@@ -11,6 +11,8 @@
 #include "Logging.h"
 #include "ShaderSystem.h"
 
+#include "mesh_attributes.h"
+
 // _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable:4996)
 
@@ -150,7 +152,7 @@ int main()
         glBindBuffer(GL_ARRAY_BUFFER, positionsBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(MESH_ATTRIB_POSITION, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
         // Texture coordinates
         float UVs[] = {
@@ -167,7 +169,7 @@ int main()
         glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(UVs), UVs, GL_STATIC_DRAW);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(MESH_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
         glBindVertexArray(0);
 
