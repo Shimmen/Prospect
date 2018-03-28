@@ -10,6 +10,9 @@ add_executable(Prospect ${SOURCES})
 
 target_include_directories(Prospect PRIVATE "src/")
 
+# We sometimes want to compile files as both C++ and GLSL
+target_include_directories(Prospect PRIVATE "shaders/")
+
 target_link_libraries(Prospect PRIVATE glfw)
 target_link_libraries(Prospect PRIVATE glad)
 target_link_libraries(Prospect PRIVATE stb_image)

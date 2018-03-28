@@ -8,6 +8,11 @@
 #include <cassert>
 #include <stdlib.h>
 
+#include "Logging.h"
+#include "ShaderSystem.h"
+
+// _CRT_SECURE_NO_WARNINGS
+#pragma warning(disable:4996)
 
 //
 // Callbacks
@@ -15,12 +20,12 @@
 
 void gl_debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
-	printf("GL debug message: %s\n", message);
+	Log("GL debug message: %s\n", message);
 }
 
 void glfw_error_callback(int code, const char *message)
 {
-    printf("GLFW error %d: %s\n", code, message);
+	LogError("GLFW error %d: %s\n", code, message);
 }
 
 void glfw_mouse_button_callback(GLFWwindow *window, int button, int state, int mods)
@@ -37,55 +42,6 @@ void glfw_key_callback(GLFWwindow *window, int key, int scancode, int state, int
 // Utility functions
 //
 
-GLuint createShader(const char *filePath, GLenum type)
-{
-    std::ifstream ifs(filePath);
-    if (!ifs.good()) {
-        printf("Could not read shader file '%s'. Aborting.\n", filePath);
-        exit(EXIT_FAILURE);
-    }
-    
-    std::stringstream buffer;
-    buffer << ifs.rdbuf();
-	std::string source = buffer.str();
-    const GLchar *sources[] = { source.c_str() };
-    
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, sources, nullptr);
-    glCompileShader(shader);
-
-    GLint compilationSuccess;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compilationSuccess);
-    if (compilationSuccess != GL_TRUE) {
-        static GLchar errorMessage[2048];
-        glGetShaderInfoLog(shader, sizeof(errorMessage), nullptr, errorMessage);
-        printf("Shader compilation error ('%s'): %s. Aborting.\n", filePath, errorMessage);
-        exit(EXIT_FAILURE);
-    }
-
-    return shader;
-}
-
-GLuint createProgram(GLuint vertexShader, GLuint fragmentShader = 0, GLuint geometryShader = 0)
-{
-    GLuint program = glCreateProgram();
-    if (vertexShader) glAttachShader(program, vertexShader);
-    if (fragmentShader) glAttachShader(program, fragmentShader);
-    if (geometryShader) glAttachShader(program, geometryShader);
-    glLinkProgram(program);
-
-    GLint linkSuccess;
-    glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
-    if (linkSuccess != GL_TRUE) {
-        static GLchar errorMessage[2048];
-        glGetProgramInfoLog(program, sizeof(errorMessage), nullptr, errorMessage);
-        printf("Shader program link error: %s. Aborting.\n", errorMessage);
-        exit(EXIT_FAILURE);
-    }
-
-    return program;
-}
-
 GLuint loadImage(const char *filePath)
 {
     stbi_set_flip_vertically_on_load(true);
@@ -94,8 +50,7 @@ GLuint loadImage(const char *filePath)
     unsigned char *pixels = stbi_load(filePath, &width, &height, &numComponents, 0);
 
     if (pixels == nullptr) {
-        printf("Image loading error ('%s'): %s. Aborting.\n", filePath, stbi_failure_reason());
-        exit(EXIT_FAILURE);
+        LogError("Image loading error ('%s'): %s. Aborting.\n", filePath, stbi_failure_reason());
     }
 
     GLenum format, internalFormat;
@@ -118,8 +73,8 @@ GLuint loadImage(const char *filePath)
             internalFormat = GL_RGBA8;
             break;
         default:
-            printf("Image loading error: unknown number of components (%d). Aborting.", numComponents);
-            exit(EXIT_FAILURE);
+			LogError("Image loading error: unknown number of components (%d). Aborting.", numComponents);
+			break;
     }
 
     GLuint texture;
@@ -168,11 +123,9 @@ int main()
 	glDebugMessageCallback(gl_debug_message_callback, nullptr);
 
     // Setup test shader program
-    GLuint program = createProgram(
-            createShader("shaders/default.vert.glsl", GL_VERTEX_SHADER),
-            createShader("shaders/default.frag.glsl", GL_FRAGMENT_SHADER));
-    glUseProgram(program);
-
+	ShaderSystem shaderSystem{ "shaders/" };
+	GLuint* program = shaderSystem.AddProgram("default");
+    
     // Setup test image
     GLuint testScreen = loadImage("assets/test_pattern.png");
 
@@ -227,15 +180,18 @@ int main()
     glfwSwapInterval(1);
     while (!glfwWindowShouldClose(window))
 	{
+		shaderSystem.Update();
 		glfwPollEvents();
 
         glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         {
+			glUseProgram(*program);
+
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, testScreen);
-            glUniform1i(glGetUniformLocation(program, "u_texture"), 0);
+            glUniform1i(glGetUniformLocation(*program, "u_texture"), 0);
 
             glBindVertexArray(quad);
             glDrawArrays(GL_TRIANGLES, 0, 6);
