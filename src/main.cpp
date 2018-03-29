@@ -10,6 +10,7 @@
 
 #include "Logging.h"
 #include "ShaderSystem.h"
+#include "TextureSystem.h"
 
 #include "mesh_attributes.h"
 
@@ -40,59 +41,7 @@ void glfw_key_callback(GLFWwindow *window, int key, int scancode, int state, int
     // ...
 }
 
-//
-// Utility functions
-//
-
-GLuint loadImage(const char *filePath)
-{
-    stbi_set_flip_vertically_on_load(true);
-
-    int width, height, numComponents;
-    unsigned char *pixels = stbi_load(filePath, &width, &height, &numComponents, 0);
-
-    if (pixels == nullptr) {
-        LogError("Image loading error ('%s'): %s. Aborting.\n", filePath, stbi_failure_reason());
-    }
-
-    GLenum format, internalFormat;
-    switch (numComponents)
-    {
-        case 1:
-            format = GL_RED;
-            internalFormat = GL_R8;
-            break;
-        case 2:
-            format = GL_RG;
-            internalFormat = GL_RG8;
-            break;
-        case 3:
-            format = GL_RGB;
-            internalFormat = GL_RGB8;
-            break;
-        case 4:
-            format = GL_RGBA;
-            internalFormat = GL_RGBA8;
-            break;
-        default:
-			LogError("Image loading error: unknown number of components (%d). Aborting.", numComponents);
-			break;
-    }
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
-
-    // Set some defaults. Min-filter is required!
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    stbi_image_free(pixels);
-    return texture;
-}
+// TODO: Redirect glad debug callbacks to something clever here!
 
 //
 //
@@ -109,6 +58,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // required for macOS
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4);
@@ -124,12 +74,15 @@ int main()
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	glDebugMessageCallback(gl_debug_message_callback, nullptr);
 
-    // Setup test shader program
+	// Enable important and basic features
+	glEnable(GL_FRAMEBUFFER_SRGB);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	ShaderSystem shaderSystem{ "shaders/" };
 	GLuint* program = shaderSystem.AddProgram("default");
     
-    // Setup test image
-    GLuint testScreen = loadImage("assets/test_pattern.png");
+	TextureSystem textureSystem;
+	GLuint texture = textureSystem.LoadLdrImage("assets/bricks_col.jpg");
 
     // Setup test geometry
     GLuint quad;
@@ -183,6 +136,8 @@ int main()
     while (!glfwWindowShouldClose(window))
 	{
 		shaderSystem.Update();
+		textureSystem.Update();
+
 		glfwPollEvents();
 
         glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
@@ -191,9 +146,11 @@ int main()
         {
 			glUseProgram(*program);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, testScreen);
-            glUniform1i(glGetUniformLocation(*program, "u_texture"), 0);
+			GLint location = glGetUniformLocation(*program, "u_texture");
+			GLuint unit = 0;
+
+			glBindTextureUnit(unit, texture);
+            glUniform1i(location, unit);
 
             glBindVertexArray(quad);
             glDrawArrays(GL_TRIANGLES, 0, 6);
