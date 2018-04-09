@@ -17,19 +17,23 @@ TextureSystem::TextureSystem()
 	{
 		while (runBackgroundLoop)
 		{
-			std::unique_lock<std::mutex> lock(accessMutex);
-			while (pendingJobs.empty() && runBackgroundLoop)      // NOTE: This won't really allow any addition of new jobs until old ones are finished ... which, yeah.. *UNLESS* we never aquire the lock for the pendingJobs producer!
-			{
-				runCondition.wait(lock);
-			}
+			ImageLoadDescription currentJob;
 
-			if (!runBackgroundLoop)
 			{
-				return;
-			}
+				std::unique_lock<std::mutex> lock(accessMutex);
+				while (pendingJobs.empty() && runBackgroundLoop)      // NOTE: This won't really allow any addition of new jobs until old ones are finished ... which, yeah.. *UNLESS* we never aquire the lock for the pendingJobs producer!
+				{
+					runCondition.wait(lock);
+				}
 
-			ImageLoadDescription currentJob = pendingJobs.front();
-			pendingJobs.pop();
+				if (!runBackgroundLoop)
+				{
+					return;
+				}
+
+				currentJob = pendingJobs.front();
+				pendingJobs.pop();
+			}
 
 			const char* filename = currentJob.filename.c_str();
 			LoadedImage image;
@@ -37,13 +41,21 @@ TextureSystem::TextureSystem()
 			if (currentJob.isHdr)
 			{
 				image.pixels = stbi_loadf(filename, &image.width, &image.height, nullptr, STBI_rgb);
-				if (!image.pixels) Log("Could not load HDR image '%s': %s.\n", filename, stbi_failure_reason());
+				if (!image.pixels)
+				{
+					Log("Could not load HDR image '%s': %s.\n", filename, stbi_failure_reason());
+					continue;
+				}
 				image.type = GL_FLOAT;
 			}
 			else
 			{
 				image.pixels = stbi_load(filename, &image.width, &image.height, nullptr, STBI_rgb_alpha);
-				if (!image.pixels) Log("Could not load image '%s': %s.\n", filename, stbi_failure_reason());
+				if (!image.pixels)
+				{
+					Log("Could not load image '%s': %s.\n", filename, stbi_failure_reason());
+					continue;
+				}
 				image.type = GL_UNSIGNED_BYTE;
 			}
 
