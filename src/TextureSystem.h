@@ -4,13 +4,14 @@
 #include <thread>
 #include <condition_variable>
 
-#include <queue>
 #include <string>
 #include <memory>
 #include <stdint.h>
 #include <unordered_map>
 
 #include <glad/glad.h>
+
+#include "Queue.h"
 
 class TextureSystem
 {
@@ -22,15 +23,16 @@ public:
 	TextureSystem(TextureSystem& other) = delete;
 	TextureSystem& operator=(TextureSystem& other) = delete;
 
+	// Must be called on a regular basis (e.g. in the beginning of every frame)
 	void Update();
+
+	bool IsHdrFile(const std::string& filename) const;
 
 	GLuint LoadLdrImage(const std::string& filename);
 	GLuint LoadHdrImage(const std::string& filename);
 	GLuint LoadDataTexture(const std::string& filename);
 
 private:
-
-	GLuint CreateTexture() const;
 
 	struct ImageLoadDescription
 	{
@@ -48,16 +50,19 @@ private:
 		int width, height;
 	};
 
+	GLuint CreateEmptyTextureObject() const;
+	void CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pixel[4]) const;
+	void CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedImage& image) const;
+
 	GLfloat textureMaxAnisotropy;
 
 	std::unordered_map<std::string, LoadedImage> loadedImages;
-
-	std::queue<ImageLoadDescription> pendingJobs;
-	std::queue<ImageLoadDescription> finishedJobs;
+	Queue<ImageLoadDescription> pendingJobs;
+	Queue<ImageLoadDescription> finishedJobs;
 
 	std::thread             backgroundThread;
 	std::mutex              accessMutex;
 	std::condition_variable runCondition;
-	volatile bool           runBackgroundLoop;
+	bool                    runBackgroundLoop;
 
 };

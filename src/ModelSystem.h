@@ -4,13 +4,14 @@
 #include <thread>
 #include <condition_variable>
 
-#include <queue>
 #include <string>
 #include <vector>
 #include <unordered_map>
 
 #include <glad/glad.h>
 #include <tiny_obj_loader.h>
+
+#include "Queue.h"
 
 struct Model
 {
@@ -81,14 +82,14 @@ private:
 	std::unordered_map<std::string, LoadedModel> loadedModels;
 
 	// The job string refers to the filename (e.g. teapot.obj)
-	std::queue<std::string> pendingJobs;
+	Queue<std::string> pendingJobs;
 
-	// The job string refers to the filename+shapename (e.g. teapot.obj.lid)
-	std::queue<std::string> finishedJobs;
+	// The job string refers to the filename+shapename (e.g. teapot.obj-lid)
+	Queue<std::string> finishedJobs;
 
 	std::thread             backgroundThread;
 	std::mutex              accessMutex;
 	std::condition_variable runCondition;
-	volatile bool           runBackgroundLoop;
+	bool                    runBackgroundLoop;
 
 };

@@ -21,7 +21,7 @@ TextureSystem::TextureSystem()
 
 			{
 				std::unique_lock<std::mutex> lock(accessMutex);
-				while (pendingJobs.empty() && runBackgroundLoop)      // NOTE: This won't really allow any addition of new jobs until old ones are finished ... which, yeah.. *UNLESS* we never aquire the lock for the pendingJobs producer!
+				while (pendingJobs.IsEmpty() && runBackgroundLoop)
 				{
 					runCondition.wait(lock);
 				}
@@ -31,8 +31,7 @@ TextureSystem::TextureSystem()
 					return;
 				}
 
-				currentJob = pendingJobs.front();
-				pendingJobs.pop();
+				currentJob = pendingJobs.Pop();
 			}
 
 			const char* filename = currentJob.filename.c_str();
@@ -60,7 +59,7 @@ TextureSystem::TextureSystem()
 			}
 
 			// We should never load an image if it's already loaded, but this can happen if we quickly
-			// call some LoadImage function a second time before the first image has loaded.
+			// call some LoadImage function a second time before the first image has finished loading.
 			if (loadedImages.find(filename) != loadedImages.end())
 			{
 				stbi_image_free(image.pixels);
@@ -70,7 +69,10 @@ TextureSystem::TextureSystem()
 				loadedImages[filename] = image;
 			}
 
-			finishedJobs.push(currentJob);
+			{
+				std::lock_guard<std::mutex> lock(accessMutex);
+				finishedJobs.Push(currentJob);
+			}
 		}
 	});
 }
@@ -92,115 +94,125 @@ TextureSystem::~TextureSystem()
 void
 TextureSystem::Update()
 {
-	//
-	// TODO: Make sure that everything is thread safe!!! Don't think it is at all now.
-	//       ALSO, this function has to be fast since it executes every frame. It doesn't
-	//       have to block or be "precise" in that it's always up to date and so. I'm not
-	//       sure what I'm talking about right now...
-	//
-
-	// This is the only place that consumes finished jobs, so a conservative check like this should work fine
-	while (!finishedJobs.empty())
+	// This is the only place that consumes finished jobs, so a check like this should work fine and be thread safe. It might be possibile that 
+	// another thread will push a job and this thread doesn't notice it until later. That is okay, though, since this is called every frame.
+	while (!finishedJobs.IsEmpty())
 	{
-		ImageLoadDescription job = finishedJobs.front();
-		finishedJobs.pop();
-
-		// Read for info about immutable texture storage and generating mipmaps:
-		//  https://stackoverflow.com/questions/15405869/is-gltexstorage2d-imperative-when-auto-generating-mipmaps
-
-		//
-		// TODO: It seems awfully arbitrary which properties belong to job and which belong to image. Clean up maybe?
-		//
-
-		LoadedImage image = loadedImages[job.filename];
-
-		if (job.shouldGenerateMipmaps)
-		{
-			if (image.width != image.height)
-			{
-				Log("Can't generate mipmaps for a non square image '%s'\n", job.filename.c_str());
-				continue;
-			}
-
-			int size = image.width;
-
-			if ((size & (size - 1)) != 0)
-			{
-				Log("Can't generate mipmaps for a non power-of-two sized image '%s'\n", job.filename.c_str());
-				continue;
-			}
-			
-			int numLevels = 1 + int(std::log2(size));
-			glTextureStorage2D(job.texture, numLevels, job.internalFormat, image.width, image.height);
-			glTextureSubImage2D(job.texture, 0, 0, 0, image.width, image.height, job.format, image.type, image.pixels);
-			glGenerateTextureMipmap(job.texture);
-		}
-		else
-		{
-			glTextureStorage2D(job.texture, 1, job.internalFormat, image.width, image.height);
-			glTextureSubImage2D(job.texture, 0, 0, 0, image.width, image.height, job.format, image.type, image.pixels);
-		}
+		ImageLoadDescription job = finishedJobs.Pop();
+		const LoadedImage& image = loadedImages[job.filename];
+		CreateImmutableTextureFromImage(job, image);
 	}
+}
+
+bool
+TextureSystem::IsHdrFile(const std::string& filename) const
+{
+	return stbi_is_hdr(filename.c_str());
 }
 
 GLuint
 TextureSystem::LoadLdrImage(const std::string& filename)
 {
-	static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
-
-	if (stbi_is_hdr(filename.c_str()))
+	if (IsHdrFile(filename))
 	{
 		Log("Texture file '%s' is an HDR image and must be loaded as such\n", filename.c_str());
 	}
 
-	GLuint texture = CreateTexture();
+	ImageLoadDescription dsc;
+	dsc.filename = filename;
+	dsc.texture = CreateEmptyTextureObject();
+	dsc.format = GL_RGBA;
+	dsc.internalFormat = GL_SRGB8_ALPHA8;
+	dsc.shouldGenerateMipmaps = true;
+	dsc.isHdr = false;
 
 	if (loadedImages.find(filename) != loadedImages.end())
 	{
-		// TODO: What about the format etc.? Assumed to be this? Am I too tired to think properly? Well, yes, assuming that this LoadImage call is valid, i.e. the image is an sRGB_A (not HDR is already checked above)
-
-		LoadedImage image = loadedImages[filename];
-
-		// TODO: Use bindless here! As above.. But probably don't copy all that over, make some convenience function
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.pixels);
-		glGenerateTextureMipmap(texture);
+		// The file is already loaded into memory, just fill in the GPU texture data
+		const LoadedImage& image = loadedImages[filename];
+		CreateImmutableTextureFromImage(dsc, image);
 	}
 	else
 	{
 		// Fill texture with placeholder data and request an image load
-		// TODO: Use bindless if possible! Not sure if possible though since the bindless stuff all seem to be immutable
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, placeholderImageData);
+		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
+		CreateMutableTextureFromPixel(dsc, placeholderImageData);
 
-		ImageLoadDescription dsc;
-		dsc.filename = filename;
-		dsc.texture = texture;
-		dsc.format = GL_RGBA;
-		dsc.internalFormat = GL_SRGB8_ALPHA8;
-		dsc.shouldGenerateMipmaps = true;
-		dsc.isHdr = false;
-
-		pendingJobs.push(dsc);
+		pendingJobs.Push(dsc);
 		runCondition.notify_all();
 	}
 
-	return texture;
+	return dsc.texture;
 }
 
 GLuint
 TextureSystem::LoadHdrImage(const std::string& filename)
 {
-	return 0;
+	if (!IsHdrFile(filename))
+	{
+		Log("Texture file '%s' is an LDR image and must be loaded as such\n", filename.c_str());
+	}
+
+	ImageLoadDescription dsc;
+	dsc.filename = filename;
+	dsc.texture = CreateEmptyTextureObject();
+	dsc.format = GL_RGB;
+	dsc.internalFormat = GL_RGB32F; // TODO: alpha? 16b?
+	dsc.shouldGenerateMipmaps = true;
+	dsc.isHdr = true;
+
+	if (loadedImages.find(filename) != loadedImages.end())
+	{
+		const LoadedImage& image = loadedImages[filename];
+		CreateImmutableTextureFromImage(dsc, image);
+	}
+	else
+	{
+		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
+		CreateMutableTextureFromPixel(dsc, placeholderImageData);
+
+		pendingJobs.Push(dsc);
+		runCondition.notify_all();
+	}
+
+	return dsc.texture;
 }
 
 GLuint
 TextureSystem::LoadDataTexture(const std::string& filename)
 {
-	return 0;
+	if (IsHdrFile(filename))
+	{
+		Log("Texture file '%s' is an HDR image and must be loaded as such\n", filename.c_str());
+	}
+
+	ImageLoadDescription dsc;
+	dsc.filename = filename;
+	dsc.texture = CreateEmptyTextureObject();
+	dsc.format = GL_RGB;
+	dsc.internalFormat = GL_RGB8;
+	dsc.shouldGenerateMipmaps = true;
+	dsc.isHdr = false;
+
+	if (loadedImages.find(filename) != loadedImages.end())
+	{
+		const LoadedImage& image = loadedImages[filename];
+		CreateImmutableTextureFromImage(dsc, image);
+	}
+	else
+	{
+		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
+		CreateMutableTextureFromPixel(dsc, placeholderImageData);
+
+		pendingJobs.Push(dsc);
+		runCondition.notify_all();
+	}
+
+	return dsc.texture;
 }
 
 GLuint
-TextureSystem::CreateTexture() const
+TextureSystem::CreateEmptyTextureObject() const
 {
 	GLuint texture;
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
@@ -213,4 +225,50 @@ TextureSystem::CreateTexture() const
 	glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, textureMaxAnisotropy);
 
 	return texture;
+}
+
+void
+TextureSystem::CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pixel[4]) const
+{
+	// Note that we can't use the bindless API for this since we need to resize the texture later,
+	// which wouldn't be possible because that API only creates immutable textures (i.e. can't be resized)
+
+	GLint lastBoundTexture2D;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastBoundTexture2D);
+	{
+		glBindTexture(GL_TEXTURE_2D, dsc.texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+	}
+	glBindTexture(GL_TEXTURE_2D, lastBoundTexture2D);
+}
+
+void
+TextureSystem::CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedImage& image) const
+{
+	if (dsc.shouldGenerateMipmaps)
+	{
+		if (image.width != image.height)
+		{
+			Log("Can't generate mipmaps for a non square image '%s'\n", dsc.filename.c_str());
+			return;
+		}
+
+		int size = image.width;
+
+		if ((size & (size - 1)) != 0)
+		{
+			Log("Can't generate mipmaps for a non power-of-two sized image '%s'\n", dsc.filename.c_str());
+			return;
+		}
+
+		int numLevels = 1 + int(std::log2(size));
+		glTextureStorage2D(dsc.texture, numLevels, dsc.internalFormat, image.width, image.height);
+		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
+		glGenerateTextureMipmap(dsc.texture);
+	}
+	else
+	{
+		glTextureStorage2D(dsc.texture, 1, dsc.internalFormat, image.width, image.height);
+		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
+	}
 }

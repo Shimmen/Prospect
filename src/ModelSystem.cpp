@@ -16,10 +16,9 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 		while (runBackgroundLoop)
 		{
 			std::string currentFile;
-
 			{
 				std::unique_lock<std::mutex> lock(accessMutex);
-				while (pendingJobs.empty() && runBackgroundLoop)
+				while (pendingJobs.IsEmpty() && runBackgroundLoop)
 				{
 					runCondition.wait(lock);
 				}
@@ -29,12 +28,11 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 					return;
 				}
 
-				currentFile = pendingJobs.front();
-				pendingJobs.pop();
+				currentFile = pendingJobs.Pop();
 			}
 
-			// TODO: Allow windows-style backslashes for paths?
 			auto pathIndex = currentFile.find_last_of('/');
+			if (pathIndex == std::string::npos) pathIndex = currentFile.find_last_of('\\');
 
 			std::string mtlBaseDirectory = "";
 			if (pathIndex != std::string::npos)
@@ -58,7 +56,7 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 			{
 				auto qualifiedName = currentFile + "-" + shape.name;
 
-				// Push model onto the map and get a local reference to it (so we never have to copy it)
+				// Push model onto the map and get a local reference to it (so we never have to make a copy of it)
 				loadedModels[qualifiedName] = LoadedModel{};
 				LoadedModel &model = loadedModels[qualifiedName];
 
@@ -169,8 +167,14 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 				// shape.mesh.indices ...
 				*/
 
-				// Push loaded and processed data for this shape when finished so that Update() can load it to the GPU as soon as possible
-				finishedJobs.push(qualifiedName);
+				// Make sure to assign the filename to the qualified names of all the loaded models
+				loadedFiles[currentFile].push_back(qualifiedName);
+
+				{
+					// Push loaded and processed data for this shape when finished so that Update() can load it to the GPU as soon as possible
+					std::lock_guard<std::mutex> lock(accessMutex);
+					finishedJobs.Push(qualifiedName);
+				}
 			}
 		}
 	});
@@ -187,11 +191,19 @@ ModelSystem::~ModelSystem()
 void
 ModelSystem::Update()
 {
-	while (!finishedJobs.empty())
+	// If it's empty don't even bother to try to get a lock etc. Most frames there won't
+	// be anything here, so this makes sure we don't waste precious frame time.
+	if (finishedJobs.IsEmpty())
 	{
-		std::string qualifiedName = finishedJobs.front();
-		finishedJobs.pop();
+		return;
+	}
 
+	// If there definitely is at least one finished job, aqcuire a lock
+	std::lock_guard<std::mutex> lock(accessMutex);
+
+	while (!finishedJobs.IsEmpty())
+	{
+		std::string qualifiedName = finishedJobs.Pop();
 		const LoadedModel& loadedModel = loadedModels[qualifiedName];
 
 		GLuint indexBuffer;
@@ -260,17 +272,18 @@ ModelSystem::LoadModel(const std::string& filename)
 {
 	if (loadedModels.find(filename) != loadedModels.end())
 	{
-		//
-		// TODO: Does this have to happen on the background thread so only it pushes to finishedJobs?
-		//
-
-		// Model is already loaded. Immediately push the job to the done queue so that
-		// the Update() method will notice it and create a GPU represenation for it
-		finishedJobs.push(filename);
+		// File is already loaded. Immediately push the models to the done queue so that
+		// the Update() method will notice it and create GPU represenations for it
+		std::lock_guard<std::mutex> lock(accessMutex);
+		for (auto qualifiedModelName : loadedFiles[filename])
+		{
+			finishedJobs.Push(qualifiedModelName);
+		}
 	}
 	else
 	{
-		pendingJobs.push(filename);
+		// Since this is the line that pushes to pendingJobs it doesn't have to be locked! (The consumers are correctly locking)
+		pendingJobs.Push(filename);
 		runCondition.notify_all();
 	}
 }
