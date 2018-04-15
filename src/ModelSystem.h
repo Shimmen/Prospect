@@ -20,7 +20,8 @@ struct Model
 	GLsizei indexCount;
 	GLenum  indexType;
 
-	tinyobj::material_t material; // TODO: Replace me!!!
+	int transformID = 0;
+	int materialID  = 0; // TODO: Implement materials!
 
 	void Draw() const
 	{
