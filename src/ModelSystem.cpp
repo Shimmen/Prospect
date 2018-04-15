@@ -80,7 +80,7 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 					if (indexMap.find(hash) != indexMap.end())
 					{
 						// This exact vertex already exist, push index of that one
-						unsigned int index = indexMap[hash];
+						uint32_t index = indexMap[hash];
 						model.indices[i] = index;
 					}
 					else
@@ -122,8 +122,9 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 						model.vertices.emplace_back(v);
 
 						assert(thisIndex < UINT32_MAX);
-						model.indices[i] = thisIndex;
-						indexMap[hash] = static_cast<uint32_t>(thisIndex);
+						uint32_t index = static_cast<uint32_t>(thisIndex);
+						model.indices[i] = index;
+						indexMap[hash] = index;
 					}
 				}
 
