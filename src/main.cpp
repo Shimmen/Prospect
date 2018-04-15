@@ -91,70 +91,100 @@ int main()
 		models.emplace_back(model);
 	}};
 	
+	modelSystem.LoadModel("assets/quad/quad.obj");
 	modelSystem.LoadModel("assets/teapot/teapot.obj");
 
     // Setup test geometry
+	/*
 	Model quad;
     {
-		
-		quad.indexCount = 6;
-		quad.indexType = GL_UNSIGNED_INT;
-		quad.material = {}; // TODO!
-
-		glGenVertexArrays(1, &quad.vao);
-		glBindVertexArray(quad.vao);
-
-		// Positions
-		float positions[] = {
-			-1.0f, -1.0f,
-			-1.0f, +1.0f,
-			+1.0f, +1.0f,
-
-			-1.0f, -1.0f,
-			+1.0f, +1.0f,
-			+1.0f, -1.0f
-        };
-		GLuint positionsBuffer;
-		glGenBuffers(1, &positionsBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, positionsBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(MESH_ATTRIB_POSITION);
-		glVertexAttribPointer(MESH_ATTRIB_POSITION, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-		// Texture coordinates
-		float UVs[] = {
-			0, 0,
-			0, 1,
-			1, 1,
-
-			0, 0,
-			1, 1,
-			1, 0
-		};
-		GLuint uvBuffer;
-		glGenBuffers(1, &uvBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(UVs), UVs, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(MESH_ATTRIB_TEX_COORD);
-		glVertexAttribPointer(MESH_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-		// Indices
-		unsigned int indices[] = {
-			0, 1, 2, 3, 4, 5
-		};
 		GLuint indexBuffer;
-		glGenBuffers(1, &indexBuffer);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+		GLsizei indexCount;
+		GLenum  indexType;
+		{
+			glCreateBuffers(1, &indexBuffer);
 
-		glBindVertexArray(0);
+			unsigned int indices[] = {
+				0, 1, 2, 3, 4, 5
+			};
 
-		glDeleteBuffers(1, &positionsBuffer);
-		glDeleteBuffers(1, &uvBuffer);
-		glDeleteBuffers(1, &indexBuffer);
+			indexCount = static_cast<GLsizei>(sizeof(indices));
+			indexType = GL_UNSIGNED_INT;
+
+			size_t size = sizeof(uint32_t) * indexCount;
+
+			GLbitfield flags = GL_DYNAMIC_STORAGE_BIT;
+			glNamedBufferStorage(indexBuffer, size, indices, flags);
+		}
+
+		GLuint positionsBuffer;
+		{
+			glCreateBuffers(1, &positionsBuffer);
+
+			float positions[] = {
+				-1.0f, -1.0f,
+				-1.0f, +1.0f,
+				+1.0f, +1.0f,
+
+				-1.0f, -1.0f,
+				+1.0f, +1.0f,
+				+1.0f, -1.0f
+			};
+
+			size_t size = sizeof(positions);
+			GLbitfield flags = GL_DYNAMIC_STORAGE_BIT;
+			glNamedBufferStorage(positionsBuffer, size, positions, flags);
+		}
+
+		GLuint texCoordBuffer;
+		{
+			glCreateBuffers(1, &texCoordBuffer);
+
+			float UVs[] = {
+				0, 0,
+				0, 1,
+				1, 1,
+
+				0, 0,
+				1, 1,
+				1, 0
+			};
+
+			size_t size = sizeof(UVs);
+			GLbitfield flags = GL_DYNAMIC_STORAGE_BIT;
+			glNamedBufferStorage(texCoordBuffer, size, UVs, flags);
+		}
+
+		GLuint vao;
+		glCreateVertexArrays(1, &vao);
+
+		// Specify the element buffer for this vertex array
+		glVertexArrayElementBuffer(vao, indexBuffer);
+
+		// Bind the vertex array to a specific binding index and specify it stride, etc.
+		GLuint positionsBindingIndex = 0;
+		GLuint texCoordsBindingIndex = 1;
+		glVertexArrayVertexBuffer(vao, positionsBindingIndex, positionsBuffer, 0, 2 * sizeof(float));
+		glVertexArrayVertexBuffer(vao, texCoordsBindingIndex, texCoordBuffer , 0, 2 * sizeof(float));
+
+		// Enable the attribute, specify its format, and connect the vertex array (at its
+		// binding index) to to this specific attribute for this vertex array
+		glEnableVertexArrayAttrib(vao, MESH_ATTRIB_POSITION);
+		glVertexArrayAttribFormat(vao, MESH_ATTRIB_POSITION, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(vao, MESH_ATTRIB_POSITION, positionsBindingIndex);
+
+		glEnableVertexArrayAttrib(vao, MESH_ATTRIB_TEX_COORD);
+		glVertexArrayAttribFormat(vao, MESH_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(vao, MESH_ATTRIB_TEX_COORD, texCoordsBindingIndex);
+
+		Model quad;
+		quad.vao = vao;
+		quad.indexCount = indexCount;
+		quad.indexType = indexType;
 
 		models.emplace_back(quad);
 	}
+	*/
 
 
 	// Render loop

@@ -122,6 +122,7 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 						model.vertices.emplace_back(v);
 
 						assert(thisIndex < UINT32_MAX);
+						model.indices[i] = thisIndex;
 						indexMap[hash] = static_cast<uint32_t>(thisIndex);
 					}
 				}

@@ -16,9 +16,10 @@ projects/
 *.slo
 *.lo
 *.o
+*.obj
 
 # Be wary of wavefront .obj files!
-*.obj
+!assets/**/*.obj
 
 # Precompiled Headers
 *.gch
