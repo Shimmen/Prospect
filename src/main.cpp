@@ -16,7 +16,12 @@
 #include "TextureSystem.h"
 #include "TransformSystem.h"
 
+#include "Input.h"
+
+#include "FpsCamera.h"
+
 #include "mesh_attributes.h"
+#include "uniform_locations.h"
 
 // _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable:4996)
@@ -42,38 +47,6 @@ void glfw_error_callback(int code, const char *message)
 	LogError("GLFW error %d: %s\n", code, message);
 }
 
-void glfw_mouse_button_callback(GLFWwindow *window, int button, int state, int mods)
-{
-	// ...
-}
-
-void glfw_key_callback(GLFWwindow *window, int key, int scancode, int state, int mods)
-{
-	if (key == GLFW_KEY_ESCAPE)
-	{
-		glfwSetWindowShouldClose(window, true);
-	}
-
-	if (state == GLFW_REPEAT || state == GLFW_PRESS)
-	{
-		const float speed = 0.01f;
-		float dx = 0.0f;
-		float dy = 0.0f;
-
-		if (key == GLFW_KEY_RIGHT) dx += speed;
-		if (key == GLFW_KEY_LEFT)  dx -= speed;
-		if (key == GLFW_KEY_UP)    dy += speed;
-		if (key == GLFW_KEY_DOWN)  dy -= speed;
-
-		for (auto model : models)
-		{
-			auto& transform = transforms.Get(model.transformID);
-			transform.position.x += dx;
-			transform.position.y += dy;
-		}
-	}
-}
-
 // TODO: Redirect glad debug callbacks to something clever here!
 
 //
@@ -95,21 +68,29 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // required for macOS
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
-	GLFWwindow *window = glfwCreateWindow(width, height, "Prospect Renderer", nullptr, nullptr);
+	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
+	GLFWwindow *window = glfwCreateWindow(vidmode->width, vidmode->height, "Prospect Renderer", monitor, nullptr);
 	if (!window) exit(EXIT_FAILURE);
 
-	// Setup basic event listeners
-	glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
-	glfwSetKeyCallback(window, glfw_key_callback);
+	// Setup input
+	Input input;
+	glfwSetWindowUserPointer(window, &input);
+	glfwSetKeyCallback(window, Input::KeyEventCallback);
+	glfwSetCharModsCallback(window, Input::CharEventCallback);
+	glfwSetMouseButtonCallback(window, Input::MouseButtonEventCallback);
+	glfwSetCursorPosCallback(window, Input::MouseMovementEventCallback);
+	glfwSetScrollCallback(window, Input::MouseScrollEventCallback);
 
 	// Setup OpenGL context
 	glfwMakeContextCurrent(window);
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	glDebugMessageCallback(gl_debug_message_callback, nullptr);
 
-	// Enable important and basic features
+	// Enable important and basic features (plus some initial state)
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable(GL_DEPTH_TEST);
 
 	ShaderSystem shaderSystem{ "shaders/" };
 	GLuint* program = shaderSystem.AddProgram("default");
@@ -123,7 +104,9 @@ int main()
 	}};
 	
 	modelSystem.LoadModel("assets/quad/quad.obj");
-	modelSystem.LoadModel("assets/teapot/teapot.obj");
+	modelSystem.LoadModel("assets/sponza/sponza.obj");
+
+	FpsCamera camera;
 
 	// Render loop
 	glfwSwapInterval(1);
@@ -133,7 +116,11 @@ int main()
 		shaderSystem.Update();
 		textureSystem.Update();
 
+		input.PreEventPoll();
 		glfwPollEvents();
+
+		float dt = 1.0f / 60.0f;
+		camera.Update(input, dt);
 
 		glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -141,19 +128,35 @@ int main()
 		{
 			glUseProgram(*program);
 
-			GLint location = glGetUniformLocation(*program, "u_texture");
-			GLuint unit = 0;
-
-			glBindTextureUnit(unit, texture);
-			glUniform1i(location, unit);
+			// Camera uniforms
+			glUniformMatrix4fv(PredefinedUniformLocation(u_view_from_world), 1, GL_FALSE, glm::value_ptr(camera.GetViewMatrix()));
+			glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_view), 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix()));
 			
 			for (auto& model : models)
 			{
+				// Object matrices
 				transforms.UpdateMatrices(model.transformID);
 				auto& transform = transforms.Get(model.transformID);
+				glUniformMatrix4fv(PredefinedUniformLocation(u_world_from_local), 1, GL_FALSE, glm::value_ptr(transform.matrix));
 
-				GLint worldFromLocalLocation = glGetUniformLocation(*program, "u_world_from_local");
-				glUniformMatrix4fv(worldFromLocalLocation, 1, GL_FALSE, glm::value_ptr(transform.matrix));
+				// Texture uniforms and bindings
+
+				//
+				//    For the future:
+				//
+				// int unit = 0;
+				// for each texture in the current material
+				//   glBindTextureUnit(unit, texture);
+				//   unit += 1;
+				//
+				// HOWEVER, maybe we want to set uniform OR texture units in advance.
+				// I.e. set one of them and let the other vary.
+				//
+
+				GLuint unit = 0;
+				glBindTextureUnit(unit, texture);
+				int a = PredefinedUniformLocation(u_diffuse);
+				glUniform1i(PredefinedUniformLocation(u_diffuse), unit);
 
 				model.Draw();
 			}

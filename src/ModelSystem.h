@@ -21,7 +21,7 @@ struct Model
 	GLenum  indexType;
 
 	int transformID = 0;
-	int materialID  = 0; // TODO: Implement materials!
+	int materialID  = 0; // TODO: Implement materials! Maybe in a similar way to transforms, with IDs and all?
 
 	void Draw() const
 	{

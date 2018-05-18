@@ -1,12 +1,15 @@
 #version 460
 
-in vec2 v_uv;
+#include <uniform_locations.h>
 
-uniform sampler2D u_texture;
+in vec2 v_uv;
+in vec3 v_position;
+
+PredefinedUniform(sampler2D, u_diffuse);
 
 out vec4 o_color;
 
 void main()
 {
-    o_color = texture(u_texture, v_uv);
+    o_color = texture(u_diffuse, v_uv);
 }

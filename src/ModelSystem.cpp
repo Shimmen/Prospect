@@ -42,7 +42,7 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 
 			tinyobj::attrib_t attributes;
 			std::vector<tinyobj::shape_t> shapes;
-			std::vector<tinyobj::material_t> materials;
+			std::vector<tinyobj::material_t> materials; // TODO: Handle materials!
 
 			const bool triangulate = true;
 			std::string error;
