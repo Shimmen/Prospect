@@ -30,6 +30,7 @@ public:
 				bool fullscreen = false;
 			} size;
 			bool resizeable = false;
+			bool vsync = true;
 		} window;
 
 		struct

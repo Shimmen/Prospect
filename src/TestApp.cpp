@@ -27,7 +27,7 @@ App::Settings TestApp::Setup()
 {
 	Settings settings{};
 	settings.window.size = { 1280, 800 };
-	settings.window.resizeable = false;
+	settings.window.resizeable = true;
 	settings.context.msaaSamples = 4;
 	return settings;
 }
