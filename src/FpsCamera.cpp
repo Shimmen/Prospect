@@ -10,6 +10,12 @@ FpsCamera::FpsCamera(/*const glm::vec3& position, const glm::vec3& lookDirection
 }
 
 void
+FpsCamera::Resize(int width, int height)
+{
+	aspectRatio = float(width) / float(height);
+}
+
+void
 FpsCamera::Update(const Input& input, float dt)
 {
 	// Apply acceleration from input
@@ -126,7 +132,6 @@ FpsCamera::GetViewMatrix()
 const glm::mat4&
 FpsCamera::GetProjectionMatrix()
 {
-	float aspectRatio = 16.0f / 9.0f; // TODO: Get aspect ratio from some global data map?
 	float near = 0.2f;
 	float far = 1000.0f;
 

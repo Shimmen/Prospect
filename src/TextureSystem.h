@@ -54,8 +54,6 @@ private:
 	void CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pixel[4]) const;
 	void CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedImage& image) const;
 
-	GLfloat textureMaxAnisotropy;
-
 	std::unordered_map<std::string, LoadedImage> loadedImages;
 	Queue<ImageLoadDescription> pendingJobs;
 	Queue<ImageLoadDescription> finishedJobs;

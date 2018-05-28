@@ -12,6 +12,7 @@ public:
 	FpsCamera(/*const glm::vec3& position, const glm::vec3& lookDirection*/);
 	~FpsCamera() = default;
 
+	void Resize(int width, int height);
 	void Update(const Input& input, float dt);
 	
 	const glm::mat4& GetViewMatrix();
@@ -50,6 +51,8 @@ private:
 	
 	//
 	
+	float aspectRatio{ 16.0f / 9.0f };
+
 	glm::mat4 viewFromWorld;
 	glm::mat4 projectionFromView;
 

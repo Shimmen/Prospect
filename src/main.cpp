@@ -17,11 +17,7 @@
 #include "TransformSystem.h"
 
 #include "Input.h"
-
-#include "FpsCamera.h"
-
-#include "mesh_attributes.h"
-#include "uniform_locations.h"
+#include "TestApp.h"
 
 // _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable:4996)
@@ -30,8 +26,7 @@
 // Globals
 //
 
-std::vector<Model> models;
-TransformSystem transforms;
+// ...
 
 //
 // Callbacks
@@ -55,23 +50,49 @@ void glfw_error_callback(int code, const char *message)
 
 int main()
 {
-	const int width = 1280;
-	const int height = 800;
-
-	// Setup window & context
+	// Setup basic GLFW and context settings
 	glfwSetErrorCallback(glfw_error_callback);
-	if (!glfwInit()) exit(EXIT_FAILURE);
+	if (!glfwInit())
+	{
+		LogError("Fatal error: could not initialize GLFW");
+	}
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // required for macOS
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-	const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
-	GLFWwindow *window = glfwCreateWindow(vidmode->width, vidmode->height, "Prospect Renderer", monitor, nullptr);
-	if (!window) exit(EXIT_FAILURE);
+
+	// Create app (should require no GL context!)
+	TestApp app{};
+	App::Settings settings = app.Setup();
+
+	glfwWindowHint(GLFW_RESIZABLE, settings.window.resizeable);
+	glfwWindowHint(GLFW_SAMPLES, settings.context.msaaSamples);
+
+	// Create window
+	GLFWwindow *window = nullptr;
+	if (settings.window.size.fullscreen)
+	{
+		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
+		window = glfwCreateWindow(vidmode->width, vidmode->height, settings.window.title.c_str(), monitor, nullptr);
+	}
+	else
+	{
+		int width = settings.window.size.width;
+		int height = settings.window.size.height;
+		window = glfwCreateWindow(width, height, settings.window.title.c_str(), nullptr, nullptr);
+	}
+	if (!window)
+	{
+		LogError("Fatal error: could not created the requested window");
+	}
+
+	// Setup OpenGL context
+	glfwMakeContextCurrent(window);
+	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+	glDebugMessageCallback(gl_debug_message_callback, nullptr);
 
 	// Setup input
 	Input input;
@@ -82,85 +103,26 @@ int main()
 	glfwSetCursorPosCallback(window, Input::MouseMovementEventCallback);
 	glfwSetScrollCallback(window, Input::MouseScrollEventCallback);
 
-	// Setup OpenGL context
-	glfwMakeContextCurrent(window);
-	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-	glDebugMessageCallback(gl_debug_message_callback, nullptr);
-
 	// Enable important and basic features (plus some initial state)
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_DEPTH_TEST);
 
-	ShaderSystem shaderSystem{ "shaders/" };
-	GLuint* program = shaderSystem.AddProgram("default");
+	app.Init();
 
-	TextureSystem textureSystem;
-	GLuint texture = textureSystem.LoadLdrImage("assets/bricks_col.jpg");
-
-	ModelSystem modelSystem{ [&](Model model, const std::string& filename, const std::string& modelname)
-	{
-		models.emplace_back(model);
-	}};
-	
-	modelSystem.LoadModel("assets/quad/quad.obj");
-	modelSystem.LoadModel("assets/sponza/sponza.obj");
-
-	FpsCamera camera;
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	app.Resize(width, height);
 
 	// Render loop
 	glfwSwapInterval(1);
 	while (!glfwWindowShouldClose(window))
 	{
-		modelSystem.Update();
-		shaderSystem.Update();
-		textureSystem.Update();
-
 		input.PreEventPoll();
 		glfwPollEvents();
 
 		float dt = 1.0f / 60.0f;
-		camera.Update(input, dt);
-
-		glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		{
-			glUseProgram(*program);
-
-			// Camera uniforms
-			glUniformMatrix4fv(PredefinedUniformLocation(u_view_from_world), 1, GL_FALSE, glm::value_ptr(camera.GetViewMatrix()));
-			glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_view), 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix()));
-			
-			for (auto& model : models)
-			{
-				// Object matrices
-				transforms.UpdateMatrices(model.transformID);
-				auto& transform = transforms.Get(model.transformID);
-				glUniformMatrix4fv(PredefinedUniformLocation(u_world_from_local), 1, GL_FALSE, glm::value_ptr(transform.matrix));
-
-				// Texture uniforms and bindings
-
-				//
-				//    For the future:
-				//
-				// int unit = 0;
-				// for each texture in the current material
-				//   glBindTextureUnit(unit, texture);
-				//   unit += 1;
-				//
-				// HOWEVER, maybe we want to set uniform OR texture units in advance.
-				// I.e. set one of them and let the other vary.
-				//
-
-				GLuint unit = 0;
-				glBindTextureUnit(unit, texture);
-				int a = PredefinedUniformLocation(u_diffuse);
-				glUniform1i(PredefinedUniformLocation(u_diffuse), unit);
-
-				model.Draw();
-			}
-		}
+		app.Draw(input, dt);
+		
 
 		glfwSwapBuffers(window);
 	}

@@ -9,7 +9,6 @@ TextureSystem::TextureSystem()
 {
 	// Basic setup
 	stbi_set_flip_vertically_on_load(true);
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &textureMaxAnisotropy);
 
 	// Start the background thread for loading
 	runBackgroundLoop = true;
@@ -222,6 +221,13 @@ TextureSystem::CreateEmptyTextureObject() const
 	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// Set max anisotropy to largest supported value
+	static GLfloat textureMaxAnisotropy = -1.0f;
+	if (textureMaxAnisotropy == -1.0f)
+	{
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &textureMaxAnisotropy);
+	}
 	glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, textureMaxAnisotropy);
 
 	return texture;
