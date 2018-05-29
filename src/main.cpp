@@ -191,9 +191,6 @@ int main()
 
 		float deltaTime = float(elapsedTime);
 		app->Draw(input, deltaTime);
-		
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 1);
 
 		glfwSwapBuffers(window);
 	}

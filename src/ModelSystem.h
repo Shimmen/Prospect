@@ -21,7 +21,7 @@ struct Model
 	GLenum  indexType;
 
 	int transformID = 0;
-	int materialID  = 0; // TODO: Implement materials! Maybe in a similar way to transforms, with IDs and all?
+	int materialID  = 0;
 
 	void Draw() const
 	{
@@ -69,12 +69,8 @@ private:
 
 		std::vector<uint32_t> indices;
 		std::vector<Vertex> vertices;
-		/*
-		std::vector<float> positions; 
-		std::vector<float> normals;   
-		std::vector<float> tangents;  
-		std::vector<float> texCoords; 
-		*/
+
+		int materialID;
 	};
 
 	// List of all loaded files and the models defined within them

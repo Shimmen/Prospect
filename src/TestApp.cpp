@@ -93,7 +93,6 @@ void TestApp::Draw(const Input& input, float deltaTime)
 
 		GLuint unit = 0;
 		glBindTextureUnit(unit, texture);
-		int a = PredefinedUniformLocation(u_diffuse);
 		glUniform1i(PredefinedUniformLocation(u_diffuse), unit);
 
 		model.Draw();

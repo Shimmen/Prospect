@@ -1,11 +1,11 @@
 #include "ModelSystem.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
 #include "mesh_attributes.h"
 
 #include "Logging.h"
+#include "MaterialSystem.h"
 
 ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 	: onModelLoadCallback(onModelLoadCallback)
@@ -42,7 +42,7 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 
 			tinyobj::attrib_t attributes;
 			std::vector<tinyobj::shape_t> shapes;
-			std::vector<tinyobj::material_t> materials; // TODO: Handle materials!
+			std::vector<tinyobj::material_t> materials;
 
 			const bool triangulate = true;
 			std::string error;
@@ -52,16 +52,39 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 				continue;
 			}
 
+			// Register/create all materials
+			std::map<int, int> materialIDs;
+			for (int i = 0; i < materials.size(); ++i)
+			{
+				int materialID = MaterialSystem::Create(materials[i]);
+				materialIDs[i] = materialID;
+			}
+
 			for (auto& shape : shapes)
 			{
 				auto qualifiedName = currentFile + "-" + shape.name;
 
 				// Push model onto the map and get a local reference to it (so we never have to make a copy of it)
 				loadedModels[qualifiedName] = LoadedModel{};
-				LoadedModel &model = loadedModels[qualifiedName];
+				LoadedModel& model = loadedModels[qualifiedName];
 
 				model.filename = currentFile;
 				model.name = shape.name;
+
+				if (shape.mesh.material_ids.size() > 1)
+				{
+					Log("Mesh '%s' in '%s' has more than one material. Only the first will be used, so some things might not look as intended.", shape.name.c_str(), currentFile.c_str());
+				}
+				if (shape.mesh.material_ids.size() == 1)
+				{
+					int firstMaterialIndex = shape.mesh.material_ids[0];
+					model.materialID = materialIDs[firstMaterialIndex];
+				}
+				else
+				{
+					// No material defined, so use the default material (ID=0)
+					model.materialID = 0;
+				}
 
 				size_t numIndices = shape.mesh.indices.size();
 				assert(numIndices % 3 == 0);
@@ -127,47 +150,6 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 						indexMap[hash] = index;
 					}
 				}
-
-				/*
-				size_t indexOffset = 0;
-
-				for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f)
-				{
-				assert(shape.mesh.num_face_vertices[f] == 3);
-
-				tinyobj::index_t i0 = shape.mesh.indices[indexOffset + 0];
-				tinyobj::index_t i1 = shape.mesh.indices[indexOffset + 1];
-				tinyobj::index_t i2 = shape.mesh.indices[indexOffset + 2];
-
-				assert(i0.vertex_index != -1);
-
-				float positions[3] = {};
-				float normals[3] = {};
-				float texCoord[2] = {};
-
-				positions[0] = attributes.vertices[i0.vertex_index];
-				positions[1] = attributes.vertices[i1.vertex_index];
-				positions[2] = attributes.vertices[i2.vertex_index];
-
-				if (i0.normal_index != -1)
-				{
-				normals[0] = attributes.normals[i0.normal_index];
-				normals[1] = attributes.normals[i1.normal_index];
-				normals[2] = attributes.normals[i2.normal_index];
-				}
-
-				if (i0.texcoord_index != -1)
-				{
-				texCoord[0] = attributes.texcoords[i0.texcoord_index];
-				texCoord[1] = attributes.texcoords[i1.texcoord_index];
-				texCoord[2] = attributes.texcoords[i2.texcoord_index];
-				}
-
-				indexOffset += 3;
-				}
-
-				// shape.mesh.indices ...
-				*/
 
 				// Make sure to assign the filename to the qualified names of all the loaded models
 				loadedFiles[currentFile].push_back(qualifiedName);
@@ -263,7 +245,7 @@ ModelSystem::Update()
 		model.vao = vao;
 		model.indexCount = indexCount;
 		model.indexType = indexType;
-		//model.material = TODO!
+		model.materialID = loadedModel.materialID;
 
 		onModelLoadCallback(model, loadedModel.filename, loadedModel.name);
 	}
