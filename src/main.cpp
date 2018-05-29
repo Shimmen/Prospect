@@ -164,6 +164,10 @@ int main()
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+	// Initialize global systems
+	TextureSystem::Init();
+	ModelSystem::Init();
+
 	app->Init();
 
 	int width, height;
@@ -183,6 +187,10 @@ int main()
 		input.PreEventPoll();
 		glfwPollEvents();
 
+		TextureSystem::Update();
+		ModelSystem::Update();
+		ShaderSystem::Update();
+
 		handle_global_key_commands(window, input);
 
 		double currentTime = glfwGetTime();
@@ -194,6 +202,10 @@ int main()
 
 		glfwSwapBuffers(window);
 	}
+
+	// Destroy global systems
+	TextureSystem::Destroy();
+	ModelSystem::Destroy();
 
 	glfwTerminate();
 }

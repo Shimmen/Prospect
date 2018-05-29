@@ -2,13 +2,21 @@
 
 #include "Lambertian.h"
 
-std::vector<std::unique_ptr<Material>> MaterialSystem::materials{};
+//
+// Data
+//
+
+std::vector<std::unique_ptr<Material>> materials{};
+
+//
+// Code
+//
 
 int
 MaterialSystem::Add(std::unique_ptr<Material> material)
 {
-	int ID = materials.size();
-	materials.emplace_back(material);
+	int ID = int(materials.size());
+	materials.emplace_back(std::move(material));
 	return ID;
 }
 
@@ -21,19 +29,17 @@ MaterialSystem::Create(const tinyobj::material_t& materialDescription)
 		// TODO: Maybe this shouldn't be done here, since we shouldn't need shader stuff here.
 		// Or maybe just make everything static..? I dunno. We still do need stuff like the shaderSystem right?
 		// Well, really, everything should just be static right? We only every have one instance at a time. Yeah...
-		auto defaultMaterial = std::make_unique<Lambertian>();
-		defaultMaterial->diffuseTexture = textureSystem.Something();
-		defaultMaterial->Init(shaderSystem);
 
-		materials.emplace_back(defaultMaterial);
+		//auto defaultMaterial = std::make_unique<Lambertian>();
+		//defaultMaterial->diffuseTexture = textureSystem.Something();
+		//defaultMaterial->Init(shaderSystem);
+
+		//materials.emplace_back(defaultMaterial);
 	}
 
 	// TODO: Create material!
 	std::unique_ptr<Material> material;
-
-	int ID = materials.size();
-	materials.emplace_back(material);
-	return ID;
+	return MaterialSystem::Add(std::move(material));
 }
 
 Material&

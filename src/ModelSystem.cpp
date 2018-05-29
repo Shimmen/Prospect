@@ -7,11 +7,66 @@
 #include "Logging.h"
 #include "MaterialSystem.h"
 
-ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
-	: onModelLoadCallback(onModelLoadCallback)
+//
+// Internal data structures
+//
+
+struct Vertex
 {
+	float position[3]; // (x, y, z)
+	float normal[3];   // (x, y, z)
+	float texCoord[2]; // (u, v)
+
+					   //float tangents[4];  // (x, y, z, w) ???
+};
+
+struct LoadedModel
+{
+	std::string filename;
+	std::string name;
+
+	std::vector<uint32_t> indices;
+	std::vector<Vertex> vertices;
+
+	int materialID;
+};
+
+//
+// Data
+//
+
+static ModelSystem::ModelLoadCallback onModelLoadCallback;
+
+// List of all loaded files and the models defined within them
+static std::unordered_map<std::string, std::vector<std::string>> loadedFiles{};
+// Cache of all loaded models. The key is the full model name (filename+shapename)
+static std::unordered_map<std::string, LoadedModel> loadedModels{};
+
+// The job string refers to the filename (e.g. teapot.obj)
+static Queue<std::string> pendingJobs{};
+
+// The job string refers to the filename+shapename (e.g. teapot.obj-lid)
+static Queue<std::string> finishedJobs{};
+
+static std::thread             backgroundThread;
+static std::mutex              accessMutex;
+static std::condition_variable runCondition;
+static bool                    runBackgroundLoop;
+
+//
+// Public API
+//
+
+void
+ModelSystem::Init()
+{
+	// Setup default model load callback to alert if not set
+	ModelSystem::SetModelLoadCallback([](Model, const std::string& filename, const std::string& meshname) {
+		Log("Model loaded in, but no model load callback is set!\n");
+	});
+
 	runBackgroundLoop = true;
-	backgroundThread = std::thread([this]()
+	backgroundThread = std::thread([]()
 	{
 		while (runBackgroundLoop)
 		{
@@ -71,9 +126,10 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 				model.filename = currentFile;
 				model.name = shape.name;
 
+
 				if (shape.mesh.material_ids.size() > 1)
 				{
-					Log("Mesh '%s' in '%s' has more than one material. Only the first will be used, so some things might not look as intended.", shape.name.c_str(), currentFile.c_str());
+					Log("Mesh '%s' in '%s' has more than one material (%zd). Only the first will be used, so some things might not look as intended.\n", shape.name.c_str(), currentFile.c_str(), shape.mesh.material_ids.size());
 				}
 				if (shape.mesh.material_ids.size() == 1)
 				{
@@ -164,7 +220,8 @@ ModelSystem::ModelSystem(const ModelLoadCallback& onModelLoadCallback)
 	});
 }
 
-ModelSystem::~ModelSystem()
+void
+ModelSystem::Destroy()
 {
 	// Shut down the background thread
 	runBackgroundLoop = false;
@@ -249,6 +306,12 @@ ModelSystem::Update()
 
 		onModelLoadCallback(model, loadedModel.filename, loadedModel.name);
 	}
+}
+
+void
+ModelSystem::SetModelLoadCallback(const ModelLoadCallback callback)
+{
+	onModelLoadCallback = callback;
 }
 
 void

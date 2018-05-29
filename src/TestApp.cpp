@@ -34,11 +34,16 @@ App::Settings TestApp::Setup()
 
 void TestApp::Init()
 {
-	program = shaderSystem.AddProgram("default");
-	texture = textureSystem.LoadLdrImage("assets/bricks_col.jpg");
+	program = ShaderSystem::AddProgram("default");
+	texture = TextureSystem::LoadLdrImage("assets/bricks_col.jpg");
 
-	modelSystem.LoadModel("assets/quad/quad.obj");
-	modelSystem.LoadModel("assets/sponza/sponza.obj");
+	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
+	{
+		models.emplace_back(model);
+	});
+
+	ModelSystem::LoadModel("assets/quad/quad.obj");
+	ModelSystem::LoadModel("assets/sponza/sponza.obj");
 }
 
 void TestApp::Resize(int width, int height)
@@ -52,10 +57,6 @@ void TestApp::Resize(int width, int height)
 
 void TestApp::Draw(const Input& input, float deltaTime)
 {
-	modelSystem.Update();
-	shaderSystem.Update();
-	textureSystem.Update();
-
 	camera.Update(input, deltaTime);
 
 	//
@@ -97,14 +98,6 @@ void TestApp::Draw(const Input& input, float deltaTime)
 
 		model.Draw();
 	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Events
-
-void TestApp::OnModelLoad(Model model, const std::string& filename, const std::string& modelname)
-{
-	models.emplace_back(model);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

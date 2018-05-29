@@ -9,10 +9,132 @@
 
 #include "Logging.h"
 
-ShaderSystem::ShaderSystem(const std::string& shaderDirectory)
-	: shaderDirectory(shaderDirectory)
+//
+// Internal data structures
+//
+
+struct Shader
 {
+	GLenum type;
+	std::string filename;
+
+	Shader(GLenum type, const std::string& filename) : type(type), filename(filename) {}
+};
+
+struct Program
+{
+	size_t fixedLocation;
+	std::vector<Shader> shaders{};
+};
+
+struct GlslFile
+{
+	std::string filename;
+	uint64_t timestamp = 0;
+	std::vector<Program> dependablePrograms{};
+
+	GlslFile() {}
+	explicit GlslFile(const std::string& filename) : filename(filename) {}
+};
+
+//
+// Data
+//
+
+// TODO: Make this setable!
+std::string shaderDirectory{ "shaders/" };
+
+std::unordered_map<std::string, GlslFile> managedFiles;
+
+// It is very important that the memory below is never moved or reordered!
+// External pointers point to elements in in this array
+std::array<GLuint, MAX_NUM_MANAGED_PROGRAMS> publicProgramHandles{};
+
+size_t nextPublicHandleIndex = 0;
+
+//
+// Internal API
+//
+
+void
+AddManagedFile(const std::string& filename, const Program& dependableProgram)
+{
+	if (managedFiles.find(filename) == managedFiles.end())
+	{
+		managedFiles[filename] = GlslFile(filename);
+	}
+
+	// TODO TODO TODO TODO TODO TODO
+	// TODO  Avoid duplicates!  TOOD
+	// TODO TODO TODO TODO TODO TODO
+	managedFiles[filename].dependablePrograms.push_back(dependableProgram);
 }
+
+uint64_t
+GetTimestamp(const GlslFile& file)
+{
+	auto filename = shaderDirectory + file.filename;
+	uint64_t timestamp = 0;
+
+#ifdef _WIN32
+	struct __stat64 stFileInfo;
+	if (_stat64(filename.c_str(), &stFileInfo) == 0)
+	{
+		timestamp = stFileInfo.st_mtime;
+	}
+#else
+	#warning "ShaderLoader doesn't currently support anything other than Windows for shader reloading!"
+#endif
+
+		return timestamp;
+}
+
+void
+ReadFileWithIncludes(const std::string& filename, const Program& dependableProgram, std::stringstream& sourceBuffer)
+{
+	// (won't do anything if the file is already managed)
+	AddManagedFile(filename, dependableProgram);
+
+	auto path = shaderDirectory + filename;
+	std::ifstream ifs(path);
+	if (!ifs.good())
+	{
+		Log("Could not read shader file '%s'.\n", filename.c_str());
+	}
+
+	std::string line;
+	while (std::getline(ifs, line))
+	{
+		size_t index = line.find("#include");
+
+		if (index == -1)
+		{
+			sourceBuffer << line;
+		}
+		else
+		{
+			// This isn't very precise but it should work assuming that
+			// the programmer isn't doing anything really stupid.
+			size_t start = line.find('<') + 1;
+			size_t end = line.find('>');
+
+			size_t count = end - start;
+			if (count < 0)
+			{
+				LogError("Invalid include directive: %s\n", line.c_str());
+			}
+
+			std::string includeFile = line.substr(start, count);
+			ReadFileWithIncludes(includeFile, dependableProgram, sourceBuffer);
+		}
+
+		sourceBuffer << '\n';
+	}
+}
+
+//
+// Public API
+//
 
 void
 ShaderSystem::Update()
@@ -130,80 +252,4 @@ ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragNam
 	AddManagedFile(fragName, program);
 
 	return &publicProgramHandles[program.fixedLocation];
-}
-
-void
-ShaderSystem::AddManagedFile(const std::string& filename, const Program& dependableProgram)
-{
-	if (managedFiles.find(filename) == managedFiles.end())
-	{
-		managedFiles[filename] = GlslFile(filename);
-	}
-
-	// TODO TODO TODO TODO TODO TODO
-	// TODO  Avoid duplicates!  TOOD
-	// TODO TODO TODO TODO TODO TODO
-	managedFiles[filename].dependablePrograms.push_back(dependableProgram);
-}
-
-uint64_t
-ShaderSystem::GetTimestamp(const GlslFile& file) const
-{
-	auto filename = shaderDirectory + file.filename;
-	uint64_t timestamp = 0;
-
-#ifdef _WIN32
-	struct __stat64 stFileInfo;
-	if (_stat64(filename.c_str(), &stFileInfo) == 0)
-	{
-		timestamp = stFileInfo.st_mtime;
-	}
-#else
- #warning "ShaderLoader doesn't currently support anything other than Windows for shader reloading!"
-#endif
-
-	return timestamp;
-}
-
-void
-ShaderSystem::ReadFileWithIncludes(const std::string& filename, const Program& dependableProgram, std::stringstream& sourceBuffer)
-{
-	// (won't do anything if the file is already managed)
-	AddManagedFile(filename, dependableProgram);
-
-	auto path = shaderDirectory + filename;
-	std::ifstream ifs(path);
-	if (!ifs.good())
-	{
-		Log("Could not read shader file '%s'.\n", filename.c_str());
-	}
-
-	std::string line;
-	while (std::getline(ifs, line))
-	{
-		size_t index = line.find("#include");
-
-		if (index == -1)
-		{
-			sourceBuffer << line;
-		}
-		else
-		{
-			// This isn't very precise but it should work assuming that
-			// the programmer isn't doing anything really stupid.
-			size_t start = line.find('<') + 1;
-			size_t end = line.find('>');
-			
-			size_t count = end - start;
-			if (count < 0)
-			{
-				LogError("Invalid include directive: %s\n", line.c_str());
-			}
-
-			std::string includeFile = line.substr(start, count);
-			ReadFileWithIncludes(includeFile, dependableProgram, sourceBuffer);
-		}
-
-		sourceBuffer << '\n';
-	}
 }

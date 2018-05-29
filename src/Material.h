@@ -8,6 +8,6 @@ struct Material
 {
 	GLuint* shader;
 
-	virtual void Init(ShaderSystem& shaderSystem) = 0;
+	virtual void Init() = 0;
 	virtual void BindUniforms() const = 0;
 };

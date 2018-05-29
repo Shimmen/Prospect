@@ -33,60 +33,15 @@ struct Model
 	}
 };
 
-class ModelSystem
+namespace ModelSystem
 {
-public:
-
-	using ModelLoadCallback = std::function<void(Model, const std::string& filename, const std::string& meshname)>;
-
-	ModelSystem(const ModelLoadCallback& onModelLoadCallback);
-	~ModelSystem();
-
-	ModelSystem(ModelSystem& other) = delete;
-	ModelSystem& operator=(ModelSystem& other) = delete;
+	void Init();
+	void Destroy();
 
 	void Update();
 
+	using ModelLoadCallback = std::function<void(Model, const std::string& filename, const std::string& meshname)>;
+	void SetModelLoadCallback(const ModelLoadCallback onModelLoadCallback);
+
 	void LoadModel(const std::string& filename);
-
-private:
-
-	ModelLoadCallback onModelLoadCallback;
-
-	struct Vertex
-	{
-		float position[3]; // (x, y, z)
-		float normal[3];   // (x, y, z)
-		float texCoord[2]; // (u, v)
-
-		//float tangents[4];  // (x, y, z, w) ???
-	};
-
-	struct LoadedModel
-	{
-		std::string filename;
-		std::string name;
-
-		std::vector<uint32_t> indices;
-		std::vector<Vertex> vertices;
-
-		int materialID;
-	};
-
-	// List of all loaded files and the models defined within them
-	std::unordered_map<std::string, std::vector<std::string>> loadedFiles;
-	// Cache of all loaded models. The key is the full model name (filename+shapename)
-	std::unordered_map<std::string, LoadedModel> loadedModels;
-
-	// The job string refers to the filename (e.g. teapot.obj)
-	Queue<std::string> pendingJobs;
-
-	// The job string refers to the filename+shapename (e.g. teapot.obj-lid)
-	Queue<std::string> finishedJobs;
-
-	std::thread             backgroundThread;
-	std::mutex              accessMutex;
-	std::condition_variable runCondition;
-	bool                    runBackgroundLoop;
-
-};
+}

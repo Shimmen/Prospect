@@ -1,9 +1,9 @@
 #include "Lambertian.h"
 
 void
-Lambertian::Init(ShaderSystem& shaderSystem)
+Lambertian::Init()
 {
-	shader = shaderSystem.AddProgram("material/lambertian");
+	shader = ShaderSystem::AddProgram("material/lambertian");
 	diffuseTextureLocation = glGetUniformLocation(*shader, "u_diffuse");
 }
 

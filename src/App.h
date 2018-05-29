@@ -62,22 +62,4 @@ public:
 	// Called every new frame
 	virtual void Draw(const Input& input, float deltaTime) = 0;
 
-	///////////////////////////////////////////////////////////////////////////
-	// Events
-
-	// Called when a new model is successfully loaded
-	virtual void OnModelLoad(Model model, const std::string& filename, const std::string& modelname) = 0;
-
-protected:
-
-	const char *shaderBasePath = "shaders/";
-
-	// Default and common components
-	ShaderSystem shaderSystem{ shaderBasePath };
-	TextureSystem textureSystem{};
-	ModelSystem modelSystem{[&](Model model, const std::string& filename, const std::string& modelname)
-	{
-		OnModelLoad(model, filename, modelname);
-	}};
-
 };

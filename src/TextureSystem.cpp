@@ -5,14 +5,125 @@
 
 #include "Logging.h"
 
-TextureSystem::TextureSystem()
+//
+// Internal data structures
+//
+
+struct ImageLoadDescription
+{
+	std::string filename;
+	GLuint texture;
+	GLenum format, internalFormat;
+	bool shouldGenerateMipmaps;
+	bool isHdr;
+};
+
+struct LoadedImage
+{
+	void* pixels;
+	GLenum type;
+	int width, height;
+};
+
+//
+// Data
+//
+
+static std::unordered_map<std::string, LoadedImage> loadedImages{};
+static Queue<ImageLoadDescription> pendingJobs{};
+static Queue<ImageLoadDescription> finishedJobs{};
+
+static std::thread             backgroundThread;
+static std::mutex              accessMutex;
+static std::condition_variable runCondition;
+static bool                    runBackgroundLoop;
+
+//
+// Internal API
+//
+
+GLuint
+CreateEmptyTextureObject()
+{
+	GLuint texture;
+	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+
+	// Set some defaults (min-filter is required)
+	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// Set max anisotropy to largest supported value
+	static GLfloat textureMaxAnisotropy = -1.0f;
+	if (textureMaxAnisotropy == -1.0f)
+	{
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &textureMaxAnisotropy);
+	}
+	glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, textureMaxAnisotropy);
+
+	return texture;
+}
+
+void
+CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pixel[4])
+{
+	// Note that we can't use the bindless API for this since we need to resize the texture later,
+	// which wouldn't be possible because that API only creates immutable textures (i.e. can't be resized)
+
+	GLint lastBoundTexture2D;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastBoundTexture2D);
+	{
+		glBindTexture(GL_TEXTURE_2D, dsc.texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+	}
+	glBindTexture(GL_TEXTURE_2D, lastBoundTexture2D);
+}
+
+void
+CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedImage& image)
+{
+	if (dsc.shouldGenerateMipmaps)
+	{
+		if (image.width != image.height)
+		{
+			Log("Can't generate mipmaps for a non square image '%s'\n", dsc.filename.c_str());
+			return;
+		}
+
+		int size = image.width;
+
+		if ((size & (size - 1)) != 0)
+		{
+			Log("Can't generate mipmaps for a non power-of-two sized image '%s'\n", dsc.filename.c_str());
+			return;
+		}
+
+		int numLevels = 1 + int(std::log2(size));
+		glTextureStorage2D(dsc.texture, numLevels, dsc.internalFormat, image.width, image.height);
+		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
+		glGenerateTextureMipmap(dsc.texture);
+	}
+	else
+	{
+		glTextureStorage2D(dsc.texture, 1, dsc.internalFormat, image.width, image.height);
+		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
+	}
+}
+
+//
+// Public API
+//
+
+void
+TextureSystem::Init()
 {
 	// Basic setup
 	stbi_set_flip_vertically_on_load(true);
 
 	// Start the background thread for loading
 	runBackgroundLoop = true;
-	backgroundThread = std::thread([this]()
+	backgroundThread = std::thread([]()
 	{
 		while (runBackgroundLoop)
 		{
@@ -76,7 +187,8 @@ TextureSystem::TextureSystem()
 	});
 }
 
-TextureSystem::~TextureSystem()
+void
+TextureSystem::Destroy()
 {
 	// Shut down the background thread
 	runBackgroundLoop = false;
@@ -104,7 +216,7 @@ TextureSystem::Update()
 }
 
 bool
-TextureSystem::IsHdrFile(const std::string& filename) const
+TextureSystem::IsHdrFile(const std::string& filename)
 {
 	return stbi_is_hdr(filename.c_str());
 }
@@ -208,73 +320,4 @@ TextureSystem::LoadDataTexture(const std::string& filename)
 	}
 
 	return dsc.texture;
-}
-
-GLuint
-TextureSystem::CreateEmptyTextureObject() const
-{
-	GLuint texture;
-	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-
-	// Set some defaults (min-filter is required)
-	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// Set max anisotropy to largest supported value
-	static GLfloat textureMaxAnisotropy = -1.0f;
-	if (textureMaxAnisotropy == -1.0f)
-	{
-		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &textureMaxAnisotropy);
-	}
-	glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY, textureMaxAnisotropy);
-
-	return texture;
-}
-
-void
-TextureSystem::CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pixel[4]) const
-{
-	// Note that we can't use the bindless API for this since we need to resize the texture later,
-	// which wouldn't be possible because that API only creates immutable textures (i.e. can't be resized)
-
-	GLint lastBoundTexture2D;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastBoundTexture2D);
-	{
-		glBindTexture(GL_TEXTURE_2D, dsc.texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-	}
-	glBindTexture(GL_TEXTURE_2D, lastBoundTexture2D);
-}
-
-void
-TextureSystem::CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedImage& image) const
-{
-	if (dsc.shouldGenerateMipmaps)
-	{
-		if (image.width != image.height)
-		{
-			Log("Can't generate mipmaps for a non square image '%s'\n", dsc.filename.c_str());
-			return;
-		}
-
-		int size = image.width;
-
-		if ((size & (size - 1)) != 0)
-		{
-			Log("Can't generate mipmaps for a non power-of-two sized image '%s'\n", dsc.filename.c_str());
-			return;
-		}
-
-		int numLevels = 1 + int(std::log2(size));
-		glTextureStorage2D(dsc.texture, numLevels, dsc.internalFormat, image.width, image.height);
-		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
-		glGenerateTextureMipmap(dsc.texture);
-	}
-	else
-	{
-		glTextureStorage2D(dsc.texture, 1, dsc.internalFormat, image.width, image.height);
-		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
-	}
 }
