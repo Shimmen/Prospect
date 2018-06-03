@@ -27,9 +27,13 @@ namespace ShaderSystem
 	// TODO: Make sure this supports changing the base path!
 	//void SetBasePath(const std::string& path);
 
+	enum { NO_MATERIAL = -1 };
+
 	// Add a shader program with the specified file name (*.vert.glsl and *.frag.glsl assumed)
-	GLuint* AddProgram(const std::string& name);
+	// Supply a material ID if there is a specific material that should be updated with this program
+	GLuint* AddProgram(const std::string& name, int materialID = NO_MATERIAL);
 
 	// Add a shader program with the specified names for the vertex and fragment shaders
-	GLuint* AddProgram(const std::string& vertName, const std::string& fragName);
+	// Supply a material ID if there is a specific material that should be updated with this program
+	GLuint* AddProgram(const std::string& vertName, const std::string& fragName, int materialID = NO_MATERIAL);
 }

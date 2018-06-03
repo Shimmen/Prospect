@@ -14,7 +14,7 @@ struct ImageLoadDescription
 	std::string filename;
 	GLuint texture;
 	GLenum format, internalFormat;
-	bool shouldGenerateMipmaps;
+	bool requestMipmaps;
 	bool isHdr;
 };
 
@@ -49,10 +49,10 @@ CreateEmptyTextureObject()
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
 
 	// Set some defaults (min-filter is required)
-	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	// Set max anisotropy to largest supported value
 	static GLfloat textureMaxAnisotropy = -1.0f;
@@ -83,29 +83,28 @@ CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pix
 void
 CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedImage& image)
 {
-	if (dsc.shouldGenerateMipmaps)
+	// It's possible that mipmaps were requested, but now when we know the size we see that's not possible
+	bool sameWidthAsHeight = image.width == image.height;
+	bool powerOfTwoSize = (image.width & (image.width - 1)) == 0;
+	bool generateMipmaps = dsc.requestMipmaps && sameWidthAsHeight && powerOfTwoSize;
+
+	if (generateMipmaps)
 	{
-		if (image.width != image.height)
-		{
-			Log("Can't generate mipmaps for a non square image '%s'\n", dsc.filename.c_str());
-			return;
-		}
-
 		int size = image.width;
-
-		if ((size & (size - 1)) != 0)
-		{
-			Log("Can't generate mipmaps for a non power-of-two sized image '%s'\n", dsc.filename.c_str());
-			return;
-		}
-
 		int numLevels = 1 + int(std::log2(size));
+
+		glTextureParameteri(dsc.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTextureParameteri(dsc.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 		glTextureStorage2D(dsc.texture, numLevels, dsc.internalFormat, image.width, image.height);
 		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
 		glGenerateTextureMipmap(dsc.texture);
 	}
 	else
 	{
+		glTextureParameteri(dsc.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(dsc.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 		glTextureStorage2D(dsc.texture, 1, dsc.internalFormat, image.width, image.height);
 		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
 	}
@@ -234,7 +233,7 @@ TextureSystem::LoadLdrImage(const std::string& filename)
 	dsc.texture = CreateEmptyTextureObject();
 	dsc.format = GL_RGBA;
 	dsc.internalFormat = GL_SRGB8_ALPHA8;
-	dsc.shouldGenerateMipmaps = true;
+	dsc.requestMipmaps = true;
 	dsc.isHdr = false;
 
 	if (loadedImages.find(filename) != loadedImages.end())
@@ -269,7 +268,7 @@ TextureSystem::LoadHdrImage(const std::string& filename)
 	dsc.texture = CreateEmptyTextureObject();
 	dsc.format = GL_RGB;
 	dsc.internalFormat = GL_RGB32F; // TODO: alpha? 16b?
-	dsc.shouldGenerateMipmaps = true;
+	dsc.requestMipmaps = true;
 	dsc.isHdr = true;
 
 	if (loadedImages.find(filename) != loadedImages.end())
@@ -302,7 +301,7 @@ TextureSystem::LoadDataTexture(const std::string& filename)
 	dsc.texture = CreateEmptyTextureObject();
 	dsc.format = GL_RGB;
 	dsc.internalFormat = GL_RGB8;
-	dsc.shouldGenerateMipmaps = true;
+	dsc.requestMipmaps = true;
 	dsc.isHdr = false;
 
 	if (loadedImages.find(filename) != loadedImages.end())

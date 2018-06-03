@@ -2,12 +2,15 @@
 
 #include <fstream>
 #include <sstream>
+#include <functional>
+#include <unordered_set>
 
 #ifdef _WIN32
  #include <sys/stat.h>
 #endif
 
 #include "Logging.h"
+#include "MaterialSystem.h"
 
 //
 // Internal data structures
@@ -25,6 +28,20 @@ struct Program
 {
 	size_t fixedLocation;
 	std::vector<Shader> shaders{};
+
+	bool operator==(const Program& other) const
+	{
+		return fixedLocation == other.fixedLocation;
+	}
+};
+
+template <>
+struct std::hash<Program>
+{
+	std::size_t operator()(const Program& program) const
+	{
+		return program.fixedLocation;
+	}
 };
 
 struct GlslFile
@@ -45,6 +62,12 @@ struct GlslFile
 std::string shaderDirectory{ "shaders/" };
 
 std::unordered_map<std::string, GlslFile> managedFiles;
+
+// Maps from a program name to an index into the publicProgramHandles array
+std::unordered_map<std::string, size_t> managedPrograms{};
+
+// Maps from a program location to a list of material ID's that need to be reinit on program changes
+std::unordered_map<size_t, std::unordered_set<int>> dependantMaterials{};
 
 // It is very important that the memory below is never moved or reordered!
 // External pointers point to elements in in this array
@@ -132,6 +155,94 @@ ReadFileWithIncludes(const std::string& filename, const Program& dependableProgr
 	}
 }
 
+void
+UpdateProgram(Program& program)
+{
+	static GLchar statusBuffer[4096];
+	bool oneOrMoreShadersFailedToCompile = false;
+
+	GLuint programHandle = glCreateProgram();
+	std::vector<GLuint> shaderHandles{};
+
+	for (auto& shader : program.shaders)
+	{
+		std::stringstream sourceBuffer{};
+		ReadFileWithIncludes(shader.filename, program, sourceBuffer);
+
+		GLuint shaderHandle = glCreateShader(shader.type);
+
+		std::string source = sourceBuffer.str();
+		const GLchar* sources[] = { source.c_str() };
+		glShaderSource(shaderHandle, 1, sources, nullptr);
+		glCompileShader(shaderHandle);
+
+		GLint compilationSuccess;
+		glGetShaderiv(shaderHandle, GL_COMPILE_STATUS, &compilationSuccess);
+		if (compilationSuccess != GL_TRUE)
+		{
+			oneOrMoreShadersFailedToCompile = true;
+			glGetShaderInfoLog(shaderHandle, sizeof(statusBuffer), nullptr, statusBuffer);
+			Log("Shader compilation error ('%s'): %s\n", shader.filename.c_str(), statusBuffer);
+
+			int lineNum = 1;
+			std::istringstream iss(source);
+			for (std::string line; std::getline(iss, line); ++lineNum)
+			{
+				Log(" %d: %s\n", lineNum, line.c_str());
+			}
+
+		}
+		else
+		{
+			glAttachShader(programHandle, shaderHandle);
+			shaderHandles.push_back(shaderHandle);
+		}
+	}
+
+	glLinkProgram(programHandle);
+
+	// (it's safe to detach and delete shaders after linking)
+	for (GLuint shaderHandle : shaderHandles)
+	{
+		glDetachShader(programHandle, shaderHandle);
+		glDeleteShader(shaderHandle);
+	}
+
+	if (oneOrMoreShadersFailedToCompile)
+	{
+		return;
+	}
+
+	GLint linkSuccess;
+	glGetProgramiv(programHandle, GL_LINK_STATUS, &linkSuccess);
+
+	if (linkSuccess != GL_TRUE)
+	{
+		glGetProgramInfoLog(programHandle, sizeof(statusBuffer), nullptr, statusBuffer);
+		Log("Shader program link error: %s\n", statusBuffer);
+	}
+	else
+	{
+		// The program successfully compiled and linked, it's safe to replace the old one
+
+		size_t index = program.fixedLocation;
+
+		GLuint oldProgramHandle = publicProgramHandles[index];
+		if (oldProgramHandle)
+		{
+			glDeleteProgram(oldProgramHandle);
+		}
+
+		publicProgramHandles[index] = programHandle;
+
+		// Notify all dependant materials
+		for (auto& materialID : dependantMaterials[program.fixedLocation])
+		{
+			MaterialSystem::Get(materialID).Init(materialID);
+		}
+	}
+}
+
 //
 // Public API
 //
@@ -140,7 +251,7 @@ void
 ShaderSystem::Update()
 {
 	static GLchar statusBuffer[4096];
-	std::vector<Program> programsToUpdate{};
+	std::unordered_set<Program> programsToUpdate{};
 
 	for (auto& pair : managedFiles)
 	{
@@ -151,105 +262,64 @@ ShaderSystem::Update()
 		{
 			file.timestamp = timestamp;
 
-			// TODO TODO TODO TODO TODO TODO
-			// TODO  Avoid duplicates!  TOOD
-			// TODO TODO TODO TODO TODO TODO
-			programsToUpdate.insert(programsToUpdate.end(),
-				file.dependablePrograms.begin(), file.dependablePrograms.end());
+			// Add all programs that are dependant of this file (directly or included)
+			programsToUpdate.insert(file.dependablePrograms.begin(), file.dependablePrograms.end());
 		}
 	}
 
-	for (auto& program : programsToUpdate)
+	for (auto program : programsToUpdate)
 	{
-		GLuint programHandle = glCreateProgram();
-		std::vector<GLuint> shaderHandles{};
-
-		for (auto& shader : program.shaders)
-		{
-			std::stringstream sourceBuffer{};
-			ReadFileWithIncludes(shader.filename, program, sourceBuffer);
-
-			GLuint shaderHandle = glCreateShader(shader.type);
-
-			std::string source = sourceBuffer.str();
-			const GLchar* sources[] = { source.c_str() };
-			glShaderSource(shaderHandle, 1, sources, nullptr);
-			glCompileShader(shaderHandle);
-
-			GLint compilationSuccess;
-			glGetShaderiv(shaderHandle, GL_COMPILE_STATUS, &compilationSuccess);
-			if (compilationSuccess != GL_TRUE)
-			{
-				glGetShaderInfoLog(shaderHandle, sizeof(statusBuffer), nullptr, statusBuffer);
-				Log("Shader compilation error ('%s'): %s", shader.filename.c_str(), statusBuffer);
-
-				int lineNum = 1;
-				std::istringstream iss(source);
-				for (std::string line; std::getline(iss, line); ++lineNum)
-				{
-					Log(" %d: %s\n", lineNum, line.c_str());
-				}
-				
-			}
-			else
-			{
-				glAttachShader(programHandle, shaderHandle);
-				shaderHandles.push_back(shaderHandle);
-			}
-		}
-
-		glLinkProgram(programHandle);
-
-		// (it's safe to detach and delete shaders after linking)
-		for (GLuint shaderHandle : shaderHandles)
-		{
-			glDetachShader(programHandle, shaderHandle);
-			glDeleteShader(shaderHandle);
-		}
-
-		GLint linkSuccess;
-		glGetProgramiv(programHandle, GL_LINK_STATUS, &linkSuccess);
-		if (linkSuccess != GL_TRUE)
-		{
-			glGetProgramInfoLog(programHandle, sizeof(statusBuffer), nullptr, statusBuffer);
-			Log("Shader program link error: %s\n", statusBuffer);
-		}
-		else
-		{
-			// The program successfully compiled and linked, it's safe to replace the old one
-
-			size_t index = program.fixedLocation;
-
-			GLuint oldProgramHandle = publicProgramHandles[index];
-			if (oldProgramHandle)
-			{
-				glDeleteProgram(oldProgramHandle);
-			}
-
-			publicProgramHandles[index] = programHandle;
-		}
+		UpdateProgram(program);
 	}
 }
 
 GLuint*
-ShaderSystem::AddProgram(const std::string& name)
+ShaderSystem::AddProgram(const std::string& name, int materialID)
 {
-	return AddProgram(name + ".vert.glsl", name + ".frag.glsl");
+	return AddProgram(name + ".vert.glsl", name + ".frag.glsl", materialID);
 }
 
 GLuint*
-ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragName)
+ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragName, int materialID)
 {
-	Shader vertexShader(GL_VERTEX_SHADER, vertName);
-	Shader fragmentShader(GL_FRAGMENT_SHADER, fragName);
+	std::string fullName = vertName + "_" + fragName;
+	if (managedPrograms.find(fullName) == managedPrograms.end())
+	{
+		Shader vertexShader(GL_VERTEX_SHADER, vertName);
+		Shader fragmentShader(GL_FRAGMENT_SHADER, fragName);
 
-	Program program;
-	program.fixedLocation = nextPublicHandleIndex++;
-	program.shaders.push_back(vertexShader);
-	program.shaders.push_back(fragmentShader);
+		Program program;
+		program.fixedLocation = nextPublicHandleIndex++;
+		program.shaders.push_back(vertexShader);
+		program.shaders.push_back(fragmentShader);
 
-	AddManagedFile(vertName, program);
-	AddManagedFile(fragName, program);
+		AddManagedFile(vertName, program);
+		AddManagedFile(fragName, program);
 
-	return &publicProgramHandles[program.fixedLocation];
+		// Trigger the initial load
+		UpdateProgram(program);
+
+		// Set dependant materials after the initial load, since the materials don't need to be reinit'ed
+		// after their initial load, i.e. at this time, since init loads shaders, i.e. calls this function.
+		if (materialID != ShaderSystem::NO_MATERIAL)
+		{
+			dependantMaterials[program.fixedLocation].emplace(materialID);
+		}
+
+		managedPrograms[fullName] = program.fixedLocation;
+		return &publicProgramHandles[program.fixedLocation];
+	}
+	else
+	{
+		// If this exact program is already added (i.e. same vert & frag names), return that address instead
+		size_t index = managedPrograms[fullName];
+
+		if (materialID != ShaderSystem::NO_MATERIAL)
+		{
+			dependantMaterials[index].emplace(materialID);
+		}
+
+		return &publicProgramHandles[index];
+	}
+
 }

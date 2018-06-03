@@ -6,8 +6,11 @@
 
 struct Material
 {
-	GLuint* shader;
+	GLuint *program;
 
-	virtual void Init() = 0;
+	// Is called by the MaterialSystem on adding and readding this material
+	virtual void Init(int materialID) = 0;
+
+	// Call before drawing with material
 	virtual void BindUniforms() const = 0;
 };

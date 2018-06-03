@@ -1,45 +1,62 @@
 #include "MaterialSystem.h"
 
+#include "TextureSystem.h"
 #include "Lambertian.h"
 
 //
 // Data
 //
 
-std::vector<std::unique_ptr<Material>> materials{};
+static std::vector<Material *> materials{};
 
 //
-// Code
+// Public API
 //
+
+void
+MaterialSystem::Init()
+{
+	// Create the default material (ID=0)
+	auto defaultMaterial = new Lambertian();
+	defaultMaterial->diffuseTexture = TextureSystem::LoadLdrImage("assets/images/default.png");
+
+	assert(materials.size() == 0);
+	MaterialSystem::Add(defaultMaterial);
+}
+
+void
+MaterialSystem::Destroy()
+{
+	for (size_t i = 0; i < materials.size(); ++i)
+	{
+		delete materials[i];
+	}
+	materials.clear();
+}
 
 int
-MaterialSystem::Add(std::unique_ptr<Material> material)
+MaterialSystem::Add(Material *material)
 {
 	int ID = int(materials.size());
+	material->Init(ID);
 	materials.emplace_back(std::move(material));
 	return ID;
 }
 
 int
-MaterialSystem::Create(const tinyobj::material_t& materialDescription)
+MaterialSystem::Create(const tinyobj::material_t& materialDescription, const std::string& baseDirectory)
 {
-	// Create the default material if it doesn't already exist
-	if (materials.empty())
+	//
+	// TODO: Create materials properly! Don't assume a certain material, do the best possible material given the supplied properties
+	//
+	auto material = new Lambertian();
+
+	if (!materialDescription.diffuse_texname.empty())
 	{
-		// TODO: Maybe this shouldn't be done here, since we shouldn't need shader stuff here.
-		// Or maybe just make everything static..? I dunno. We still do need stuff like the shaderSystem right?
-		// Well, really, everything should just be static right? We only every have one instance at a time. Yeah...
-
-		//auto defaultMaterial = std::make_unique<Lambertian>();
-		//defaultMaterial->diffuseTexture = textureSystem.Something();
-		//defaultMaterial->Init(shaderSystem);
-
-		//materials.emplace_back(defaultMaterial);
+		material->diffuseTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
 	}
 
-	// TODO: Create material!
-	std::unique_ptr<Material> material;
-	return MaterialSystem::Add(std::move(material));
+	return MaterialSystem::Add(material);
 }
 
 Material&

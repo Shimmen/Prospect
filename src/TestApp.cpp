@@ -2,6 +2,7 @@
 
 #include "ShaderSystem.h"
 #include "TransformSystem.h"
+#include "MaterialSystem.h"
 #include "TextureSystem.h"
 #include "ModelSystem.h"
 
@@ -34,7 +35,6 @@ App::Settings TestApp::Setup()
 
 void TestApp::Init()
 {
-	program = ShaderSystem::AddProgram("default");
 	texture = TextureSystem::LoadLdrImage("assets/bricks_col.jpg");
 
 	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
@@ -64,15 +64,22 @@ void TestApp::Draw(const Input& input, float deltaTime)
 	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glUseProgram(*program);
 	glEnable(GL_DEPTH_TEST);
-
-	// Camera uniforms
-	glUniformMatrix4fv(PredefinedUniformLocation(u_view_from_world), 1, GL_FALSE, glm::value_ptr(camera.GetViewMatrix()));
-	glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_view), 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix()));
 
 	for (auto& model : models)
 	{
+		auto& material = MaterialSystem::Get(model.materialID);
+		glUseProgram(*material.program);
+		material.BindUniforms();
+
+		//
+		// TODO: Sort materials and only set the camera stuff once per new material type!
+		//
+
+		// Camera uniforms
+		glUniformMatrix4fv(PredefinedUniformLocation(u_view_from_world), 1, GL_FALSE, glm::value_ptr(camera.GetViewMatrix()));
+		glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_view), 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix()));
+
 		// Object matrices
 		transforms.UpdateMatrices(model.transformID);
 		auto& transform = transforms.Get(model.transformID);
@@ -92,9 +99,9 @@ void TestApp::Draw(const Input& input, float deltaTime)
 		// I.e. set one of them and let the other vary.
 		//
 
-		GLuint unit = 0;
-		glBindTextureUnit(unit, texture);
-		glUniform1i(PredefinedUniformLocation(u_diffuse), unit);
+		//GLuint unit = 0;
+		//glBindTextureUnit(unit, texture);
+		//glUniform1i(PredefinedUniformLocation(u_diffuse), unit);
 
 		model.Draw();
 	}

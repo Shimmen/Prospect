@@ -14,6 +14,7 @@
 #include "ModelSystem.h"
 #include "ShaderSystem.h"
 #include "TextureSystem.h"
+#include "MaterialSystem.h"
 #include "TransformSystem.h"
 
 #include "Input.h"
@@ -164,8 +165,9 @@ int main()
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-	// Initialize global systems
+	// Initialize global systems (that need initialization)
 	TextureSystem::Init();
+	MaterialSystem::Init();
 	ModelSystem::Init();
 
 	app->Init();
@@ -203,8 +205,9 @@ int main()
 		glfwSwapBuffers(window);
 	}
 
-	// Destroy global systems
+	// Destroy global systems (that need to be destroyed)
 	TextureSystem::Destroy();
+	MaterialSystem::Destroy();
 	ModelSystem::Destroy();
 
 	glfwTerminate();

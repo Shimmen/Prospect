@@ -28,7 +28,9 @@ struct LoadedModel
 	std::vector<uint32_t> indices;
 	std::vector<Vertex> vertices;
 
-	int materialID;
+	bool materialDefined;
+	std::string baseDirectory;
+	tinyobj::material_t materialDescription;
 };
 
 //
@@ -89,10 +91,10 @@ ModelSystem::Init()
 			auto pathIndex = currentFile.find_last_of('/');
 			if (pathIndex == std::string::npos) pathIndex = currentFile.find_last_of('\\');
 
-			std::string mtlBaseDirectory = "";
+			std::string baseDirectory = "";
 			if (pathIndex != std::string::npos)
 			{
-				mtlBaseDirectory = currentFile.substr(0, pathIndex + 1);
+				baseDirectory = currentFile.substr(0, pathIndex + 1);
 			}
 
 			tinyobj::attrib_t attributes;
@@ -101,18 +103,10 @@ ModelSystem::Init()
 
 			const bool triangulate = true;
 			std::string error;
-			if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &error, currentFile.c_str(), mtlBaseDirectory.c_str(), triangulate))
+			if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &error, currentFile.c_str(), baseDirectory.c_str(), triangulate))
 			{
 				Log("Could not load model '%s': %s.\n", currentFile.c_str(), error.c_str());
 				continue;
-			}
-
-			// Register/create all materials
-			std::map<int, int> materialIDs;
-			for (int i = 0; i < materials.size(); ++i)
-			{
-				int materialID = MaterialSystem::Create(materials[i]);
-				materialIDs[i] = materialID;
 			}
 
 			for (auto& shape : shapes)
@@ -126,20 +120,25 @@ ModelSystem::Init()
 				model.filename = currentFile;
 				model.name = shape.name;
 
-
-				if (shape.mesh.material_ids.size() > 1)
+				int firstMaterialIndex = shape.mesh.material_ids[0];
+				for (int i = 1; i < shape.mesh.material_ids.size(); ++i)
 				{
-					Log("Mesh '%s' in '%s' has more than one material (%zd). Only the first will be used, so some things might not look as intended.\n", shape.name.c_str(), currentFile.c_str(), shape.mesh.material_ids.size());
+					if (shape.mesh.material_ids[i] != firstMaterialIndex)
+					{
+						Log("Mesh '%s' in '%s' has more than one material defined. Only the first will be used, so some things might not look as intended.\n", shape.name.c_str(), currentFile.c_str());
+						break;
+					}
 				}
-				if (shape.mesh.material_ids.size() == 1)
+
+				if (firstMaterialIndex != -1)
 				{
-					int firstMaterialIndex = shape.mesh.material_ids[0];
-					model.materialID = materialIDs[firstMaterialIndex];
+					model.materialDefined = true;
+					model.baseDirectory = baseDirectory;
+					model.materialDescription = materials[firstMaterialIndex];
 				}
 				else
 				{
-					// No material defined, so use the default material (ID=0)
-					model.materialID = 0;
+					model.materialDefined = false;
 				}
 
 				size_t numIndices = shape.mesh.indices.size();
@@ -302,7 +301,12 @@ ModelSystem::Update()
 		model.vao = vao;
 		model.indexCount = indexCount;
 		model.indexType = indexType;
-		model.materialID = loadedModel.materialID;
+
+		// Register/create material (must be done here on the main thread!)
+		if (loadedModel.materialDefined)
+		{
+			model.materialID = MaterialSystem::Create(loadedModel.materialDescription, loadedModel.baseDirectory);
+		}
 
 		onModelLoadCallback(model, loadedModel.filename, loadedModel.name);
 	}
@@ -329,7 +333,9 @@ ModelSystem::LoadModel(const std::string& filename)
 	}
 	else
 	{
-		// Since this is the line that pushes to pendingJobs it doesn't have to be locked! (The consumers are correctly locking)
+		// Since this is the only line that pushes to pendingJobs it doesn't have to be locked! (The consumers are correctly locking)
+		// TODO: Seems as we need this lock anyway? Debug some...
+		std::lock_guard<std::mutex> lock(accessMutex);
 		pendingJobs.Push(filename);
 		runCondition.notify_all();
 	}
