@@ -48,7 +48,7 @@ struct GlslFile
 {
 	std::string filename;
 	uint64_t timestamp = 0;
-	std::vector<Program> dependablePrograms{};
+	std::unordered_set<Program> dependablePrograms{};
 
 	GlslFile() {}
 	explicit GlslFile(const std::string& filename) : filename(filename) {}
@@ -87,10 +87,7 @@ AddManagedFile(const std::string& filename, const Program& dependableProgram)
 		managedFiles[filename] = GlslFile(filename);
 	}
 
-	// TODO TODO TODO TODO TODO TODO
-	// TODO  Avoid duplicates!  TOOD
-	// TODO TODO TODO TODO TODO TODO
-	managedFiles[filename].dependablePrograms.push_back(dependableProgram);
+	managedFiles[filename].dependablePrograms.emplace(dependableProgram);
 }
 
 uint64_t
