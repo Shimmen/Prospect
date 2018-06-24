@@ -5,7 +5,8 @@
 in vec2 v_uv;
 in vec3 v_position;
 
-PredefinedUniform(sampler2D, u_diffuse);
+PredefinedUniform(vec3, u_directional_light_color);
+PredefinedUniform(vec3, u_directional_light_direction);
 
 out vec4 o_color;
 

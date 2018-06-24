@@ -1,6 +1,6 @@
 #version 460
 
-#include <uniform_locations.h>
+#include <shader_locations.h>
 
 in vec2 v_uv;
 in vec3 v_position;

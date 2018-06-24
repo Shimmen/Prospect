@@ -1,7 +1,7 @@
 #version 460
 
 #include <mesh_attributes.h>
-#include <uniform_locations.h>
+#include <shader_locations.h>
 
 layout(location = MESH_ATTRIB_POSITION)  in vec3 a_vertex;
 layout(location = MESH_ATTRIB_TEX_COORD) in vec2 a_uv;
