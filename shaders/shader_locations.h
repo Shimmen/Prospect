@@ -2,13 +2,11 @@
 #define UNIFORM_LOCATIONS_H
 
 // Camera related
-#define LOC_u_world_from_local     10
-#define LOC_u_view_from_world      11
-#define LOC_u_projection_from_view 12
+#define BINDING_CameraUniformBlock 0
 
 // G-Buffer
-#define LOC_u_g_buffer_albedo       20
-#define LOC_u_g_buffer_normal_depth 21
+#define LOC_u_g_buffer_albedo 20
+#define LOC_u_g_buffer_normal 21
 
 #define TARGET_o_g_buffer_albedo 0
 #define TARGET_o_g_buffer_normal 1
@@ -30,5 +28,10 @@
 
 #define PredefinedUniformLocation(name) LOC_##name
 #define PredefinedUniform(type, name) layout(location = PredefinedUniformLocation(name)) uniform type name
+
+//
+
+#define PredefinedUniformBlockBinding(name) BINDING_##name
+#define PredefinedUniformBlock(name) layout(std140, binding = PredefinedUniformBlockBinding(name)) uniform name
 
 #endif // UNIFORM_LOCATIONS_H

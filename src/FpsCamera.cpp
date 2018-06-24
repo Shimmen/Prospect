@@ -114,28 +114,63 @@ FpsCamera::Update(const Input& input, float dt)
 	targetFieldOfView = glm::clamp(targetFieldOfView, minFieldOfView, maxFieldOfView);
 	fieldOfView = glm::mix(fieldOfView, targetFieldOfView, 1.0f - pow(0.01f, dt));
 
+	// Create the view matrix
+
+	auto up = glm::rotate(bankingOrientation, glm::vec3{ 0, 1, 0 });
+	glm::vec3 lookAt = position + forward;
+	viewFromWorld = glm::lookAtLH(position, lookAt, up);
+
+	// Create the projection matrix
+
+	float cameraNear = 0.2f;
+	float cameraFar = 1000.0f;
+	projectionFromView = glm::perspectiveLH(fieldOfView, aspectRatio, cameraNear, cameraFar);
+
+	// Update the camera uniform buffer
+
+	if (!cameraUniformBuffer)
+	{
+		glCreateBuffers(1, &cameraUniformBuffer);
+		glNamedBufferStorage(cameraUniformBuffer, sizeof(CameraUniforms), nullptr, GL_DYNAMIC_STORAGE_BIT);
+		glBindBufferBase(GL_UNIFORM_BUFFER, cameraUniformBinding, cameraUniformBuffer);
+	}
+
+	bool performUpdate = false;
+
+	if (cameraUniformData.view_from_world != viewFromWorld)
+	{
+		cameraUniformData.view_from_world = viewFromWorld;
+		performUpdate = true;
+	}
+
+	if (cameraUniformData.projection_from_view != projectionFromView)
+	{
+		cameraUniformData.projection_from_view = projectionFromView;
+		performUpdate = true;
+	}
+
+	glm::vec4 nearFar = glm::vec4(cameraNear, cameraFar, 0, 0);
+	if (cameraUniformData.near_far != nearFar)
+	{
+		cameraUniformData.near_far = nearFar;
+		performUpdate = true;
+	}
+
+	if (performUpdate)
+	{
+		glNamedBufferSubData(cameraUniformBuffer, 0, sizeof(CameraUniforms), &cameraUniformData);
+	}
+
 }
 
 const glm::mat4&
 FpsCamera::GetViewMatrix()
 {
-	// orientation
-	auto up = glm::rotate(bankingOrientation, glm::vec3{ 0, 1, 0 });
-	auto forward = glm::rotate(orientation, glm::vec3{ 0, 0, 1 });
-	
-	glm::vec3 lookAt = position + forward;
-	viewFromWorld = glm::lookAtLH(position, lookAt, up);
-
 	return viewFromWorld;
 }
 
 const glm::mat4&
 FpsCamera::GetProjectionMatrix()
 {
-	float near = 0.2f;
-	float far = 1000.0f;
-
-	projectionFromView = glm::perspectiveLH(fieldOfView, aspectRatio, near, far);
-
 	return projectionFromView;
 }

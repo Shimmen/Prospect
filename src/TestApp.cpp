@@ -12,6 +12,7 @@
 #include "GeometryPass.h"
 
 #include "shader_locations.h"
+#include "camera_uniforms.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Data

@@ -3,7 +3,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <glad/glad.h>
+
 #include "Input.h"
+
+#include "camera_uniforms.h"
 
 class FpsCamera
 {
@@ -18,6 +22,7 @@ public:
 	const glm::mat4& GetViewMatrix();
 	const glm::mat4& GetProjectionMatrix();
 
+	const GLuint cameraUniformBinding = 0;
 
 private:
 
@@ -55,5 +60,10 @@ private:
 
 	glm::mat4 viewFromWorld;
 	glm::mat4 projectionFromView;
+
+	//
+
+	CameraUniforms cameraUniformData;
+	GLuint cameraUniformBuffer;
 
 };

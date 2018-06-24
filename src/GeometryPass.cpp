@@ -86,11 +86,6 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 		{
 			glUseProgram(program);
 			lastProgram = program;
-
-			// Camera uniforms
-			// TODO: Use uniform buffer instead!
-			glUniformMatrix4fv(PredefinedUniformLocation(u_view_from_world), 1, GL_FALSE, glm::value_ptr(camera.GetViewMatrix()));
-			glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_view), 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix()));
 		}
 
 		Transform& transform = TransformSystem::Get(model.transformID);
