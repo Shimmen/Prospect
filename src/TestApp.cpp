@@ -71,9 +71,6 @@ void TestApp::Draw(const Input& input, float deltaTime)
 
 	//
 
-	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	// All geometry is currently opaque! Maybe later add some material flag to indicate opaqueness?
 	auto opaqueGeometry = std::vector<Model>(models);
 

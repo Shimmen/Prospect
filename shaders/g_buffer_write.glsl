@@ -4,6 +4,6 @@
 #include <shader_locations.h>
 
 PredefinedOutput(vec3, o_albedo);
-PredefinedOutput(vec4, o_normal_depth);
+PredefinedOutput(vec3, o_normal);
 
 #endif // G_BUFFER_WRITE_H

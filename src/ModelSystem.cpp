@@ -2,7 +2,7 @@
 
 #include <tiny_obj_loader.h>
 
-#include "mesh_attributes.h"
+#include "shader_locations.h"
 
 #include "Logging.h"
 #include "MaterialSystem.h"
@@ -285,17 +285,17 @@ ModelSystem::Update()
 
 		// Enable the attribute, specify its format, and connect the vertex array (at its
 		// binding index) to to this specific attribute for this vertex array
-		glEnableVertexArrayAttrib(vao, MESH_ATTRIB_POSITION);
-		glVertexArrayAttribFormat(vao, MESH_ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
-		glVertexArrayAttribBinding(vao, MESH_ATTRIB_POSITION, vertexArrayBindingIndex);
+		glEnableVertexArrayAttrib(vao, PredefinedAttributeLocation(a_position));
+		glVertexArrayAttribFormat(vao, PredefinedAttributeLocation(a_position), 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
+		glVertexArrayAttribBinding(vao, PredefinedAttributeLocation(a_position), vertexArrayBindingIndex);
 
-		glEnableVertexArrayAttrib(vao, MESH_ATTRIB_NORMAL);
-		glVertexArrayAttribFormat(vao, MESH_ATTRIB_NORMAL, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
-		glVertexArrayAttribBinding(vao, MESH_ATTRIB_NORMAL, vertexArrayBindingIndex);
+		glEnableVertexArrayAttrib(vao, PredefinedAttributeLocation(a_normal));
+		glVertexArrayAttribFormat(vao, PredefinedAttributeLocation(a_normal), 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
+		glVertexArrayAttribBinding(vao, PredefinedAttributeLocation(a_normal), vertexArrayBindingIndex);
 
-		glEnableVertexArrayAttrib(vao, MESH_ATTRIB_TEX_COORD);
-		glVertexArrayAttribFormat(vao, MESH_ATTRIB_TEX_COORD, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, texCoord));
-		glVertexArrayAttribBinding(vao, MESH_ATTRIB_TEX_COORD, vertexArrayBindingIndex);
+		glEnableVertexArrayAttrib(vao, PredefinedAttributeLocation(a_tex_coord));
+		glVertexArrayAttribFormat(vao, PredefinedAttributeLocation(a_tex_coord), 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, texCoord));
+		glVertexArrayAttribBinding(vao, PredefinedAttributeLocation(a_tex_coord), vertexArrayBindingIndex);
 
 		Model model;
 		model.vao = vao;

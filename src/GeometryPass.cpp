@@ -65,6 +65,9 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	}
 
+	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	//
 	// TODO: Do we need to qsort a separate array or can we allow the array to be mixed up?
 	//
