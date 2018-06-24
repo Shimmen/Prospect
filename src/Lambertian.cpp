@@ -1,25 +1,23 @@
 #include "Lambertian.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 void
-Lambertian::Init(int materialID)
+Lambertian::Init(int thisMaterialID)
 {
-	program = ShaderSystem::AddProgram("material/lambertian", materialID);
+	program = ShaderSystem::AddProgram("material/lambertian", thisMaterialID);
 
 	if (*program)
 	{
-		// TODO: Really, this needs to be redone every time the shader is reloaded..! :o
-		// MAYBE a better way would be to have fixed locations for all the uniforms?!
-		// MAYBE this funtion (i.e. Init()) should be called for every dependent material
-		// to that shader program. Sort of how programs can dependent on shaders.
+		modelMatrixLocation = glGetUniformLocation(*program, "u_world_from_local");
 		diffuseTextureLocation = glGetUniformLocation(*program, "u_diffuse");
 	}
 }
 
 void
-Lambertian::BindUniforms() const
+Lambertian::BindUniforms(Transform& transform) const
 {
-	// Don't 'use' program, this should be done before
-	//glUseProgram(*program);
+	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(transform.matrix));
 
 	const GLuint unit = 0;
 	glBindTextureUnit(unit, diffuseTexture);

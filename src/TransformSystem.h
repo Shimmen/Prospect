@@ -58,26 +58,16 @@ struct Transform
 	}
 };
 
-class TransformSystem
+namespace TransformSystem
 {
-public:
 
-	TransformSystem()
-	{
-		// Setup a default transform (transform 0)
-		int defaultTransform = Create();
-		assert(defaultTransform == 0);
-	}
-	~TransformSystem() = default;
+	void Init();
+
+	// Must be called before every frame
+	void Update();
 
 	int Create();
 	Transform& Get(int transformID);
 	void UpdateMatrices(int transformID);
-
-private:
-
-	int nextIndex = 0;
-	std::array<Transform, MAX_NUM_TRANSFORMS> transforms;
-	std::array<Transform, MAX_NUM_TRANSFORMS> oldTransforms;
 
 };

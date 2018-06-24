@@ -6,9 +6,10 @@
 layout(location = MESH_ATTRIB_POSITION)  in vec3 a_vertex;
 layout(location = MESH_ATTRIB_TEX_COORD) in vec2 a_uv;
 
-PredefinedUniform(mat4, u_world_from_local);
 PredefinedUniform(mat4, u_view_from_world);
 PredefinedUniform(mat4, u_projection_from_view);
+
+uniform mat4 u_world_from_local;
 
 out vec2 v_uv;
 out vec3 v_position;

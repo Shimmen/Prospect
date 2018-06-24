@@ -7,6 +7,8 @@ struct Lambertian: public Material
 	GLuint diffuseTexture;
 	GLint diffuseTextureLocation;
 
-	virtual void Init(int materialID) override;
-	virtual void BindUniforms() const override;
+	GLint modelMatrixLocation;
+
+	virtual void Init(int thisMaterialID) override;
+	virtual void BindUniforms(Transform& transform) const override;
 };

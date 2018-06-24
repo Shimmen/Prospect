@@ -2,14 +2,24 @@
 
 #include <vector>
 
+#include <glad/glad.h>
+
 #include "Model.h"
+#include "GBuffer.h"
 #include "FpsCamera.h"
 
 class GeometryPass
 {
 public:
 
-	// TODO: Maybe also pass in some GBuffer object? Or not..?
-	void Draw(const std::vector<Model>& opaqueGeometry, FpsCamera& camera);
+	void Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeometry, FpsCamera& camera);
+
+private:
+
+	GLenum framebuffer;
+
+	GLuint lastBoundAlbedo = 0;
+	GLuint lastBoundNormal = 0;
+	GLuint lastBoundDepth = 0;
 
 };

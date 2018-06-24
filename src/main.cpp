@@ -60,6 +60,9 @@ void glad_post_callback(const char *name, void *funcptr, int argCount, ...)
 		case GL_OUT_OF_MEMORY:
 			errorName = "GL_OUT_OF_MEMORY";
 			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			errorName = "GL_INVALID_FRAMEBUFFER_OPERATION";
+			break;
 		default:
 			errorName = "UnknownError";
 			break;
@@ -166,6 +169,7 @@ int main()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	// Initialize global systems (that need initialization)
+	TransformSystem::Init();
 	TextureSystem::Init();
 	MaterialSystem::Init();
 	ModelSystem::Init();
@@ -189,6 +193,7 @@ int main()
 		input.PreEventPoll();
 		glfwPollEvents();
 
+		TransformSystem::Update();
 		TextureSystem::Update();
 		ModelSystem::Update();
 		ShaderSystem::Update();

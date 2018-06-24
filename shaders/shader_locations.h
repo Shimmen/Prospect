@@ -7,20 +7,24 @@
 #define LOC_u_projection_from_view 12
 
 // G-Buffer
-#define LOC_u_g_buffer_albedo       20;
-#define LOC_u_g_buffer_normal_depth 21;
+#define LOC_u_g_buffer_albedo       20
+#define LOC_u_g_buffer_normal_depth 21
 
-#define TARGET_g_buffer_albedo       0;
-#define TARGET_g_buffer_normal_depth 1;
+#define TARGET_o_g_buffer_albedo 0
+#define TARGET_o_g_buffer_normal 1
 
 // Directional light
-#define LOC_u_directional_light_color     30;
-#define LOC_u_directional_light_direction 31;
+#define LOC_u_directional_light_color     30
+#define LOC_u_directional_light_direction 31
 
 //
 
-#define PredefinedOutputLocation(name) LOC_##name
-#define PredefinedOutput(type, name) layout(location = PredefinedOutputLocation(name)) out type name
+#ifdef GL_COLOR_ATTACHMENT0
+ #define PredefinedOutputLocation(name) GL_COLOR_ATTACHMENT0 + TARGET_##name
+#endif
+
+#define PredefinedOutputShaderLocation(name) TARGET_##name
+#define PredefinedOutput(type, name) layout(location = PredefinedOutputShaderLocation(name)) out type name
 
 //
 
