@@ -43,6 +43,7 @@ void TestApp::Init()
 	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
 	{
 		models.emplace_back(model);
+		//6Log("Model %s from file %s loaded\n", modelname.c_str(), filename.c_str());
 
 		// TODO: Create proper API for these types of operations
 		if (filename == "assets/quad/quad.obj")
@@ -73,14 +74,17 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	camera.Update(input, deltaTime);
 
 	// TODO: Make some better API for these types of things
-	auto& quadTransform = TransformSystem::Get(testQuad.transformID);
+	if (testQuad.vao)
 	{
-		quadTransform.position.x = 4.0f * std::cos(runningTime);
-		quadTransform.position.z = 3.0f * std::sin(runningTime);
-		quadTransform.position.y = 5.0f + 0.25f * std::sin(runningTime * 10.0f);
-		quadTransform.orientation = glm::rotate(quadTransform.orientation, deltaTime, { 0, 1, 0 });
+		auto& quadTransform = TransformSystem::Get(testQuad.transformID);
+		{
+			quadTransform.position.x = 4.0f * std::cos(runningTime);
+			quadTransform.position.z = 3.0f * std::sin(runningTime);
+			quadTransform.position.y = 5.0f + 0.25f * std::sin(runningTime * 10.0f);
+			quadTransform.orientation = glm::rotate(quadTransform.orientation, deltaTime, { 0, 1, 0 });
+		}
+		TransformSystem::UpdateMatrices(testQuad.transformID);
 	}
-	TransformSystem::UpdateMatrices(testQuad.transformID);
 
 	//
 

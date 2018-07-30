@@ -3,7 +3,7 @@
 // _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable:4996)
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_MSC_VER) && defined(_DEBUG) && false
 
  #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN

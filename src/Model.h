@@ -8,7 +8,7 @@
 
 struct Model
 {
-	GLuint vao;
+	GLuint vao = 0;
 
 	GLsizei indexCount;
 	GLenum  indexType;

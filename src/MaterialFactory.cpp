@@ -27,6 +27,11 @@ MaterialFactory::CreateMaterial(const tinyobj::material_t& materialDescription, 
 	{
 		material->diffuseTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
 	}
+	else
+	{
+		// TODO: Just a placeholder for now...
+		material->diffuseTexture = TextureSystem::LoadLdrImage("assets/images/default.png");
+	}
 
 	managedMaterials.push_back(material);
 	return material;

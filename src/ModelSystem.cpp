@@ -246,6 +246,12 @@ ModelSystem::Update()
 		std::string qualifiedName = finishedJobs.Pop();
 		const LoadedModel& loadedModel = loadedModels[qualifiedName];
 
+		if (loadedModel.indices.size() <= 0 || loadedModel.vertices.size() <= 0)
+		{
+			Log("Ignoring model since it has either no indices or no vertices defined!\n");
+			continue;
+		}
+
 		GLuint indexBuffer;
 		GLsizei indexCount;
 		GLenum  indexType;

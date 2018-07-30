@@ -7,7 +7,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #ifndef MAX_NUM_TRANSFORMS
- #define MAX_NUM_TRANSFORMS 1024
+ #define MAX_NUM_TRANSFORMS 1024 * 1024
 #endif
 
 struct Transform
