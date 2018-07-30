@@ -60,6 +60,6 @@ public:
 	// Drawing / main loop
 
 	// Called every new frame
-	virtual void Draw(const Input& input, float deltaTime) = 0;
+	virtual void Draw(const Input& input, float deltaTime, float runningTime) = 0;
 
 };

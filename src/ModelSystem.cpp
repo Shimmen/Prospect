@@ -302,6 +302,12 @@ ModelSystem::Update()
 		model.indexCount = indexCount;
 		model.indexType = indexType;
 
+		// Create a transform for the object
+		// TODO: Implement some pareting system for models within files, and more. For example,
+		// when calling LoadModel you get an ID for the parent transform, and all of the children
+		// transforms (i.e. these ones), refer to that one as their parent.
+		model.transformID = TransformSystem::Create();
+
 		// Register/create material (must be done here on the main thread!)
 		if (loadedModel.materialDefined)
 		{

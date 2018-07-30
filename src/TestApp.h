@@ -13,6 +13,6 @@ public:
 
 	void Init() override;
 	void Resize(int width, int height) override;
-	void Draw(const Input& input, float deltaTime) override;
+	void Draw(const Input& input, float deltaTime, float runningTime) override;
 
 };

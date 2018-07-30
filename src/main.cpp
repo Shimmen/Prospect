@@ -24,10 +24,16 @@
 #pragma warning(disable:4996)
 
 //
-// Globals
+// Globals etc.
 //
 
 std::unique_ptr<App> app;
+
+// Discards any frame time measuring and assumes everything runs at 60 FPS.
+// This can remove frame jittering in the case where sold 60 FPS is maintained.
+// To assert that, use vsync and make sure that the scene can be rendered
+// without dropping any frames etc. In other words, works pretty well for me.
+#define ASSUME_FIXED_60_FPS true
 
 //
 // Callbacks
@@ -186,6 +192,7 @@ int main()
 
 	glfwSetTime(0.0);
 	double lastTime = glfwGetTime();
+	float accumulatedTime = 0.0;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -199,12 +206,17 @@ int main()
 
 		handle_global_key_commands(window, input);
 
+#if ASSUME_FIXED_60_FPS
+		float deltaTime = 1.0f / 60.0f;
+#else
 		double currentTime = glfwGetTime();
 		double elapsedTime = currentTime - lastTime;
 		lastTime = currentTime;
-
 		float deltaTime = float(elapsedTime);
-		app->Draw(input, deltaTime);
+#endif
+
+		app->Draw(input, deltaTime, accumulatedTime);
+		accumulatedTime += deltaTime;
 
 		glfwSwapBuffers(window);
 	}

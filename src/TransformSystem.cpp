@@ -32,9 +32,6 @@ bool IdenticalTransformProperties(const Transform& a, const Transform& b)
 void
 TransformSystem::Init()
 {
-	// Setup a default transform (transform 0)
-	int defaultTransform = Create();
-	assert(defaultTransform == 0);
 }
 
 void

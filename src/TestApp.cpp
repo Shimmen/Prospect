@@ -19,11 +19,9 @@
 std::vector<Model> models;
 
 GBuffer gBuffer;
-
-GLuint* program;
-GLuint texture;
-
 FpsCamera camera;
+
+Model testQuad;
 
 // Passes
 GeometryPass geometryPass;
@@ -42,15 +40,21 @@ App::Settings TestApp::Setup()
 
 void TestApp::Init()
 {
-	texture = TextureSystem::LoadLdrImage("assets/bricks_col.jpg");
-
 	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
 	{
 		models.emplace_back(model);
+
+		// TODO: Create proper API for these types of operations
+		if (filename == "assets/quad/quad.obj")
+		{
+			testQuad = model;
+		}
 	});
 
 	ModelSystem::LoadModel("assets/quad/quad.obj");
 	ModelSystem::LoadModel("assets/sponza/sponza.obj");
+
+	camera.LookAt({ -20, 3, 0 }, { 0, 10, 0 });
 }
 
 void TestApp::Resize(int width, int height)
@@ -64,9 +68,19 @@ void TestApp::Resize(int width, int height)
 ///////////////////////////////////////////////////////////////////////////////
 // Drawing / main loop
 
-void TestApp::Draw(const Input& input, float deltaTime)
+void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 {
 	camera.Update(input, deltaTime);
+
+	// TODO: Make some better API for these types of things
+	auto& quadTransform = TransformSystem::Get(testQuad.transformID);
+	{
+		quadTransform.position.x = 4.0f * std::cos(runningTime);
+		quadTransform.position.z = 3.0f * std::sin(runningTime);
+		quadTransform.position.y = 5.0f + 0.25f * std::sin(runningTime * 10.0f);
+		quadTransform.orientation = glm::rotate(quadTransform.orientation, deltaTime, { 0, 1, 0 });
+	}
+	TransformSystem::UpdateMatrices(testQuad.transformID);
 
 	//
 

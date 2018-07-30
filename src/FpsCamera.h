@@ -13,8 +13,10 @@ class FpsCamera
 {
 public:
 
-	FpsCamera(/*const glm::vec3& position, const glm::vec3& lookDirection*/);
+	FpsCamera() = default;
 	~FpsCamera() = default;
+
+	void LookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up = {0, 1, 0});
 
 	void Resize(int width, int height);
 	void Update(const Input& input, float dt);

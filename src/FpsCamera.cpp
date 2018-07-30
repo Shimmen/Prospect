@@ -4,9 +4,13 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-FpsCamera::FpsCamera(/*const glm::vec3& position, const glm::vec3& lookDirection*/)
+void
+FpsCamera::LookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up)
 {
+	this->position = position;
 
+	auto direction = glm::normalize(target - position);
+	this->orientation = glm::quatLookAtLH(direction, up);
 }
 
 void
@@ -116,7 +120,9 @@ FpsCamera::Update(const Input& input, float dt)
 
 	// Create the view matrix
 
-	auto up = glm::rotate(bankingOrientation, glm::vec3{ 0, 1, 0 });
+	auto preAdjustedUp = glm::rotate(orientation, glm::vec3(0, 1, 0));
+	auto up = glm::rotate(bankingOrientation, preAdjustedUp);
+
 	glm::vec3 lookAt = position + forward;
 	viewFromWorld = glm::lookAtLH(position, lookAt, up);
 
