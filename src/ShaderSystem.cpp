@@ -10,7 +10,6 @@
 #endif
 
 #include "Logging.h"
-#include "MaterialSystem.h"
 
 //
 // Internal data structures
@@ -40,7 +39,7 @@ struct std::hash<Program>
 {
 	std::size_t operator()(const Program& program) const
 	{
-		return program.fixedLocation;
+		return 17 * program.fixedLocation;
 	}
 };
 
@@ -67,7 +66,7 @@ std::unordered_map<std::string, GlslFile> managedFiles;
 std::unordered_map<std::string, size_t> managedPrograms{};
 
 // Maps from a program location to a list of material ID's that need to be reinit on program changes
-std::unordered_map<size_t, std::unordered_set<int>> dependantMaterials{};
+std::unordered_map<size_t, std::unordered_set<ShaderDepandant *>> dependantObjects{};
 
 // It is very important that the memory below is never moved or reordered!
 // External pointers point to elements in in this array
@@ -232,10 +231,13 @@ UpdateProgram(Program& program)
 
 		publicProgramHandles[index] = programHandle;
 
-		// Notify all dependant materials
-		for (auto& materialID : dependantMaterials[program.fixedLocation])
+		// Notify all dependant objects
+		for (auto shaderDependant : dependantObjects[program.fixedLocation])
 		{
-			MaterialSystem::Get(materialID).Init(materialID);
+			if (shaderDependant)
+			{
+				shaderDependant->ProgramLoaded(programHandle);
+			}
 		}
 	}
 }
@@ -271,13 +273,13 @@ ShaderSystem::Update()
 }
 
 GLuint*
-ShaderSystem::AddProgram(const std::string& name, int materialID)
+ShaderSystem::AddProgram(const std::string& name, ShaderDepandant *shaderDependant)
 {
-	return AddProgram(name + ".vert.glsl", name + ".frag.glsl", materialID);
+	return AddProgram(name + ".vert.glsl", name + ".frag.glsl", shaderDependant);
 }
 
 GLuint*
-ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragName, int materialID)
+ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant)
 {
 	std::string fullName = vertName + "_" + fragName;
 	if (managedPrograms.find(fullName) == managedPrograms.end())
@@ -293,15 +295,13 @@ ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragNam
 		AddManagedFile(vertName, program);
 		AddManagedFile(fragName, program);
 
+		if (shaderDependant)
+		{
+			dependantObjects[program.fixedLocation].emplace(shaderDependant);
+		}
+
 		// Trigger the initial load
 		UpdateProgram(program);
-
-		// Set dependant materials after the initial load, since the materials don't need to be reinit'ed
-		// after their initial load, i.e. at this time, since init loads shaders, i.e. calls this function.
-		if (materialID != ShaderSystem::NO_MATERIAL)
-		{
-			dependantMaterials[program.fixedLocation].emplace(materialID);
-		}
 
 		managedPrograms[fullName] = program.fixedLocation;
 		return &publicProgramHandles[program.fixedLocation];
@@ -309,14 +309,23 @@ ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragNam
 	else
 	{
 		// If this exact program is already added (i.e. same vert & frag names), return that address instead
-		size_t index = managedPrograms[fullName];
+		size_t fixedLocation = managedPrograms[fullName];
 
-		if (materialID != ShaderSystem::NO_MATERIAL)
+		if (shaderDependant)
 		{
-			dependantMaterials[index].emplace(materialID);
+			dependantObjects[fixedLocation].emplace(shaderDependant);
+
+			// Since this exact program is added previously there is a chance that it's already loaded.
+			// If it is, call program loaded immediately so that it can perform its initial setup.
+			GLuint program = publicProgramHandles[fixedLocation];
+			if (program)
+			{
+				shaderDependant->ProgramLoaded(program);
+			}
+			
 		}
 
-		return &publicProgramHandles[index];
+		return &publicProgramHandles[fixedLocation];
 	}
 
 }

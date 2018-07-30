@@ -8,6 +8,8 @@
 #include <string>
 #include <array>
 
+#include "ShaderDependant.h"
+
 // Defines how many programs that the shader loader can manage. Should be set at a safe maximum.
 #ifndef MAX_NUM_MANAGED_PROGRAMS
  #define MAX_NUM_MANAGED_PROGRAMS 128
@@ -27,13 +29,12 @@ namespace ShaderSystem
 	// TODO: Make sure this supports changing the base path!
 	//void SetBasePath(const std::string& path);
 
-	enum { NO_MATERIAL = -1 };
 
 	// Add a shader program with the specified file name (*.vert.glsl and *.frag.glsl assumed)
-	// Supply a material ID if there is a specific material that should be updated with this program
-	GLuint* AddProgram(const std::string& name, int materialID = NO_MATERIAL);
+	// Supply a shader depandant if there is some object that should be updated with this program
+	GLuint* AddProgram(const std::string& name, ShaderDepandant *shaderDependant = nullptr);
 
 	// Add a shader program with the specified names for the vertex and fragment shaders
-	// Supply a material ID if there is a specific material that should be updated with this program
-	GLuint* AddProgram(const std::string& vertName, const std::string& fragName, int materialID = NO_MATERIAL);
+	// Supply a shader depandant if there is some object that should be updated with this program
+	GLuint* AddProgram(const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant = nullptr);
 }

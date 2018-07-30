@@ -14,8 +14,8 @@
 #include "ModelSystem.h"
 #include "ShaderSystem.h"
 #include "TextureSystem.h"
-#include "MaterialSystem.h"
 #include "TransformSystem.h"
+#include "MaterialFactory.h"
 
 #include "Input.h"
 #include "TestApp.h"
@@ -171,7 +171,6 @@ int main()
 	// Initialize global systems (that need initialization)
 	TransformSystem::Init();
 	TextureSystem::Init();
-	MaterialSystem::Init();
 	ModelSystem::Init();
 
 	app->Init();
@@ -212,8 +211,10 @@ int main()
 
 	// Destroy global systems (that need to be destroyed)
 	TextureSystem::Destroy();
-	MaterialSystem::Destroy();
 	ModelSystem::Destroy();
+
+	// Delete managed resources
+	MaterialFactory::DeleteManagedMaterials();
 
 	glfwTerminate();
 }

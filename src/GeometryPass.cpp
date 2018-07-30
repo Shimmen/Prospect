@@ -3,8 +3,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <memory>
+
 #include "Logging.h"
-#include "MaterialSystem.h"
+#include "Material.h"
 #include "TransformSystem.h"
 
 #include "shader_locations.h"
@@ -15,12 +17,9 @@ model_compare_function(const void *a, const void *b)
 	auto modelA = (const Model *)a;
 	auto modelB = (const Model *)b;
 
-	auto materialA = &MaterialSystem::Get(modelA->materialID);
-	auto materialB = &MaterialSystem::Get(modelB->materialID);
-
-	if (*materialA->program <  *materialB->program) return -1;
-	if (*materialA->program == *materialB->program) return  0;
-	if (*materialA->program >  *materialB->program) return +1;
+	if (modelA->material->program <  modelB->material->program) return -1;
+	if (modelA->material->program == modelB->material->program) return  0;
+	if (modelA->material->program >  modelB->material->program) return +1;
 
 	return 0;
 }
@@ -82,8 +81,12 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 	GLuint lastProgram = UINT_MAX;
 	for (const Model& model : opaqueGeometry)
 	{
-		Material *material = &MaterialSystem::Get(model.materialID);
-		GLuint program = *material->program;
+		GLuint program = model.material->program;
+
+		if (program == 0)
+		{
+			continue;
+		}
 
 		if (program != lastProgram)
 		{
@@ -92,7 +95,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 		}
 
 		Transform& transform = TransformSystem::Get(model.transformID);
-		material->BindUniforms(transform);
+		model.material->BindUniforms(transform);
 
 		model.Draw();
 	}

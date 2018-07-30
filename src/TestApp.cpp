@@ -2,7 +2,6 @@
 
 #include "ShaderSystem.h"
 #include "TransformSystem.h"
-#include "MaterialSystem.h"
 #include "TextureSystem.h"
 #include "ModelSystem.h"
 

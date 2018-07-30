@@ -5,12 +5,11 @@
 #include "ShaderSystem.h"
 #include "TransformSystem.h"
 
-struct Material
+struct Material: public ShaderDepandant
 {
-	GLuint *program;
+	GLuint program = 0;
 
-	// Is called by the MaterialSystem on adding and reading this material, and when the program is reloaded
-	virtual void Init(int thisMaterialID) = 0;
+	virtual void ProgramLoaded(GLuint program) = 0;
 
 	// Call before drawing with material
 	virtual void BindUniforms(Transform& transform) const = 0;

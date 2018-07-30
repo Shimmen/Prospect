@@ -3,7 +3,9 @@
 
 #include <shader_locations.h>
 
-PredefinedOutput(vec3, o_albedo);
-PredefinedOutput(vec3, o_normal);
+// TODO: Maybe remove this? Unnecessary files and indirection?
+// Same with g_buffer_read maybe, although we want more utilites with that...
+PredefinedOutput(vec4, o_g_buffer_albedo);
+PredefinedOutput(vec4, o_g_buffer_normal);
 
 #endif // G_BUFFER_WRITE_H

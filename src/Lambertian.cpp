@@ -2,15 +2,19 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-void
-Lambertian::Init(int thisMaterialID)
+Lambertian::Lambertian()
 {
-	program = ShaderSystem::AddProgram("material/lambertian", thisMaterialID);
+	ShaderSystem::AddProgram("material/lambertian", this);
+}
 
-	if (*program)
+void
+Lambertian::ProgramLoaded(GLuint program)
+{
+	this->program = program;
+	if (program)
 	{
-		modelMatrixLocation = glGetUniformLocation(*program, "u_world_from_local");
-		diffuseTextureLocation = glGetUniformLocation(*program, "u_diffuse");
+		modelMatrixLocation = glGetUniformLocation(program, "u_world_from_local");
+		diffuseTextureLocation = glGetUniformLocation(program, "u_diffuse");
 	}
 }
 

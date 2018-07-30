@@ -1,6 +1,10 @@
 #pragma once
 
+#include <memory>
+
 #include <glad/glad.h>
+
+#include "Material.h"
 
 struct Model
 {
@@ -10,7 +14,7 @@ struct Model
 	GLenum  indexType;
 
 	int transformID = 0;
-	int materialID = 0;
+	Material *material = nullptr;
 
 	void Draw() const
 	{

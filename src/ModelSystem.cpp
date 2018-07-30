@@ -5,7 +5,7 @@
 #include "shader_locations.h"
 
 #include "Logging.h"
-#include "MaterialSystem.h"
+#include "MaterialFactory.h"
 
 //
 // Internal data structures
@@ -305,10 +305,10 @@ ModelSystem::Update()
 		// Register/create material (must be done here on the main thread!)
 		if (loadedModel.materialDefined)
 		{
-			model.materialID = MaterialSystem::Create(loadedModel.materialDescription, loadedModel.baseDirectory);
+			model.material = MaterialFactory::CreateMaterial(loadedModel.materialDescription, loadedModel.baseDirectory);
 		}
 
-		onModelLoadCallback(model, loadedModel.filename, loadedModel.name);
+		onModelLoadCallback(std::move(model), loadedModel.filename, loadedModel.name);
 	}
 }
 
