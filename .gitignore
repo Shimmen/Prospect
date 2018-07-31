@@ -4,6 +4,7 @@
 #
 
 projects/
+imgui.ini
 
 #
 # C++-related files

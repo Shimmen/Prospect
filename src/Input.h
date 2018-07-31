@@ -20,16 +20,19 @@ public:
 	// Keyboard related
 	//
 
+	static const int KEYBOARD_KEY_COUNT{ GLFW_KEY_LAST };
+
 	bool IsKeyDown(int key) const;
 	bool WasKeyPressed(int key) const;
 	bool WasKeyReleased(int key) const;
 
 	static void KeyEventCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-	static void CharEventCallback(GLFWwindow *window, unsigned int codepoint, int mods);
 
 	//
 	// Mouse related
 	//
+
+	static const int MOUSE_BUTTON_COUNT{ GLFW_MOUSE_BUTTON_LAST };
 
 	bool IsButtonDown(int button) const;
 	bool WasButtonPressed(int button) const;
@@ -49,8 +52,6 @@ private:
 	// Keyboard related
 	//
 
-	static const int KEYBOARD_KEY_COUNT{ GLFW_KEY_LAST };
-
 	bool isKeyDown[KEYBOARD_KEY_COUNT] = { 0 };
 	bool wasKeyPressed[KEYBOARD_KEY_COUNT] = { 0 };
 	bool wasKeyReleased[KEYBOARD_KEY_COUNT] = { 0 };
@@ -58,8 +59,6 @@ private:
 	//
 	// Mouse related
 	//
-
-	static const int MOUSE_BUTTON_COUNT{ GLFW_MOUSE_BUTTON_LAST };
 
 	bool isButtonDown[MOUSE_BUTTON_COUNT] = { 0 };
 	bool wasButtonPressed[MOUSE_BUTTON_COUNT] = { 0 };

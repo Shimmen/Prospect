@@ -52,17 +52,6 @@ void Input::KeyEventCallback(GLFWwindow *window, int key, int scancode, int acti
 	default:
 		break;
 	}
-
-	if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
-	{
-		// TODO: Call into ImGui!
-	}
-}
-
-/*static*/ void Input::CharEventCallback(GLFWwindow *window, unsigned int codepoint, int mods)
-{
-	auto input = static_cast<Input *>(glfwGetWindowUserPointer(window));
-	// TODO
 }
 
 bool Input::IsButtonDown(int button) const

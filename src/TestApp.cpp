@@ -1,5 +1,7 @@
 #include "TestApp.h"
 
+#include <imgui.h>
+
 #include "ShaderSystem.h"
 #include "TransformSystem.h"
 #include "TextureSystem.h"
@@ -94,6 +96,8 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	// TODO: Perform depth prepass!
 
 	geometryPass.Draw(gBuffer, opaqueGeometry, camera);
+
+	ImGui::ShowDemoWindow();
 
 }
 

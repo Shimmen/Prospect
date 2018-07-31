@@ -42,6 +42,9 @@
 #define LOC_u_directional_light_color     30
 #define LOC_u_directional_light_direction 31
 
+#define LOC_u_gui_projection 40
+#define LOC_u_gui_texture    41
+
 ///////////////////////////////////////////////////////////////////////////////
 // Uniform block bindings
 

@@ -74,6 +74,10 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 	// Sort geometry so that we can optimize the number of shader program switches, i.e. calling glUseProgram
 	qsort((void *)(opaqueGeometry.data()), opaqueGeometry.size(), sizeof(Model), model_compare_function);
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CW);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

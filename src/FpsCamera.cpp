@@ -4,6 +4,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "GuiSystem.h"
+
 void
 FpsCamera::LookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up)
 {
@@ -35,7 +37,7 @@ FpsCamera::Update(const Input& input, float dt)
 	if (input.IsKeyDown(GLFW_KEY_SPACE))      acceleration.y += 1;
 	if (input.IsKeyDown(GLFW_KEY_LEFT_SHIFT)) acceleration.y -= 1;
 
-	if (glm::length2(acceleration) > 0.01f)
+	if (glm::length2(acceleration) > 0.01f && !GuiSystem::IsUsingKeyboard())
 	{
 		acceleration = glm::normalize(acceleration) * (maxSpeed / timeToMaxSpeed) * dt;
 		velocity += glm::rotate(orientation, acceleration);
@@ -67,7 +69,7 @@ FpsCamera::Update(const Input& input, float dt)
 
 	// Calculate rotation velocity from input
 
-	if (input.IsButtonDown(GLFW_MOUSE_BUTTON_2))
+	if (input.IsButtonDown(GLFW_MOUSE_BUTTON_2) && !GuiSystem::IsUsingMouse())
 	{
 		glm::vec2 screenSize = { 1280, 800 }; // TODO: Get from somewhere!
 
@@ -114,8 +116,11 @@ FpsCamera::Update(const Input& input, float dt)
 
 	// Apply zoom
 
-	targetFieldOfView += -input.GetScrollDelta() * zoomSensitivity;
-	targetFieldOfView = glm::clamp(targetFieldOfView, minFieldOfView, maxFieldOfView);
+	if (!GuiSystem::IsUsingMouse())
+	{
+		targetFieldOfView += -input.GetScrollDelta() * zoomSensitivity;
+		targetFieldOfView = glm::clamp(targetFieldOfView, minFieldOfView, maxFieldOfView);
+	}
 	fieldOfView = glm::mix(fieldOfView, targetFieldOfView, 1.0f - pow(0.01f, dt));
 
 	// Create the view matrix

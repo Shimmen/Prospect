@@ -1,6 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -11,6 +13,7 @@
 #include <stdlib.h>
 
 #include "Logging.h"
+#include "GuiSystem.h"
 #include "ModelSystem.h"
 #include "ShaderSystem.h"
 #include "TextureSystem.h"
@@ -161,14 +164,16 @@ int main()
 	glad_set_post_callback(glad_post_callback);
 	glDebugMessageCallback(gl_debug_message_callback, nullptr);
 
-	// Setup input
+	// Setup input and callbacks
 	Input input;
 	glfwSetWindowUserPointer(window, &input);
+
 	glfwSetKeyCallback(window, Input::KeyEventCallback);
-	glfwSetCharModsCallback(window, Input::CharEventCallback);
 	glfwSetMouseButtonCallback(window, Input::MouseButtonEventCallback);
 	glfwSetCursorPosCallback(window, Input::MouseMovementEventCallback);
 	glfwSetScrollCallback(window, Input::MouseScrollEventCallback);
+
+	glfwSetCharCallback(window, GuiSystem::CharacterInputCallback);
 
 	// Enable important and basic features (plus some initial state)
 	glEnable(GL_FRAMEBUFFER_SRGB);
@@ -178,6 +183,7 @@ int main()
 	TransformSystem::Init();
 	TextureSystem::Init();
 	ModelSystem::Init();
+	GuiSystem::Init(window);
 
 	app->Init();
 
@@ -215,8 +221,13 @@ int main()
 		float deltaTime = float(elapsedTime);
 #endif
 
+		GuiSystem::NewFrame(input, deltaTime);
+
 		app->Draw(input, deltaTime, accumulatedTime);
 		accumulatedTime += deltaTime;
+
+		ImGui::Render();
+		GuiSystem::RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(window);
 	}
@@ -224,6 +235,7 @@ int main()
 	// Destroy global systems (that need to be destroyed)
 	TextureSystem::Destroy();
 	ModelSystem::Destroy();
+	GuiSystem::Destroy();
 
 	// Delete managed resources
 	MaterialFactory::DeleteManagedMaterials();
