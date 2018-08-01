@@ -24,8 +24,6 @@ public:
 	const glm::mat4& GetViewMatrix();
 	const glm::mat4& GetProjectionMatrix();
 
-	const GLuint cameraUniformBinding = 0;
-
 private:
 
 	glm::vec3 position{};

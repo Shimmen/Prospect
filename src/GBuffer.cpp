@@ -25,14 +25,20 @@ GLuint CreateFlatTexture(int width, int height, GLenum internalFormat)
 void
 GBuffer::RecreateGpuResources(int width, int height)
 {
-	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
-	glDeleteTextures(1, &albedoTexture);
-	glDeleteTextures(1, &normalTexture);
-	glDeleteTextures(1, &depthTexture);
+	// Create new textures first, so that we always get new handles, which is an indication
+	// to some systems that the texture has changes.
+	GLuint oldAlbedo = albedoTexture;
+	GLuint oldNormal = normalTexture;
+	GLuint oldDepth = depthTexture;
 
 	albedoTexture = CreateFlatTexture(width, height, GL_RGBA8);
 	normalTexture = CreateFlatTexture(width, height, GL_RGBA8);
 	depthTexture = CreateFlatTexture(width, height, GL_DEPTH_COMPONENT32F);
+
+	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
+	glDeleteTextures(1, &oldAlbedo);
+	glDeleteTextures(1, &oldNormal);
+	glDeleteTextures(1, &oldDepth);
 }
 
 void

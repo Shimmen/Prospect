@@ -6,6 +6,8 @@
 
 #include "GuiSystem.h"
 
+#include "shader_locations.h"
+
 void
 FpsCamera::LookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up)
 {
@@ -143,7 +145,7 @@ FpsCamera::Update(const Input& input, float dt)
 	{
 		glCreateBuffers(1, &cameraUniformBuffer);
 		glNamedBufferStorage(cameraUniformBuffer, sizeof(CameraUniforms), nullptr, GL_DYNAMIC_STORAGE_BIT);
-		glBindBufferBase(GL_UNIFORM_BUFFER, cameraUniformBinding, cameraUniformBuffer);
+		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(CameraUniformBlock), cameraUniformBuffer);
 	}
 
 	bool performUpdate = false;

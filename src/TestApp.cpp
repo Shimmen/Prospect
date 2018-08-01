@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "GuiSystem.h"
 #include "ShaderSystem.h"
 #include "TransformSystem.h"
 #include "TextureSystem.h"
@@ -73,6 +74,20 @@ void TestApp::Resize(int width, int height)
 
 void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 {
+	ImGui::Begin("Prospect");
+	if (input.WasKeyPressed(GLFW_KEY_HOME))
+	{
+		ImGui::SetWindowPos(ImVec2(10, 10));
+		ImGui::SetWindowSize(ImVec2(350, 500));
+	}
+
+	static bool showMetrics = false;
+	ImGui::Checkbox("Show metrics", &showMetrics);
+	if (showMetrics)
+	{
+		ImGui::ShowMetricsWindow();
+	}
+
 	camera.Update(input, deltaTime);
 
 	// TODO: Make some better API for these types of things
@@ -93,12 +108,20 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	// All geometry is currently opaque! Maybe later add some material flag to indicate opaqueness?
 	auto opaqueGeometry = std::vector<Model>(models);
 
-	// TODO: Perform depth prepass!
-
+	geometryPass.performDepthPrepass = true;
 	geometryPass.Draw(gBuffer, opaqueGeometry, camera);
 
-	ImGui::ShowDemoWindow();
+	if (ImGui::CollapsingHeader("G-Buffer"))
+	{
+		ImGui::Text("Albedo:");
+		GuiSystem::Texture(gBuffer.albedoTexture);
+		ImGui::Text("Normal:");
+		GuiSystem::Texture(gBuffer.normalTexture);
+		ImGui::Text("Depth:");
+		GuiSystem::Texture(gBuffer.depthTexture);
+	}
 
+	ImGui::End();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

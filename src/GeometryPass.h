@@ -12,6 +12,8 @@ class GeometryPass
 {
 public:
 
+	bool performDepthPrepass = true;
+
 	void Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeometry, FpsCamera& camera);
 
 private:
@@ -21,5 +23,7 @@ private:
 	GLuint lastBoundAlbedo = 0;
 	GLuint lastBoundNormal = 0;
 	GLuint lastBoundDepth = 0;
+
+	GLuint *depthOnlyProgram = nullptr;
 
 };

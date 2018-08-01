@@ -247,6 +247,7 @@ GuiSystem::RenderDrawData(ImDrawData *data)
 		-1.0f,                 1.0f,                   0.0f, 1.0f
 	};
 
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBindVertexArray(vertexArray);
 	glUseProgram(*shaderProgram);
 
@@ -321,4 +322,18 @@ GuiSystem::CharacterInputCallback(GLFWwindow *window, unsigned int codepoint)
 		ImGuiIO& io = ImGui::GetIO();
 		io.AddInputCharacter((unsigned short)codepoint);
 	}
+}
+
+void
+GuiSystem::Texture(GLuint texture, float aspectRatio)
+{
+	ImVec2 windowSize = ImGui::GetWindowSize();
+	float width = windowSize.x;
+	float height = width / aspectRatio;
+
+	const ImVec2 uv0{ 0, 1 };
+	const ImVec2 uv1{ 1, 0 };
+
+	auto imageId = (ImTextureID)static_cast<uint64_t>(texture);
+	ImGui::Image(imageId, ImVec2(width, height), uv0, uv1);
 }

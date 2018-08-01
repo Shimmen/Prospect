@@ -32,6 +32,13 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 		if (!framebuffer)
 		{
 			glCreateFramebuffers(1, &framebuffer);
+
+			GLenum drawBuffers[] = {
+				PredefinedOutputLocation(o_g_buffer_albedo),
+				PredefinedOutputLocation(o_g_buffer_normal)
+			};
+			int numDrawBuffers = sizeof(drawBuffers) / sizeof(GLenum);
+			glNamedFramebufferDrawBuffers(framebuffer, numDrawBuffers, drawBuffers);
 		}
 
 		if (gBuffer.albedoTexture != lastBoundAlbedo)
@@ -60,27 +67,50 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 			LogError("G-buffer is not complete for the geometry pass!");
 		}
 
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
 	}
 
 	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//
-	// TODO: Do we need to qsort a separate array or can we allow the array to be mixed up?
-	//
-
-	// Sort geometry so that we can optimize the number of shader program switches, i.e. calling glUseProgram
-	qsort((void *)(opaqueGeometry.data()), opaqueGeometry.size(), sizeof(Model), model_compare_function);
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+
+	if (performDepthPrepass)
+	{
+		glDepthMask(true);
+		glColorMask(false, false, false, false);
+
+		if (!depthOnlyProgram)
+		{
+			depthOnlyProgram = ShaderSystem::AddProgram("material/depth_only");
+		}
+
+		glUseProgram(*depthOnlyProgram);
+		GLint modelMatrixLoc = glGetUniformLocation(*depthOnlyProgram, "u_world_from_local");
+		for (const Model& model : opaqueGeometry)
+		{
+			// TODO: Use linear uniform buffer for transforms instead
+			Transform& transform = TransformSystem::Get(model.transformID);
+			glUniformMatrix4fv(modelMatrixLoc, 1, false, glm::value_ptr(transform.matrix));
+			model.Draw();
+		}
+
+		glColorMask(true, true, true, true);
+	}
+
+	// Sort geometry so that we can optimize the number of shader program switches, i.e. calling glUseProgram
+	qsort((void *)(opaqueGeometry.data()), opaqueGeometry.size(), sizeof(Model), model_compare_function);
+
+	if (performDepthPrepass)
+	{
+		glDepthMask(false);
+		glDepthFunc(GL_EQUAL);
+	}
 
 	GLuint lastProgram = UINT_MAX;
 	for (const Model& model : opaqueGeometry)
@@ -103,4 +133,8 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 
 		model.Draw();
 	}
+
+	glDepthMask(true);
+	glDepthFunc(GL_LEQUAL);
+
 }

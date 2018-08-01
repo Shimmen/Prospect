@@ -21,4 +21,10 @@ namespace GuiSystem
 	// The Input class doesn't capture character/text input, so this is managed here instead
 	void CharacterInputCallback(GLFWwindow *window, unsigned int codepoint);
 
+	//
+	// Utilities
+	//
+
+	void Texture(GLuint texture, float aspectRatio = 16.0f / 9.0f);
+
 }

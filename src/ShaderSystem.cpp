@@ -108,6 +108,14 @@ GetTimestamp(const GlslFile& file)
 		return timestamp;
 }
 
+bool
+FileReadable(const std::string& filename)
+{
+	auto path = shaderDirectory + filename;
+	std::ifstream ifs(path);
+	return ifs.good();
+}
+
 void
 ReadFileWithIncludes(const std::string& filename, const Program& dependableProgram, std::stringstream& sourceBuffer)
 {
@@ -284,16 +292,22 @@ ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragNam
 	std::string fullName = vertName + "_" + fragName;
 	if (managedPrograms.find(fullName) == managedPrograms.end())
 	{
-		Shader vertexShader(GL_VERTEX_SHADER, vertName);
-		Shader fragmentShader(GL_FRAGMENT_SHADER, fragName);
-
 		Program program;
 		program.fixedLocation = nextPublicHandleIndex++;
+
+		Shader vertexShader(GL_VERTEX_SHADER, vertName);
 		program.shaders.push_back(vertexShader);
-		program.shaders.push_back(fragmentShader);
+
+		// Since there can be programs without fragment shaders, consider it optional
+		bool includeFragShader = FileReadable(fragName);
+		if (includeFragShader)
+		{
+			Shader fragmentShader(GL_FRAGMENT_SHADER, fragName);
+			program.shaders.push_back(fragmentShader);
+		}
 
 		AddManagedFile(vertName, program);
-		AddManagedFile(fragName, program);
+		if (includeFragShader) AddManagedFile(fragName, program);
 
 		if (shaderDependant)
 		{
