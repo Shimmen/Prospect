@@ -183,6 +183,9 @@ ModelSystem::Init()
 						else
 						{
 							// TODO: Calculate normal
+							v.normal[0] = 0.0f;
+							v.normal[1] = 0.0f;
+							v.normal[2] = 0.0f;
 						}
 
 						if (hasTexCoord)

@@ -52,6 +52,7 @@ void TestApp::Init()
 		if (filename == "assets/quad/quad.obj")
 		{
 			testQuad = model;
+			testQuad.material->cullBackfaces = false;
 		}
 	});
 
@@ -120,6 +121,10 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 		ImGui::Text("Depth:");
 		GuiSystem::Texture(gBuffer.depthTexture);
 	}
+
+	// TODO: Implement! Later, also perform shadow pass before
+	// TODO: Also consider how the g-buffer and light buffer are stored and created, and who owns them!
+	//lightPass.Draw(lightBuffer, gBuffer, lights, camera);
 
 	ImGui::End();
 }

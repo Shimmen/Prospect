@@ -7,8 +7,9 @@
 
 struct Material: public ShaderDepandant
 {
-	GLuint program = 0;
+	bool cullBackfaces = true;
 
+	GLuint program = 0;
 	virtual void ProgramLoaded(GLuint program) = 0;
 
 	// Call before drawing with material

@@ -10,6 +10,7 @@ struct Lambertian: public Material
 	GLint diffuseTextureLocation;
 
 	GLint modelMatrixLocation;
+	GLint normalMatrixLocation;
 
 	virtual void ProgramLoaded(GLuint program) override;
 	virtual void BindUniforms(Transform& transform) const override;

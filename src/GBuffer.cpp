@@ -35,6 +35,10 @@ GBuffer::RecreateGpuResources(int width, int height)
 	normalTexture = CreateFlatTexture(width, height, GL_RGBA8);
 	depthTexture = CreateFlatTexture(width, height, GL_DEPTH_COMPONENT32F);
 
+	// Setup the swizzle for the depth textures so all color channels are depth
+	GLenum depthSwizzle[] = { GL_RED, GL_RED, GL_RED, GL_ALPHA };
+	glTextureParameteriv(depthTexture, GL_TEXTURE_SWIZZLE_RGBA, (GLint *)depthSwizzle);
+	
 	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
 	glDeleteTextures(1, &oldAlbedo);
 	glDeleteTextures(1, &oldNormal);

@@ -5,13 +5,13 @@
 struct GBuffer
 {
 	// RGBA8: RGB - albedo, A - unused
-	GLuint albedoTexture;
+	GLuint albedoTexture = 0;
 
 	// RGBA8: RGB - normal xyz, A - unused
-	GLuint normalTexture;
+	GLuint normalTexture = 0;
 
 	// DEPTH_COMPONENT32: projected non-linear depth
-	GLuint depthTexture;
+	GLuint depthTexture = 0;
 
 	////////////////////////////
 

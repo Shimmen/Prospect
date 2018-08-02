@@ -70,8 +70,15 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
 	}
 
-	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	const uint8_t magenta[] = { 1, 0, 1, 1 };
+	glClearTexImage(gBuffer.albedoTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, magenta);
+
+	const uint8_t black[] = { 0, 0, 0, 0 };
+	glClearTexImage(gBuffer.normalTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
+
+	const float farDepth = 1.0f;
+	glClearTexImage(gBuffer.depthTexture, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &farDepth);
+
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -97,6 +104,10 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 			// TODO: Use linear uniform buffer for transforms instead
 			Transform& transform = TransformSystem::Get(model.transformID);
 			glUniformMatrix4fv(modelMatrixLoc, 1, false, glm::value_ptr(transform.matrix));
+
+			if (model.material->cullBackfaces) glEnable(GL_CULL_FACE);
+			else glDisable(GL_CULL_FACE);
+
 			model.Draw();
 		}
 
@@ -130,6 +141,9 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 
 		Transform& transform = TransformSystem::Get(model.transformID);
 		model.material->BindUniforms(transform);
+
+		if (model.material->cullBackfaces) glEnable(GL_CULL_FACE);
+		else glDisable(GL_CULL_FACE);
 
 		model.Draw();
 	}

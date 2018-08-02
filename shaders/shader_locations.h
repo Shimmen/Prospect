@@ -25,6 +25,8 @@
 
 //
 
+#define TARGET_o_color 0
+
 #define TARGET_o_g_buffer_albedo 0
 #define TARGET_o_g_buffer_normal 1
 
