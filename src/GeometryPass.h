@@ -18,12 +18,6 @@ public:
 
 private:
 
-	GLenum framebuffer;
-
-	GLuint lastBoundAlbedo = 0;
-	GLuint lastBoundNormal = 0;
-	GLuint lastBoundDepth = 0;
-
 	GLuint *depthOnlyProgram = nullptr;
 
 };

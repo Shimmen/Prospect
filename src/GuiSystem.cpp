@@ -251,7 +251,8 @@ GuiSystem::RenderDrawData(ImDrawData *data)
 	glBindVertexArray(vertexArray);
 	glUseProgram(*shaderProgram);
 
-	glUniform1i(PredefinedUniformLocation(u_gui_texture), 0);
+	GLint textureUnit = 0;
+	glUniform1i(PredefinedUniformLocation(u_gui_texture), textureUnit);
 	glUniformMatrix4fv(PredefinedUniformLocation(u_gui_projection), 1, GL_FALSE, glm::value_ptr(projection));
 
 	// Perform drawing
@@ -285,7 +286,7 @@ GuiSystem::RenderDrawData(ImDrawData *data)
 					glScissor((int)clip_rect.x, (int)(fbHeight - clip_rect.w), (int)(clip_rect.z - clip_rect.x), (int)(clip_rect.w - clip_rect.y));
 
 					// Bind texture, Draw
-					glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
+					glBindTextureUnit(textureUnit, (GLuint)(intptr_t)pcmd->TextureId);
 					glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
 				}
 			}
@@ -298,6 +299,8 @@ GuiSystem::RenderDrawData(ImDrawData *data)
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+
+	glBindVertexArray(0);
 }
 
 bool

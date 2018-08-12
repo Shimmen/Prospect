@@ -25,6 +25,7 @@
 
 //
 
+// (for all "normal" color outputs)
 #define TARGET_o_color 0
 
 #define TARGET_o_g_buffer_albedo 0
@@ -46,6 +47,8 @@
 
 #define LOC_u_gui_projection 40
 #define LOC_u_gui_texture    41
+
+#define LOC_u_texture 0
 
 ///////////////////////////////////////////////////////////////////////////////
 // Uniform block bindings

@@ -10,8 +10,10 @@
 
 #include "FpsCamera.h"
 #include "GBuffer.h"
+#include "LightBuffer.h"
 
 #include "GeometryPass.h"
+#include "LightPass.h"
 
 #include "shader_locations.h"
 #include "camera_uniforms.h"
@@ -19,15 +21,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Data
 
+FpsCamera camera;
 std::vector<Model> models;
 
 GBuffer gBuffer;
-FpsCamera camera;
+LightBuffer lightBuffer;
 
 Model testQuad;
 
 // Passes
 GeometryPass geometryPass;
+LightPass lightPass;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Application lifetime
@@ -64,10 +68,10 @@ void TestApp::Init()
 
 void TestApp::Resize(int width, int height)
 {
-	glViewport(0, 0, width, height);
 	camera.Resize(width, height);
 
 	gBuffer.RecreateGpuResources(width, height);
+	lightBuffer.RecreateGpuResources(width, height);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -122,9 +126,17 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 		GuiSystem::Texture(gBuffer.depthTexture);
 	}
 
-	// TODO: Implement! Later, also perform shadow pass before
-	// TODO: Also consider how the g-buffer and light buffer are stored and created, and who owns them!
-	//lightPass.Draw(lightBuffer, gBuffer, lights, camera);
+	lightPass.Draw(lightBuffer, gBuffer, /*lights,*/ camera);
+
+	if (ImGui::CollapsingHeader("Light buffer"))
+	{
+		GuiSystem::Texture(lightBuffer.lightTexture);
+	}
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glViewport(0, 0, windowWidth, windowHeight);
+	glClearColor(0, 1, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	ImGui::End();
 }

@@ -4,6 +4,11 @@
 
 struct GBuffer
 {
+	int width;
+	int height;
+
+	GLuint framebuffer;
+
 	// RGBA8: RGB - albedo, A - unused
 	GLuint albedoTexture = 0;
 
@@ -17,8 +22,5 @@ struct GBuffer
 
 	// Create or recreate the g-buffer textures with the given dimensions
 	void RecreateGpuResources(int width, int height);
-
-	// Binds the g-buffer textures to uniforms for reading in light shaders
-	void BindForReading();
 
 };

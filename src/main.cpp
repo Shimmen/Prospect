@@ -88,6 +88,8 @@ void glfw_error_callback(int code, const char *message)
 
 void glfw_framebuffer_resize_callback(GLFWwindow *window, int width, int height)
 {
+	app->windowWidth = width;
+	app->windowHeight = height;
 	app->Resize(width, height);
 }
 
@@ -162,7 +164,12 @@ int main()
 
 	// Setup OpenGL error handlers
 	glad_set_post_callback(glad_post_callback);
+
+	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(gl_debug_message_callback, nullptr);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, false);
 
 	// Setup input and callbacks
 	Input input;
@@ -190,7 +197,9 @@ int main()
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	glfwSetFramebufferSizeCallback(window, glfw_framebuffer_resize_callback);
-	app->Resize(width, height);
+
+	// (manually initiate first callback)
+	glfw_framebuffer_resize_callback(nullptr, width, height);
 
 	glfwSwapInterval(settings.window.vsync ? 1 : 0);
 

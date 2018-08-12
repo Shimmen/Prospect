@@ -7,7 +7,7 @@ in vec4 v_color;
 
 PredefinedUniform(sampler2D, u_gui_texture);
 
-layout (location = 0) out vec4 o_color;
+PredefinedOutput(vec4, o_color);
 
 void main()
 {

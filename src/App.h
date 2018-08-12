@@ -44,6 +44,9 @@ public:
 	App() = default;
 	virtual ~App() = default;
 
+	int windowWidth{};
+	int windowHeight{};
+
 	///////////////////////////////////////////////////////////////////////////
 	// Application lifetime
 

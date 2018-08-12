@@ -27,58 +27,17 @@ model_compare_function(const void *a, const void *b)
 void
 GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeometry, FpsCamera& camera)
 {
-	// Prepare framebuffer
-	{
-		if (!framebuffer)
-		{
-			glCreateFramebuffers(1, &framebuffer);
-
-			GLenum drawBuffers[] = {
-				PredefinedOutputLocation(o_g_buffer_albedo),
-				PredefinedOutputLocation(o_g_buffer_normal)
-			};
-			int numDrawBuffers = sizeof(drawBuffers) / sizeof(GLenum);
-			glNamedFramebufferDrawBuffers(framebuffer, numDrawBuffers, drawBuffers);
-		}
-
-		if (gBuffer.albedoTexture != lastBoundAlbedo)
-		{
-			GLenum albedoAttachment = PredefinedOutputLocation(o_g_buffer_albedo);
-			glNamedFramebufferTexture(framebuffer, albedoAttachment, gBuffer.albedoTexture, 0);
-			lastBoundAlbedo = gBuffer.albedoTexture;
-		}
-
-		if (gBuffer.normalTexture != lastBoundNormal)
-		{
-			int normalAttachment = PredefinedOutputLocation(o_g_buffer_normal);
-			glNamedFramebufferTexture(framebuffer, normalAttachment, gBuffer.normalTexture, 0);
-			lastBoundNormal = gBuffer.normalTexture;
-		}
-
-		if (gBuffer.depthTexture != lastBoundDepth)
-		{
-			glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, gBuffer.depthTexture, 0);
-			lastBoundDepth = gBuffer.depthTexture;
-		}
-
-		GLenum status = glCheckNamedFramebufferStatus(framebuffer, GL_DRAW_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE)
-		{
-			LogError("G-buffer is not complete for the geometry pass!");
-		}
-
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
-	}
-
-	const uint8_t magenta[] = { 1, 0, 1, 1 };
+	const uint8_t magenta[] = { 255, 0, 255, 255 };
 	glClearTexImage(gBuffer.albedoTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, magenta);
 
-	const uint8_t black[] = { 0, 0, 0, 0 };
+	const uint8_t black[] = { 0, 0, 0, 255 };
 	glClearTexImage(gBuffer.normalTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
 
 	const float farDepth = 1.0f;
 	glClearTexImage(gBuffer.depthTexture, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &farDepth);
 
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gBuffer.framebuffer);
+	glViewport(0, 0, gBuffer.width, gBuffer.height);
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -150,5 +109,6 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 
 	glDepthMask(true);
 	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_CULL_FACE);
 
 }
