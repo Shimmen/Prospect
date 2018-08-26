@@ -4,10 +4,6 @@
 
 #include "shader_locations.h"
 
-GLuint *blitProgram = nullptr;
-GLuint blitTexture = 0;
-GLint textureUnit = 0;
-
 void
 LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, FpsCamera& camera)
 {
@@ -16,24 +12,29 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, FpsCamer
 		glCreateVertexArrays(1, &emptyVertexArray);
 	}
 
-	if (!blitProgram)
+	if (!directionalLightProgram)
 	{
-		blitProgram = ShaderSystem::AddProgram("quad.vert.glsl", "blit.frag.glsl");
-		glProgramUniform1i(*blitProgram, PredefinedUniformLocation(u_texture), textureUnit);
+		directionalLightProgram = ShaderSystem::AddProgram("light/directional.vert.glsl", "light/directional.frag.glsl");
+
+		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
+		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
+		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
 	}
 
-	if (!blitTexture)
-	{
-		blitTexture = TextureSystem::LoadLdrImage("assets/images/default.png");
-	}
+	// TODO: We shouldn't need to do this every loop, right?
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
+
+	glBindTextureUnit(0, gBuffer.albedoTexture);
+	glBindTextureUnit(1, gBuffer.normalTexture);
+	glBindTextureUnit(2, gBuffer.depthTexture);
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightBuffer.framebuffer);
 	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
 
-	glUseProgram(*blitProgram);
+	glUseProgram(*directionalLightProgram);
 	{
-		glBindTextureUnit(textureUnit, blitTexture);
-
 		glDisable(GL_DEPTH_TEST);
 
 		glBindVertexArray(emptyVertexArray);

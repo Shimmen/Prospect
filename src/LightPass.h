@@ -19,5 +19,6 @@ private:
 
 	GLuint emptyVertexArray = 0;
 
+	GLuint *directionalLightProgram;
+
 };
-#pragma once

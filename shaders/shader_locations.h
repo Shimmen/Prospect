@@ -41,6 +41,7 @@
 
 #define LOC_u_g_buffer_albedo 20
 #define LOC_u_g_buffer_normal 21
+#define LOC_u_g_buffer_depth  22
 
 #define LOC_u_directional_light_color     30
 #define LOC_u_directional_light_direction 31
@@ -59,6 +60,8 @@
 //
 
 #define BINDING_CameraUniformBlock 0
+
+#define BINDING_DirectionalLightBlock 1
 
 ///////////////////////////////////////////////////////////////////////////////
 

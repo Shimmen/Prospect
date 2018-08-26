@@ -159,6 +159,7 @@ FpsCamera::Update(const Input& input, float dt)
 	if (cameraUniformData.projection_from_view != projectionFromView)
 	{
 		cameraUniformData.projection_from_view = projectionFromView;
+		cameraUniformData.view_from_projection = glm::inverse(projectionFromView);
 		performUpdate = true;
 	}
 
