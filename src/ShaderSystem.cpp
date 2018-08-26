@@ -132,9 +132,10 @@ ReadFileWithIncludes(const std::string& filename, const Program& dependableProgr
 	std::string line;
 	while (std::getline(ifs, line))
 	{
+		size_t commentIndex = line.find("//");
 		size_t index = line.find("#include");
 
-		if (index == -1)
+		if (index == -1 || (commentIndex < index && commentIndex != -1))
 		{
 			sourceBuffer << line;
 		}
