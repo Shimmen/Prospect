@@ -51,6 +51,9 @@
 
 #define LOC_u_texture 0
 
+#define LOC_u_world_from_local 1
+#define LOC_u_projection_from_world 2
+
 ///////////////////////////////////////////////////////////////////////////////
 // Uniform block bindings
 
@@ -61,7 +64,9 @@
 
 #define BINDING_CameraUniformBlock 0
 
-#define BINDING_DirectionalLightBlock 1
+#define BINDING_ShadowMapSegmentBlock 1
+
+#define BINDING_DirectionalLightBlock 2
 
 ///////////////////////////////////////////////////////////////////////////////
 

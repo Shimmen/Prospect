@@ -57,7 +57,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 		}
 
 		glUseProgram(*depthOnlyProgram);
-		GLint modelMatrixLoc = glGetUniformLocation(*depthOnlyProgram, "u_world_from_local");
+		GLint modelMatrixLoc = glGetUniformLocation(*depthOnlyProgram, "u_world_from_local"); // TODO: Use the predefined location!
 		for (const Model& model : opaqueGeometry)
 		{
 			// TODO: Use linear uniform buffer for transforms instead

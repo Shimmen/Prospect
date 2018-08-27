@@ -11,10 +11,14 @@
 #include "FpsCamera.h"
 #include "GBuffer.h"
 #include "LightBuffer.h"
+#include "ShadowMap.h"
 
 #include "GeometryPass.h"
+#include "ShadowPass.h"
 #include "LightPass.h"
 
+using namespace glm;
+#include "shader_types.h"
 #include "shader_locations.h"
 #include "camera_uniforms.h"
 
@@ -25,12 +29,17 @@ FpsCamera camera;
 std::vector<Model> models;
 
 GBuffer gBuffer;
+ShadowMap shadowMap;
 LightBuffer lightBuffer;
 
 Model testQuad;
 
+// Lights
+DirectionalLight sunLight;
+
 // Passes
 GeometryPass geometryPass;
+ShadowPass shadowPass;
 LightPass lightPass;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -41,7 +50,7 @@ App::Settings TestApp::Setup()
 	Settings settings{};
 	settings.window.size = { 1280, 800 };
 	settings.window.resizeable = true;
-	settings.context.msaaSamples = 4;
+	settings.context.msaaSamples = 1;
 	return settings;
 }
 
@@ -62,6 +71,10 @@ void TestApp::Init()
 
 	ModelSystem::LoadModel("assets/quad/quad.obj");
 	ModelSystem::LoadModel("assets/sponza/sponza.obj");
+
+	shadowMap.RecreateGpuResources(8192);
+
+	sunLight.color = glm::vec4(1.0, 0.9, 0.9, 0.1);
 
 	camera.LookAt({ -20, 3, 0 }, { 0, 10, 0 });
 }
@@ -124,6 +137,13 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 		GuiSystem::Texture(gBuffer.normalTexture);
 		ImGui::Text("Depth:");
 		GuiSystem::Texture(gBuffer.depthTexture);
+	}
+
+	shadowPass.Draw(shadowMap, models, sunLight);
+
+	if (ImGui::CollapsingHeader("Shadows"))
+	{
+		GuiSystem::Texture(shadowMap.texture, 1.0f);
 	}
 
 	lightPass.Draw(lightBuffer, gBuffer, /*lights,*/ camera);
