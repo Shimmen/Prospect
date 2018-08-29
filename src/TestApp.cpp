@@ -22,6 +22,7 @@
 #include "GeometryPass.h"
 #include "ShadowPass.h"
 #include "LightPass.h"
+#include "FinalPass.h"
 
 using namespace glm;
 #include "shader_types.h"
@@ -41,6 +42,7 @@ LightBuffer lightBuffer;
 GeometryPass geometryPass;
 ShadowPass shadowPass;
 LightPass lightPass;
+FinalPass finalPass;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Application lifetime
@@ -98,8 +100,8 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	ImGui::Begin("Prospect");
 	if (input.WasKeyPressed(GLFW_KEY_HOME))
 	{
-		ImGui::SetWindowPos(ImVec2(10, 10));
-		ImGui::SetWindowSize(ImVec2(350, 500));
+		ImGui::SetWindowPos(ImVec2(0, 1));
+		ImGui::SetWindowSize(ImVec2(350.0f, lightBuffer.height - 25.0f));
 	}
 
 	scene.mainCamera.Update(input, deltaTime);
@@ -128,13 +130,9 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	geometryPass.Draw(gBuffer, scene);
 
 	shadowPass.Draw(shadowMap, scene);
-
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glViewport(0, 0, windowWidth, windowHeight);
-	glClearColor(0, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	finalPass.Draw(lightBuffer);
 
 	ImGui::End();
 }

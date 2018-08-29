@@ -12,4 +12,5 @@ PredefinedOutput(vec4, o_color);
 void main()
 {
     o_color = v_color * texture(u_gui_texture, v_uv);
+    o_color.rgb = pow(o_color.rgb, vec3(1.0 / 2.2));
 }

@@ -130,7 +130,6 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 
 	// Create app (should require no GL context!)
 	app = std::make_unique<TestApp>();
@@ -182,8 +181,8 @@ int main()
 
 	glfwSetCharCallback(window, GuiSystem::CharacterInputCallback);
 
-	// Enable important and basic features (plus some initial state)
-	glEnable(GL_FRAMEBUFFER_SRGB);
+	// Enable important and basic features
+	//glEnable(GL_FRAMEBUFFER_SRGB); (note: implemented manually!)
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	// Initialize global systems (that need initialization)
