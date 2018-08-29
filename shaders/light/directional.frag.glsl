@@ -5,6 +5,7 @@
 #include <camera_uniforms.h>
 
 #include <shader_types.h>
+#include <shader_constants.h>
 
 in vec2 v_uv;
 in vec3 v_view_ray;
@@ -16,8 +17,7 @@ PredefinedUniformBlock(CameraUniformBlock)
 
 PredefinedUniformBlock(ShadowMapSegmentBlock)
 {
-    ShadowMapSegment shadowMapSegments[32];
-    int shadowMapSegmentCount;
+    ShadowMapSegment shadowMapSegments[SHADOW_MAP_SEGMENT_MAX_COUNT];
 };
 
 PredefinedUniformBlock(DirectionalLightBlock)
@@ -33,29 +33,23 @@ PredefinedUniform(sampler2D, u_shadow_map);
 
 PredefinedOutput(vec4, o_color);
 
+float linearizeDepth(float nonLinearDepth)
+{
+    float projectionA = camera_uniforms.near_far.z;
+    float projectionB = camera_uniforms.near_far.w;
+    return projectionB / (nonLinearDepth - projectionA);
+}
+
 void main()
 {
-    // TODO: Pass these in through the camera uniforms!
-    // Calculate the projection constants
-    float zNear = camera_uniforms.near_far.x;
-    float zFar  = camera_uniforms.near_far.y;
-    float projectionA = zFar / (zFar - zNear);
-    float projectionB = (-zFar * zNear) / (zFar - zNear);
-
-    // Sample the depth and convert to linear view space Z
     float depth = texture(u_g_buffer_depth, v_uv).x;
-    float linearDepth = projectionB / (depth - projectionA);
-    vec4 viewSpacePos = vec4(v_view_ray * linearDepth, 1.0);
-
-    //
+    vec4 viewSpacePos = vec4(v_view_ray * linearizeDepth(depth), 1.0);
 
     vec3 packedNormal = texture(u_g_buffer_normal, v_uv).xyz;
     bool unlit = lengthSquared(packedNormal) < 0.0001;
-    vec3 N = normalize(packedNormal * vec3(2.0) - vec3(1.0));
 
-    vec3 worldLightDirection = vec3(-0.2, -1.0, -0.2);
-    vec3 viewLightDirection = mat3(camera_uniforms.view_from_world) * worldLightDirection;
-    vec3 L = -normalize(viewLightDirection);
+    vec3 N = unpackNormal(packedNormal);
+    vec3 L = -normalize(directionalLight.viewDirecion.xyz);
 
     vec3 albedo = texture(u_g_buffer_albedo, v_uv).xyz;
     vec3 lightColor = rgbFromColor(directionalLight.color);
@@ -63,7 +57,7 @@ void main()
     vec3 color = vec3(0.0);
 
     // ambient term
-    const float ambient = 0.02;
+    const float ambient = 0.01;
     color += albedo * lightColor * ambient * float(!unlit);
 
     // shadow factor

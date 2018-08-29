@@ -17,7 +17,9 @@ struct ShadowMapSegment
 
 struct DirectionalLight
 {
+	vec4 worldDirection;
     vec4 viewDirecion;
+
     Color color;
 
 	// x = index, yzw = unused

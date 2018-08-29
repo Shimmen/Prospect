@@ -74,6 +74,7 @@ void TestApp::Init()
 
 	shadowMap.RecreateGpuResources(8192);
 
+	sunLight.worldDirection = glm::vec4(-0.2, -1.0, -0.2, 0);
 	sunLight.color = glm::vec4(1.0, 0.9, 0.9, 0.1);
 
 	camera.LookAt({ -20, 3, 0 }, { 0, 10, 0 });
@@ -146,7 +147,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 		GuiSystem::Texture(shadowMap.texture, 1.0f);
 	}
 
-	lightPass.Draw(lightBuffer, gBuffer, shadowMap, /*lights,*/ camera);
+	lightPass.Draw(lightBuffer, gBuffer, shadowMap, /*lights,*/ camera, sunLight);
 
 	if (ImGui::CollapsingHeader("Light buffer"))
 	{

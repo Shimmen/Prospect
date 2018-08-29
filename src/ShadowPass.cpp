@@ -12,34 +12,8 @@
 
 using namespace glm;
 #include "shader_locations.h"
+#include "shader_constants.h"
 #include "shader_types.h"
-
-struct ShadowMapSegmentUniformBufferData
-{
-	// TODO: Get max number of segments from somewhere
-	// Or preferably, share this object somehow!
-	// Also, see all hard coded 32s below...
-	ShadowMapSegment shadowMapSegments[32];
-	int shadowMapSegmentCount;
-};
-
-void
-FillShadowMapSegmentBuffer(GLuint buffer, const std::vector<ShadowMapSegment>& shadowMapSegments)
-{
-	static ShadowMapSegmentUniformBufferData data{};
-
-	size_t numSegments = shadowMapSegments.size();
-	assert(numSegments <= 32);
-
-	size_t numSegmentBytes = numSegments * sizeof(ShadowMapSegment);
-
-	// fill data buffer
-	std::memcpy(data.shadowMapSegments, shadowMapSegments.data(), numSegmentBytes);
-	data.shadowMapSegmentCount = static_cast<int>(numSegments);
-
-	// send to GPU
-	glNamedBufferSubData(buffer, 0, sizeof(ShadowMapSegmentUniformBufferData), &data);
-}
 
 void
 ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingGeomety, DirectionalLight& dirLight)
@@ -75,19 +49,11 @@ ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingG
 
 	if (!shadowMapSegmentUniformBuffer)
 	{
-		// TODO: Get size or max number of segments from somewhere
-		size_t bufferSize = 32 * sizeof(ShadowMapSegment) + 1 * sizeof(int);
+		size_t bufferSize = SHADOW_MAP_SEGMENT_MAX_COUNT * sizeof(ShadowMapSegment);
 
 		glCreateBuffers(1, &shadowMapSegmentUniformBuffer);
 		glNamedBufferStorage(shadowMapSegmentUniformBuffer, bufferSize, nullptr, GL_DYNAMIC_STORAGE_BIT);
 		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(ShadowMapSegmentBlock), shadowMapSegmentUniformBuffer);
-	}
-
-	if (!directionalLightUniformBuffer)
-	{
-		glCreateBuffers(1, &directionalLightUniformBuffer);
-		glNamedBufferStorage(directionalLightUniformBuffer, sizeof(DirectionalLight), nullptr, GL_DYNAMIC_STORAGE_BIT);
-		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(DirectionalLightBlock), directionalLightUniformBuffer);
 	}
 
 	//
@@ -102,8 +68,9 @@ ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingG
 	shadowMapSegments.push_back(dirLightSegment);
 	dirLight.shadowMapSegmentIndex = ivec4(index, 0, 0, 0);
 
-	FillShadowMapSegmentBuffer(shadowMapSegmentUniformBuffer, shadowMapSegments);
-	glNamedBufferSubData(directionalLightUniformBuffer, 0, sizeof(DirectionalLight), &dirLight);
+	size_t numSegments = shadowMapSegments.size();
+	assert(numSegments <= SHADOW_MAP_SEGMENT_MAX_COUNT);
+	glNamedBufferSubData(shadowMapSegmentUniformBuffer, 0, numSegments * sizeof(ShadowMapSegment), shadowMapSegments.data());
 
 	//
 	// Render the shadow maps into the set

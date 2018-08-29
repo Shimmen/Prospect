@@ -14,7 +14,7 @@ struct CameraUniforms
 	mat4 world_from_view;
     mat4 projection_from_view;
     mat4 view_from_projection;
-    vec4 near_far; // (x=near, y=far, zw=unused)
+    vec4 near_far; // x=near, y=far, z=(far / (far - near)), w=((-far * near) / (far - near))
 };
 
 #if COMPILING_CPP

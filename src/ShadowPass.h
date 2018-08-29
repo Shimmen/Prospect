@@ -13,15 +13,12 @@ class ShadowPass
 {
 public:
 
-	void Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingGeomety,
-		DirectionalLight& dirLight);
+	void Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingGeomety, DirectionalLight& dirLight);
 
 private:
 
 	GLuint *shadowProgram;
 
 	GLuint shadowMapSegmentUniformBuffer{ 0 };
-
-	GLuint directionalLightUniformBuffer{ 0 };
 
 };

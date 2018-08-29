@@ -164,7 +164,10 @@ FpsCamera::Update(const Input& input, float dt)
 		performUpdate = true;
 	}
 
-	glm::vec4 nearFar = glm::vec4(cameraNear, cameraFar, 0, 0);
+	float projA = cameraFar / (cameraFar - cameraNear);
+	float projB = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
+
+	glm::vec4 nearFar = glm::vec4(cameraNear, cameraFar, projA, projB);
 	if (cameraUniformData.near_far != nearFar)
 	{
 		cameraUniformData.near_far = nearFar;

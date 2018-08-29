@@ -12,6 +12,16 @@ vec3 rgbFromColor(Color color)
     return vec3(color.rgb * y);
 }
 
+vec3 packNormal(vec3 normal)
+{
+    return normalize(normal) * vec3(0.5) + vec3(0.5);
+}
+
+vec3 unpackNormal(vec3 packedNormal)
+{
+    return normalize(packedNormal * vec3(2.0) - vec3(1.0));
+}
+
 float lengthSquared(vec3 v)
 {
     return dot(v, v);
