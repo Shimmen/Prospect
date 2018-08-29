@@ -25,18 +25,32 @@ ShadowPass::Draw(const ShadowMap& shadowMap, Scene& scene)
 
 	ShadowMapSegment dirLightSegment;
 	{
-		dirLightSegment.minX = 4096;
-		dirLightSegment.minY = 4096;
-		dirLightSegment.maxX = 8192;
-		dirLightSegment.maxY = 8192;
-		dirLightSegment.zNear = -100.0f;
-		dirLightSegment.zFar = +100.0f;
+		int minX = 4096;
+		int minY = 4096;
+		int maxX = 8192;
+		int maxY = 8192;
 
-		glm::vec3 L = glm::normalize(glm::vec3(0.2, 1.0, 0.2));
-		auto dirLightView = glm::lookAtLH({ 0, 0, 0 }, -L, { 0, 1, 0 });
+		dirLightSegment.minX = minX;
+		dirLightSegment.minY = minY;
+		dirLightSegment.maxX = maxX;
+		dirLightSegment.maxY = maxY;
+
+		vec2 textureSize = { shadowMap.size, shadowMap.size };
+		vec2 minUV = vec2(minX, minY) / textureSize;
+		vec2 maxUV = vec2(maxX, maxY) / textureSize;
+		vec2 sizeUV = maxUV - minUV;
+
+		mat4 toUnilateral = glm::translate(mat4(1.0f), vec3(0.5f)) * glm::scale(mat4(1.0f), vec3(0.5f));
+		mat4 uvScale = glm::scale(mat4(1.0f), vec3(sizeUV, 0.0f));
+		mat4 uvTranslation = glm::translate(mat4(1.0f), vec3(minUV, 0.0f));
+		dirLightSegment.uvTransform = uvTranslation * uvScale * toUnilateral;
+
+		auto dirLightView = glm::lookAtLH({ 0, 0, 0 }, vec3(scene.directionalLights[0].worldDirection), { 0, 1, 0 });
 
 		float size = 50.0f;
-		auto dirLightProjection = glm::orthoLH(-size, size, -size, size, dirLightSegment.zNear, dirLightSegment.zFar);
+		float zNear = -100.0f;
+		float zFar = +100.0f;
+		auto dirLightProjection = glm::orthoLH(-size, size, -size, size, zNear, zFar);
 
 		dirLightSegment.lightViewProjection = dirLightProjection * dirLightView;
 	}
@@ -111,4 +125,43 @@ ShadowPass::Draw(const ShadowMap& shadowMap, Scene& scene)
 		ImGui::Text("Shadow map size: %dx%d", shadowMap.size, shadowMap.size);
 		GuiSystem::Texture(shadowMap.texture, 1.0f);
 	}
+}
+
+ShadowMapSegment
+ShadowPass::CreateShadowMapSegmentForDirectionalLight(const ShadowMap& shadowMap, const DirectionalLight& dirLight)
+{
+	ShadowMapSegment segment;
+	
+	int minX = 4096;
+	int minY = 4096;
+	int maxX = 8192;
+	int maxY = 8192;
+
+	segment.minX = minX;
+	segment.minY = minY;
+	segment.maxX = maxX;
+	segment.maxY = maxY;
+
+	vec2 textureSize = { shadowMap.size, shadowMap.size };
+	vec2 minUV = vec2(minX, minY) / textureSize;
+	vec2 maxUV = vec2(maxX, maxY) / textureSize;
+	vec2 sizeUV = maxUV - minUV;
+
+	static const mat4 id = mat4(1.0f);
+
+	mat4 toUnilateral = glm::translate(id, vec3(0.5f)) * glm::scale(id, vec3(0.5f));
+	mat4 uvScale = glm::scale(id, vec3(sizeUV, 0.0f));
+	mat4 uvTranslation = glm::translate(id, vec3(minUV, 0.0f));
+	segment.uvTransform = uvTranslation * uvScale * toUnilateral;
+
+	auto dirLightView = glm::lookAtLH({ 0, 0, 0 }, vec3(dirLight.worldDirection), { 0, 1, 0 });
+
+	float size = 50.0f;
+	float zNear = -100.0f;
+	float zFar = +100.0f;
+	auto dirLightProjection = glm::orthoLH(-size, size, -size, size, zNear, zFar);
+
+	segment.lightViewProjection = dirLightProjection * dirLightView;
+
+	return segment;
 }

@@ -70,20 +70,15 @@ void main()
         vec4 posInShadowMap = lightProjectionFromView * viewSpacePos;
         posInShadowMap.xyz /= posInShadowMap.w;
 
+        // Compare depths for shadows
         float actualDepth = posInShadowMap.z * 0.5 + 0.5;
-        vec2 segmentUv = posInShadowMap.xy * vec2(0.5) + vec2(0.5);
-
-        ivec2 shadowMapSize = textureSize(u_shadow_map, 0);
-        ivec2 segmentMin = ivec2(segment.minX, segment.minY);
-        ivec2 segmentMax = ivec2(segment.maxX, segment.maxY);
-        vec2 segmentMinUv = vec2(segmentMin) / vec2(shadowMapSize);
-        vec2 segmentMaxUv = vec2(segmentMax) / vec2(shadowMapSize);
-        vec2 segmentSizeUv = segmentMaxUv - segmentMinUv;
-
-        vec2 shadowMapUv = vec2(segmentMinUv + segmentUv * segmentSizeUv);
+        vec2 shadowMapUv = (segment.uvTransform * vec4(posInShadowMap.xy, 0.0, 1.0)).xy;
         float mapDepth = texture(u_shadow_map, shadowMapUv).x;
-
         shadowFactor = (mapDepth < actualDepth) ? 0.0 : 1.0;
+
+        // Fragments outside the shadow map should be considered to be in shadow
+        bool insideBounds = posInShadowMap.xy == clamp(posInShadowMap.xy, vec2(-1.0), vec2(1.0));
+        shadowFactor = (insideBounds) ? shadowFactor : 0.0;
     }
 
     // diffuse term

@@ -1,5 +1,9 @@
 #include "TestApp.h"
 
+#include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/rotate_vector.hpp>
+
 #include <imgui.h>
 
 #include "GuiSystem.h"
@@ -99,6 +103,11 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	}
 
 	scene.mainCamera.Update(input, deltaTime);
+
+	for (auto& dirLight : scene.directionalLights)
+	{
+		dirLight.worldDirection = glm::rotateY(dirLight.worldDirection, deltaTime);
+	}
 
 	// TODO: Make some better API for these types of things
 	if (testQuad.vao)

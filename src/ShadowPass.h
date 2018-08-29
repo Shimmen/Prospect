@@ -8,6 +8,7 @@
 #include "Model.h"
 #include "ShadowMap.h"
 
+struct ShadowMapSegment;
 struct DirectionalLight;
 
 class ShadowPass
@@ -18,8 +19,9 @@ public:
 
 private:
 
-	GLuint *shadowProgram;
+	ShadowMapSegment CreateShadowMapSegmentForDirectionalLight(const ShadowMap& shadowMap, const DirectionalLight& dirLight);
 
+	GLuint *shadowProgram;
 	GLuint shadowMapSegmentUniformBuffer{ 0 };
 
 };

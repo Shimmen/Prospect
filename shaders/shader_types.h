@@ -6,12 +6,10 @@
 
 struct ShadowMapSegment
 {
-	float zNear, zFar;
-	float unused1, unused2;
-
 	int minX, maxX;
 	int minY, maxY;
 
+	mat4 uvTransform;
 	mat4 lightViewProjection;
 };
 
