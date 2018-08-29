@@ -43,16 +43,14 @@
 #define LOC_u_g_buffer_normal 21
 #define LOC_u_g_buffer_depth  22
 
-#define LOC_u_directional_light_color     30
-#define LOC_u_directional_light_direction 31
-
 #define LOC_u_gui_projection 40
 #define LOC_u_gui_texture    41
 
-#define LOC_u_texture 0
+#define LOC_u_texture    0
+#define LOC_u_shadow_map 1
 
-#define LOC_u_world_from_local 1
-#define LOC_u_projection_from_world 2
+#define LOC_u_world_from_local      101
+#define LOC_u_projection_from_world 102
 
 ///////////////////////////////////////////////////////////////////////////////
 // Uniform block bindings

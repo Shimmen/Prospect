@@ -146,7 +146,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 		GuiSystem::Texture(shadowMap.texture, 1.0f);
 	}
 
-	lightPass.Draw(lightBuffer, gBuffer, /*lights,*/ camera);
+	lightPass.Draw(lightBuffer, gBuffer, shadowMap, /*lights,*/ camera);
 
 	if (ImGui::CollapsingHeader("Light buffer"))
 	{

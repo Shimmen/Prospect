@@ -5,7 +5,7 @@
 #include "shader_locations.h"
 
 void
-LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, FpsCamera& camera)
+LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, FpsCamera& camera)
 {
 	if (!emptyVertexArray)
 	{
@@ -32,6 +32,9 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, FpsCamer
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightBuffer.framebuffer);
 	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
+
+	glBindTextureUnit(10, shadowMap.texture);
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_shadow_map), 10);
 
 	glUseProgram(*directionalLightProgram);
 	{

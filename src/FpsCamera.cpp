@@ -153,6 +153,7 @@ FpsCamera::Update(const Input& input, float dt)
 	if (cameraUniformData.view_from_world != viewFromWorld)
 	{
 		cameraUniformData.view_from_world = viewFromWorld;
+		cameraUniformData.world_from_view = glm::inverse(viewFromWorld);
 		performUpdate = true;
 	}
 

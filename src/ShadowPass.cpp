@@ -48,8 +48,6 @@ ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingG
 	
 	int lightCount = 1;
 
-	ImGui::ColorPicker4("Sun color", glm::value_ptr(dirLight.color));
-
 	ShadowMapSegment dirLightSegment;
 	{
 		dirLightSegment.minX = 4096;

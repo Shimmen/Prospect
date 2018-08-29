@@ -5,13 +5,14 @@
 #include "Model.h"
 #include "GBuffer.h"
 #include "FpsCamera.h"
+#include "ShadowMap.h"
 #include "LightBuffer.h"
 
 class LightPass
 {
 public:
 
-	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, FpsCamera& camera);
+	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, FpsCamera& camera);
 
 private:
 
