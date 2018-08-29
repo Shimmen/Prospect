@@ -1,5 +1,9 @@
 #include "LightPass.h"
 
+#include <imgui.h>
+
+#include "Scene.h"
+#include "GuiSystem.h"
 #include "TextureSystem.h"
 
 using namespace glm;
@@ -7,7 +11,7 @@ using namespace glm;
 #include "shader_types.h"
 
 void
-LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, FpsCamera& camera, DirectionalLight& dirLight)
+LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, Scene& scene)
 {
 	if (!emptyVertexArray)
 	{
@@ -49,8 +53,10 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 
 	glUseProgram(*directionalLightProgram);
 	{
-		
-		dirLight.viewDirecion = camera.GetViewMatrix() * dirLight.worldDirection;
+		assert(scene.directionalLights.size() == 1);
+		auto& dirLight = scene.directionalLights[0];
+
+		dirLight.viewDirecion = scene.mainCamera.GetViewMatrix() * dirLight.worldDirection;
 		glNamedBufferSubData(directionalLightUniformBuffer, 0, sizeof(DirectionalLight), &dirLight);
 
 		glDisable(GL_DEPTH_TEST);
@@ -59,5 +65,10 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glEnable(GL_DEPTH_TEST);
+	}
+
+	if (ImGui::CollapsingHeader("Light buffer"))
+	{
+		GuiSystem::Texture(lightBuffer.lightTexture);
 	}
 }

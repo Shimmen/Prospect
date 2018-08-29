@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 
 #include "Model.h"
+#include "Scene.h"
 #include "GBuffer.h"
 #include "FpsCamera.h"
 #include "ShadowMap.h"
@@ -14,7 +15,7 @@ class LightPass
 {
 public:
 
-	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, FpsCamera& camera, DirectionalLight& dirLight);
+	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, Scene& scene);
 
 private:
 

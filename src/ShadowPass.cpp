@@ -8,6 +8,7 @@
 
 #include "TransformSystem.h"
 #include "ShaderSystem.h"
+#include "GuiSystem.h"
 #include "Logging.h"
 
 using namespace glm;
@@ -16,7 +17,7 @@ using namespace glm;
 #include "shader_types.h"
 
 void
-ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingGeomety, DirectionalLight& dirLight)
+ShadowPass::Draw(const ShadowMap& shadowMap, Scene& scene)
 {
 	// TODO: Pass in instead of setting up here!
 	
@@ -66,7 +67,7 @@ ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingG
 	// TODO/REMOVE: for the directional light
 	int index = (int)shadowMapSegments.size();
 	shadowMapSegments.push_back(dirLightSegment);
-	dirLight.shadowMapSegmentIndex = ivec4(index, 0, 0, 0);
+	scene.directionalLights[0].shadowMapSegmentIndex = ivec4(index, 0, 0, 0);
 
 	size_t numSegments = shadowMapSegments.size();
 	assert(numSegments <= SHADOW_MAP_SEGMENT_MAX_COUNT);
@@ -94,7 +95,7 @@ ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingG
 
 		glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_world), 1, false, glm::value_ptr(segment.lightViewProjection));
 
-		for (const Model& model : blockingGeomety)
+		for (const Model& model : scene.models)
 		{
 			Transform& transform = TransformSystem::Get(model.transformID);
 			glUniformMatrix4fv(PredefinedUniformLocation(u_world_from_local), 1, false, glm::value_ptr(transform.matrix));
@@ -105,4 +106,9 @@ ShadowPass::Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingG
 	glCullFace(GL_BACK);
 	glUseProgram(0);
 
+	if (ImGui::CollapsingHeader("Shadows"))
+	{
+		ImGui::Text("Shadow map size: %dx%d", shadowMap.size, shadowMap.size);
+		GuiSystem::Texture(shadowMap.texture, 1.0f);
+	}
 }

@@ -4,6 +4,7 @@
 
 #include <glad/glad.h>
 
+#include "Scene.h"
 #include "Model.h"
 #include "GBuffer.h"
 #include "FpsCamera.h"
@@ -14,7 +15,7 @@ public:
 
 	bool performDepthPrepass = true;
 
-	void Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeometry, FpsCamera& camera);
+	void Draw(const GBuffer& gBuffer, Scene& scene);
 
 private:
 

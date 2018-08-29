@@ -4,8 +4,9 @@
 
 #include <glad/glad.h>
 
-#include "ShadowMap.h"
+#include "Scene.h"
 #include "Model.h"
+#include "ShadowMap.h"
 
 struct DirectionalLight;
 
@@ -13,7 +14,7 @@ class ShadowPass
 {
 public:
 
-	void Draw(const ShadowMap& shadowMap, const std::vector<Model>& blockingGeomety, DirectionalLight& dirLight);
+	void Draw(const ShadowMap& shadowMap, Scene& scene);
 
 private:
 

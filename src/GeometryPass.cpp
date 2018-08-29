@@ -1,12 +1,14 @@
 #include "GeometryPass.h"
 
+#include <memory>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <memory>
+#include <imgui.h>
 
 #include "Logging.h"
 #include "Material.h"
+#include "GuiSystem.h"
 #include "TransformSystem.h"
 
 #include "shader_locations.h"
@@ -25,8 +27,11 @@ model_compare_function(const void *a, const void *b)
 }
 
 void
-GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeometry, FpsCamera& camera)
+GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 {
+	// All geometry is currently opaque! Maybe later add some material flag to indicate opaqueness?
+	auto opaqueGeometry = std::vector<Model>(scene.models);
+
 	const uint8_t magenta[] = { 255, 0, 255, 255 };
 	glClearTexImage(gBuffer.albedoTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, magenta);
 
@@ -111,4 +116,13 @@ GeometryPass::Draw(const GBuffer& gBuffer, const std::vector<Model>& opaqueGeome
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_CULL_FACE);
 
+	if (ImGui::CollapsingHeader("G-Buffer"))
+	{
+		ImGui::Text("Albedo:");
+		GuiSystem::Texture(gBuffer.albedoTexture);
+		ImGui::Text("Normal:");
+		GuiSystem::Texture(gBuffer.normalTexture);
+		ImGui::Text("Depth:");
+		GuiSystem::Texture(gBuffer.depthTexture);
+	}
 }

@@ -57,7 +57,7 @@ void main()
     vec3 color = vec3(0.0);
 
     // ambient term
-    const float ambient = 0.01;
+    const float ambient = 0.02;
     color += albedo * lightColor * ambient * float(!unlit);
 
     // shadow factor
