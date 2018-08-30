@@ -3,6 +3,9 @@
 
 #include <shader_types.h>
 
+#define PI     (3.14159265358979323846)
+#define TWO_PI (2.0 * PI)
+
 // color.rgb is the color [0, 1] and color.a is [0, 1] but maps to a [0, 1000] exponential scale y=2^(10x)
 // see shader_types.h for definitions
 vec3 rgbFromColor(Color color)
@@ -30,6 +33,14 @@ float lengthSquared(vec3 v)
 float saturate(float x)
 {
     return clamp(x, 0.0, 1.0);
+}
+
+vec2 sphericalFromDirection(vec3 direction)
+{
+    float theta = acos(clamp(direction.y, -1.0, 1.0));
+    float phi = atan(direction.z, direction.x);
+    if (phi < 0.0) phi += TWO_PI;
+	return vec2(phi / TWO_PI, theta / PI);
 }
 
 #endif // COMMON_GLSL

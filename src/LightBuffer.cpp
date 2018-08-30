@@ -5,7 +5,7 @@
 #include "shader_locations.h"
 
 void
-LightBuffer::RecreateGpuResources(int width, int height)
+LightBuffer::RecreateGpuResources(int width, int height, const GBuffer& gBuffer)
 {
 	this->width = width;
 	this->height = height;
@@ -29,9 +29,12 @@ LightBuffer::RecreateGpuResources(int width, int height)
 
 	glNamedFramebufferTexture(framebuffer, PredefinedOutputLocation(o_color), lightTexture, 0);
 
+	// Use the g-buffer depth as the depth in the light pass (for reading only)
+	glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, gBuffer.depthTexture, 0);
+
 	GLenum status = glCheckNamedFramebufferStatus(framebuffer, GL_DRAW_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LogError("The Light buffer framebuffer is not complete!");
+		Log("The Light buffer framebuffer is not complete!");
 	}
 }

@@ -23,6 +23,7 @@
 #include "ShadowPass.h"
 #include "LightPass.h"
 #include "FinalPass.h"
+#include "SkyPass.h"
 
 using namespace glm;
 #include "shader_types.h"
@@ -42,6 +43,7 @@ LightBuffer lightBuffer;
 GeometryPass geometryPass;
 ShadowPass shadowPass;
 LightPass lightPass;
+SkyPass skyPass;
 FinalPass finalPass;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,6 +78,8 @@ void TestApp::Init()
 
 	shadowMap.RecreateGpuResources(8192);
 
+	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/blue_lagoon/blue_lagoon_2k.hdr");
+
 	DirectionalLight sunLight;
 	sunLight.worldDirection = glm::vec4(-0.2, -1.0, -0.2, 0);
 	sunLight.color = glm::vec4(1.0, 0.9, 0.9, 0.1);
@@ -89,7 +93,7 @@ void TestApp::Resize(int width, int height)
 	scene.mainCamera.Resize(width, height);
 
 	gBuffer.RecreateGpuResources(width, height);
-	lightBuffer.RecreateGpuResources(width, height);
+	lightBuffer.RecreateGpuResources(width, height, gBuffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -131,6 +135,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 
 	shadowPass.Draw(shadowMap, scene);
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
+	skyPass.Draw(lightBuffer, scene);
 
 	finalPass.Draw(lightBuffer);
 

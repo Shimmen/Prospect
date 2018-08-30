@@ -2,6 +2,8 @@
 
 #include <glad/glad.h>
 
+#include <GBuffer.h>
+
 struct LightBuffer
 {
 	int width;
@@ -15,6 +17,6 @@ struct LightBuffer
 	////////////////////////////
 
 	// Create or recreate the light buffer textures with the given dimensions
-	void RecreateGpuResources(int width, int height);
+	void RecreateGpuResources(int width, int height, const GBuffer& gBuffer);
 
 };
