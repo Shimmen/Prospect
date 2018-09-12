@@ -1,9 +1,11 @@
 #include "ModelSystem.h"
 
+#include <limits>
 #include <tiny_obj_loader.h>
 
 #include "shader_locations.h"
 
+#include "Maths.h"
 #include "Logging.h"
 #include "MaterialFactory.h"
 
@@ -27,6 +29,8 @@ struct LoadedModel
 
 	std::vector<uint32_t> indices;
 	std::vector<Vertex> vertices;
+
+	BoundingSphere bounds;
 
 	bool materialDefined;
 	std::string baseDirectory;
@@ -150,6 +154,9 @@ ModelSystem::Init()
 
 				std::unordered_map<uint64_t, uint32_t> indexMap;
 
+				glm::vec3 minVertex{ std::numeric_limits<float>::infinity() };
+				glm::vec3 maxVertex{ -std::numeric_limits<float>::infinity() };
+
 				for (size_t i = 0; i < numIndices; ++i)
 				{
 					tinyobj::index_t index = shape.mesh.indices[i];
@@ -170,6 +177,17 @@ ModelSystem::Init()
 						v.position[0] = attributes.vertices[3 * index.vertex_index + 0];
 						v.position[1] = attributes.vertices[3 * index.vertex_index + 1];
 						v.position[2] = attributes.vertices[3 * index.vertex_index + 2];
+
+						// Grow the bounding box around the vertex if required
+						{
+							minVertex.x = fmin(minVertex.x, v.position[0]);
+							minVertex.y = fmin(minVertex.y, v.position[1]);
+							minVertex.z = fmin(minVertex.z, v.position[2]);
+
+							maxVertex.x = fmax(maxVertex.x, v.position[0]);
+							maxVertex.y = fmax(maxVertex.y, v.position[1]);
+							maxVertex.z = fmax(maxVertex.z, v.position[2]);
+						}
 
 						bool hasNormal = index.normal_index != -1;
 						bool hasTexCoord = index.texcoord_index != -1;
@@ -208,6 +226,10 @@ ModelSystem::Init()
 						indexMap[hash] = index;
 					}
 				}
+
+				// Make a bounding sphere around the mesh
+				model.bounds.center = glm::mix(minVertex, maxVertex, 0.5f);
+				model.bounds.radius = glm::distance(model.bounds.center, maxVertex);
 
 				// Make sure to assign the filename to the qualified names of all the loaded models
 				loadedFiles[currentFile].push_back(qualifiedName);
@@ -310,6 +332,8 @@ ModelSystem::Update()
 		model.vao = vao;
 		model.indexCount = indexCount;
 		model.indexType = indexType;
+
+		model.bounds = loadedModel.bounds;
 
 		// Create a transform for the object
 		// TODO: Implement some pareting system for models within files, and more. For example,

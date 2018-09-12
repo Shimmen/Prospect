@@ -192,3 +192,9 @@ FpsCamera::GetProjectionMatrix()
 {
 	return projectionFromView;
 }
+
+const glm::mat4
+FpsCamera::GetViewProjectionMatrix()
+{
+	return projectionFromView * viewFromWorld;
+}

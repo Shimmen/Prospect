@@ -7,6 +7,7 @@
 
 struct Material: public ShaderDepandant
 {
+	bool opaque = true;
 	bool cullBackfaces = true;
 
 	GLuint program = 0;

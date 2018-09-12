@@ -130,7 +130,6 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 
 	//
 
-	geometryPass.performDepthPrepass = true;
 	geometryPass.Draw(gBuffer, scene);
 
 	shadowPass.Draw(shadowMap, scene);

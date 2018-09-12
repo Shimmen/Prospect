@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
+#include "Maths.h"
 #include "Logging.h"
 #include "Material.h"
 #include "GuiSystem.h"
@@ -29,8 +30,24 @@ model_compare_function(const void *a, const void *b)
 void
 GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 {
-	// All geometry is currently opaque! Maybe later add some material flag to indicate opaqueness?
-	auto opaqueGeometry = std::vector<Model>(scene.models);
+	std::array<glm::vec4, 6> frustumPlanes{};
+	ExtractFrustumPlanes(scene.mainCamera.GetViewProjectionMatrix(), frustumPlanes);
+
+	static std::vector<Model> geometryToRender{};
+	geometryToRender.reserve(scene.models.size());
+	geometryToRender.clear();
+
+	for (const Model& model : scene.models)
+	{
+		if (!model.material->opaque) continue;
+
+		auto transform = TransformSystem::Get(model.transformID);
+		BoundingSphere worldSpaceBounds = model.bounds;
+		worldSpaceBounds.center += transform.position;
+		if (!InsideFrustum(frustumPlanes, worldSpaceBounds)) continue;
+
+		geometryToRender.emplace_back(model);
+	}
 
 	const uint8_t magenta[] = { 255, 0, 255, 255 };
 	glClearTexImage(gBuffer.albedoTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, magenta);
@@ -63,7 +80,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 
 		glUseProgram(*depthOnlyProgram);
 		GLint modelMatrixLoc = glGetUniformLocation(*depthOnlyProgram, "u_world_from_local"); // TODO: Use the predefined location!
-		for (const Model& model : opaqueGeometry)
+		for (const Model& model : geometryToRender)
 		{
 			// TODO: Use linear uniform buffer for transforms instead
 			Transform& transform = TransformSystem::Get(model.transformID);
@@ -79,7 +96,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 	}
 
 	// Sort geometry so that we can optimize the number of shader program switches, i.e. calling glUseProgram
-	qsort((void *)(opaqueGeometry.data()), opaqueGeometry.size(), sizeof(Model), model_compare_function);
+	qsort((void *)(geometryToRender.data()), geometryToRender.size(), sizeof(Model), model_compare_function);
 
 	if (performDepthPrepass)
 	{
@@ -87,8 +104,11 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		glDepthFunc(GL_EQUAL);
 	}
 
+	int numDrawCalls = 0;
+	int numTriangles = 0;
+
 	GLuint lastProgram = UINT_MAX;
-	for (const Model& model : opaqueGeometry)
+	for (const Model& model : geometryToRender)
 	{
 		GLuint program = model.material->program;
 
@@ -110,6 +130,9 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		else glDisable(GL_CULL_FACE);
 
 		model.Draw();
+
+		numDrawCalls += 1;
+		numTriangles += TriangleCount(model);
 	}
 
 	glDepthMask(true);
@@ -118,6 +141,14 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 
 	if (ImGui::CollapsingHeader("G-Buffer"))
 	{
+		ImGui::Checkbox("Perform depth-prepass", &performDepthPrepass);
+
+		if (performDepthPrepass) ImGui::Text("Draw calls: %d (with depth-prepass)", 2 * numDrawCalls);
+		else ImGui::Text("Draw calls: %d", numDrawCalls);
+		ImGui::Text("Triangles:  %d", numTriangles);
+
+		ImGui::Separator();
+
 		ImGui::Text("Albedo:");
 		GuiSystem::Texture(gBuffer.albedoTexture);
 		ImGui::Text("Normal:");
