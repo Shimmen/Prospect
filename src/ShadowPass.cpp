@@ -101,6 +101,9 @@ ShadowPass::Draw(const ShadowMap& shadowMap, Scene& scene)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 
+	int numDrawCalls = 0;
+	int numTriangles = 0;
+
 	for (const ShadowMapSegment& segment : shadowMapSegments)
 	{
 		int width = segment.maxX - segment.minX;
@@ -109,11 +112,23 @@ ShadowPass::Draw(const ShadowMap& shadowMap, Scene& scene)
 
 		glUniformMatrix4fv(PredefinedUniformLocation(u_projection_from_world), 1, false, glm::value_ptr(segment.lightViewProjection));
 
+		std::array<glm::vec4, 6> frustumPlanes{};
+		ExtractFrustumPlanes(segment.lightViewProjection, frustumPlanes);
+
 		for (const Model& model : scene.models)
 		{
+			if (!model.material->opaque) continue;
+
 			Transform& transform = TransformSystem::Get(model.transformID);
+			BoundingSphere worldSpaceBounds = model.bounds;
+			worldSpaceBounds.center += transform.position;
+			if (!InsideFrustum(frustumPlanes, worldSpaceBounds)) continue;
+			
 			glUniformMatrix4fv(PredefinedUniformLocation(u_world_from_local), 1, false, glm::value_ptr(transform.matrix));
 			model.Draw();
+
+			numDrawCalls += 1;
+			numTriangles += TriangleCount(model);
 		}
 	}
 
@@ -123,6 +138,8 @@ ShadowPass::Draw(const ShadowMap& shadowMap, Scene& scene)
 	if (ImGui::CollapsingHeader("Shadows"))
 	{
 		ImGui::Text("Shadow map size: %dx%d", shadowMap.size, shadowMap.size);
+		ImGui::Text("Draw calls: %d", numDrawCalls);
+		ImGui::Text("Triangles:  %d", numTriangles);
 		GuiSystem::Texture(shadowMap.texture, 1.0f);
 	}
 }
