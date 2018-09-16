@@ -34,7 +34,7 @@ void main()
     vec3 hdrColor = texture(u_texture, v_uv).rgb;
     hdrColor *= u_exposure;
 
-    float exposureBias = 2.0;
+    float exposureBias = 1.0;
     vec3 curr = uncharted2Tonemap(exposureBias * hdrColor);
 
     vec3 whiteScale = vec3(1.0) / uncharted2Tonemap(vec3(W));

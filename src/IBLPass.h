@@ -21,7 +21,7 @@ private:
 
 	GLuint emptyVertexArray{ 0 };
 
-	GLuint *directIBLProgram{ 0 };
+	//GLuint *directIBLProgram{ 0 };
 	GLuint *indirectIBLProgram{ 0 };
 
 };

@@ -22,7 +22,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 
 	{
 		float lastExposure = 0.0f;
-		static float exposure = 3.0f;
+		static float exposure = 1.0f;
 
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{

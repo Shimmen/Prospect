@@ -14,6 +14,7 @@ struct Scene
 	FpsCamera mainCamera;
 
 	GLuint skyTexture;
+	GLuint skyIrradiance;
 
 	std::vector<Model> models;
 

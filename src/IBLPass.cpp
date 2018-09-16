@@ -18,14 +18,6 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 		glCreateVertexArrays(1, &emptyVertexArray);
 	}
 
-	if (!directIBLProgram)
-	{
-		directIBLProgram = ShaderSystem::AddProgram("light/ibl.vert.glsl", "light/ibl.frag.glsl");
-		glProgramUniform1i(*directIBLProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-		glProgramUniform1i(*directIBLProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
-		glProgramUniform1i(*directIBLProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
-	}
-
 	glBindTextureUnit(0, gBuffer.albedoTexture);
 	glBindTextureUnit(1, gBuffer.normalTexture);
 	glBindTextureUnit(2, gBuffer.depthTexture);
@@ -33,9 +25,30 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightBuffer.framebuffer);
 	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
 
-	glUseProgram(*directIBLProgram);
+	if (indirectLight)
 	{
+		if (!indirectIBLProgram)
+		{
+			indirectIBLProgram = ShaderSystem::AddProgram("light/ibl.vert.glsl", "light/iblIndirect.frag.glsl");
+			glProgramUniform1i(*indirectIBLProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
+			glProgramUniform1i(*indirectIBLProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
+			glProgramUniform1i(*indirectIBLProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
+
+			GLint loc = glGetUniformLocation(*indirectIBLProgram, "u_irradiance");
+			glProgramUniform1i(*indirectIBLProgram, loc, 3);
+		}
+
+		// TODO: Fix error where we need to set this each frame..
+		glProgramUniform1i(*indirectIBLProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
+		glProgramUniform1i(*indirectIBLProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
+		glProgramUniform1i(*indirectIBLProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
+
+		glUseProgram(*indirectIBLProgram);
 		glDisable(GL_DEPTH_TEST);
+
+		GLint loc = glGetUniformLocation(*indirectIBLProgram, "u_irradiance");
+		glProgramUniform1i(*indirectIBLProgram, loc, 3);
+		glBindTextureUnit(3, scene.skyIrradiance);
 
 		glBindVertexArray(emptyVertexArray);
 		glDrawArrays(GL_TRIANGLES, 0, 3);

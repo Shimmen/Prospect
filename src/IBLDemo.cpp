@@ -80,12 +80,8 @@ void IBLDemo::Init()
 	});
 	ModelSystem::LoadModel("assets/sphere/sphere.obj");
 
-	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/blue_lagoon/blue_lagoon_2k.hdr");
-
-	DirectionalLight sunLight;
-	sunLight.worldDirection = glm::vec4(-0.2, -1.0, -0.2, 0);
-	sunLight.color = glm::vec4(1.0, 0.9, 0.9, 0.1);
-	scene.directionalLights.push_back(sunLight);
+	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
+	scene.skyIrradiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");
 
 	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }
