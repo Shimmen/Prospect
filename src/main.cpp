@@ -21,7 +21,7 @@
 #include "MaterialFactory.h"
 
 #include "Input.h"
-#include "TestApp.h"
+#include "AppSelector.h"
 
 // _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable:4996)
@@ -132,7 +132,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Create app (should require no GL context!)
-	app = std::make_unique<TestApp>();
+	app = AppSelector::ConstructApp();
 	App::Settings settings = app->Setup();
 
 	glfwWindowHint(GLFW_RESIZABLE, settings.window.resizeable);

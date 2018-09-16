@@ -1,4 +1,4 @@
-#include "TestApp.h"
+#include "IBLDemo.h"
 
 #include <glm/glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -22,8 +22,9 @@
 #include "GeometryPass.h"
 #include "ShadowPass.h"
 #include "LightPass.h"
-#include "FinalPass.h"
+#include "IBLPass.h"
 #include "SkyPass.h"
+#include "FinalPass.h"
 
 using namespace glm;
 #include "shader_types.h"
@@ -39,20 +40,18 @@ namespace
 	Model testQuad;
 
 	GBuffer gBuffer;
-	ShadowMap shadowMap;
 	LightBuffer lightBuffer;
 
 	GeometryPass geometryPass;
-	ShadowPass shadowPass;
-	LightPass lightPass;
+	IBLPass iblPass;
 	SkyPass skyPass;
 	FinalPass finalPass;
-};
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Application lifetime
 
-App::Settings TestApp::Setup()
+App::Settings IBLDemo::Setup()
 {
 	Settings settings{};
 	settings.window.size = { 1280, 800 };
@@ -61,25 +60,25 @@ App::Settings TestApp::Setup()
 	return settings;
 }
 
-void TestApp::Init()
+void IBLDemo::Init()
 {
 	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
 	{
-		scene.models.emplace_back(model);
-		//Log("Model %s from file %s loaded\n", modelname.c_str(), filename.c_str());
-
-		// TODO: Create proper API for these types of operations
-		if (filename == "assets/quad/quad.obj")
+		for (int y = 0; y < 10; ++y)
 		{
-			testQuad = model;
-			testQuad.material->cullBackfaces = false;
+			for (int x = 0; x < 10; ++x)
+			{
+				int id = TransformSystem::Create();
+				TransformSystem::Get(id).SetPosition(2.5f * x, 2.5f * y, 0.0f);
+				TransformSystem::UpdateMatrices(id);
+
+				Model sphere = model;
+				sphere.transformID = id;
+				scene.models.emplace_back(sphere);
+			}
 		}
 	});
-
-	ModelSystem::LoadModel("assets/quad/quad.obj");
-	ModelSystem::LoadModel("assets/sponza/sponza.obj");
-
-	shadowMap.RecreateGpuResources(8192);
+	ModelSystem::LoadModel("assets/sphere/sphere.obj");
 
 	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/blue_lagoon/blue_lagoon_2k.hdr");
 
@@ -88,10 +87,10 @@ void TestApp::Init()
 	sunLight.color = glm::vec4(1.0, 0.9, 0.9, 0.1);
 	scene.directionalLights.push_back(sunLight);
 
-	scene.mainCamera.LookAt({ -20, 3, 0 }, { 0, 10, 0 });
+	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }
 
-void TestApp::Resize(int width, int height)
+void IBLDemo::Resize(int width, int height)
 {
 	scene.mainCamera.Resize(width, height);
 
@@ -102,9 +101,9 @@ void TestApp::Resize(int width, int height)
 ///////////////////////////////////////////////////////////////////////////////
 // Drawing / main loop
 
-void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
+void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 {
-	ImGui::Begin("Prospect");
+	ImGui::Begin("Prospect - IBL demo");
 	if (input.WasKeyPressed(GLFW_KEY_HOME))
 	{
 		ImGui::SetWindowPos(ImVec2(0, 1));
@@ -113,32 +112,9 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 
 	scene.mainCamera.Update(input, deltaTime);
 
-	for (auto& dirLight : scene.directionalLights)
-	{
-		dirLight.worldDirection = glm::rotateY(dirLight.worldDirection, deltaTime);
-	}
-
-	// TODO: Make some better API for these types of things
-	if (testQuad.vao)
-	{
-		auto& quadTransform = TransformSystem::Get(testQuad.transformID);
-		{
-			quadTransform.position.x = 4.0f * std::cos(runningTime);
-			quadTransform.position.z = 3.0f * std::sin(runningTime);
-			quadTransform.position.y = 5.0f + 0.25f * std::sin(runningTime * 10.0f);
-			quadTransform.orientation = glm::rotate(quadTransform.orientation, deltaTime, { 0, 1, 0 });
-		}
-		TransformSystem::UpdateMatrices(testQuad.transformID);
-	}
-
-	//
-
 	geometryPass.Draw(gBuffer, scene);
-
-	shadowPass.Draw(shadowMap, scene);
-	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
+	iblPass.Draw(lightBuffer, gBuffer, scene);
 	skyPass.Draw(lightBuffer, scene);
-
 	finalPass.Draw(lightBuffer);
 
 	ImGui::End();

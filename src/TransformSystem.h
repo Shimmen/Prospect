@@ -25,26 +25,29 @@ struct Transform
 
 	//
 
-	void SetPosition(float x, float y, float z)
+	Transform& SetPosition(float x, float y, float z)
 	{
 		position.x = x;
 		position.y = y;
 		position.z = z;
+		return *this;
 	}
 
-	void SetScale(float s)
+	Transform& SetScale(float s)
 	{
 		SetScale(s, s, s);
+		return *this;
 	}
 
-	void SetScale(float x, float y, float z)
+	Transform& SetScale(float x, float y, float z)
 	{
 		scale.x = x;
 		scale.y = y;
 		scale.z = z;
+		return *this;
 	}
 
-	void SetDirection(float x, float y, float z)
+	Transform& SetDirection(float x, float y, float z)
 	{
 		// From: https://gamedev.stackexchange.com/questions/149006/direction-vector-to-quaternion
 
@@ -55,6 +58,8 @@ struct Transform
 		orientation.y = sin(halfAngle);
 		orientation.z = 0.0f;
 		orientation.w = cos(halfAngle);
+
+		return *this;
 	}
 };
 
