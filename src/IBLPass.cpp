@@ -18,53 +18,57 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 		glCreateVertexArrays(1, &emptyVertexArray);
 	}
 
-	//
-	// TODO: Create brdf LUT for IBL radiance
-	//
+	if (!iblProgram)
+	{
+		ShaderSystem::AddProgram("light/ibl", this);
+	}
+
+	if (!brdfIntegrationMap)
+	{
+		CreateBrdfIntegrationMap();
+	}
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightBuffer.framebuffer);
+	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
+
+	glUseProgram(iblProgram);
+	glDisable(GL_DEPTH_TEST);
 
 	glBindTextureUnit(0, gBuffer.albedoTexture);
 	glBindTextureUnit(1, gBuffer.materialTexture);
 	glBindTextureUnit(2, gBuffer.normalTexture);
 	glBindTextureUnit(3, gBuffer.depthTexture);
+	glBindTextureUnit(5, scene.skyIrradiance);
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightBuffer.framebuffer);
-	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
+	glBindVertexArray(emptyVertexArray);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	if (indirectLight)
-	{
-		if (!iblProgram)
-		{
-			iblProgram = ShaderSystem::AddProgram("light/ibl.vert.glsl", "light/ibl.frag.glsl");
-			glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-			glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
-			glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
-			glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
+	glEnable(GL_DEPTH_TEST);
+}
 
-			GLint loc = glGetUniformLocation(*iblProgram, "u_irradiance");
-			glProgramUniform1i(*iblProgram, loc, 3);
-		}
+void
+IBLPass::ProgramLoaded(GLuint program)
+{
+	iblProgram = program;
 
-		// TODO: Fix error where we need to set this each frame..
-		glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-		glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
-		glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
-		glProgramUniform1i(*iblProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
+	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
+	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
+	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
+	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
 
-		glUseProgram(*iblProgram);
-		glDisable(GL_DEPTH_TEST);
+	GLint loc = glGetUniformLocation(iblProgram, "u_irradiance");
+	glProgramUniform1i(iblProgram, loc, 5);
+}
 
-		GLint loc = glGetUniformLocation(*iblProgram, "u_irradiance");
-		glProgramUniform1i(*iblProgram, loc, 5);
-		glBindTextureUnit(5, scene.skyIrradiance);
+void
+IBLPass::CreateBrdfIntegrationMap()
+{
+	const int size = 512;
 
-		glBindVertexArray(emptyVertexArray);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glCreateTextures(GL_TEXTURE_2D, 1, &brdfIntegrationMap);
+	//glTexture.....
 
-		glEnable(GL_DEPTH_TEST);
-	}
-
-	if (ImGui::CollapsingHeader("IBL settings"))
-	{
-		ImGui::Checkbox("Indirect light", &indirectLight);
-	}
+	//
+	// TODO: Create brdf LUT for IBL radiance
+	//
 }

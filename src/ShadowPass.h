@@ -21,7 +21,7 @@ private:
 
 	ShadowMapSegment CreateShadowMapSegmentForDirectionalLight(const ShadowMap& shadowMap, const DirectionalLight& dirLight);
 
-	GLuint *shadowProgram;
+	GLuint *shadowProgram{ 0 };
 	GLuint shadowMapSegmentUniformBuffer{ 0 };
 
 };

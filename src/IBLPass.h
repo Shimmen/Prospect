@@ -8,18 +8,20 @@
 
 struct DirectionalLight;
 
-class IBLPass
+class IBLPass : ShaderDepandant
 {
 public:
 
 	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& scene);
-
-	bool indirectLight = true;
+	void ProgramLoaded(GLuint program) override;
 
 private:
 
+	void CreateBrdfIntegrationMap();
+
 	GLuint emptyVertexArray{ 0 };
-	GLuint *iblProgram{ 0 };
+	GLuint iblProgram{ 0 };
+
+	GLuint brdfIntegrationMap{ 0 };
 
 };
-#pragma once

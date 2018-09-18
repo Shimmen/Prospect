@@ -20,12 +20,7 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 
 	if (!directionalLightProgram)
 	{
-		directionalLightProgram = ShaderSystem::AddProgram("light/directional.vert.glsl", "light/directional.frag.glsl");
-
-		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
-		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
-		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
+		ShaderSystem::AddProgram("light/directional", this);
 	}
 
 	if (!directionalLightUniformBuffer)
@@ -35,12 +30,6 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(DirectionalLightBlock), directionalLightUniformBuffer);
 	}
 
-	// TODO: We shouldn't need to do this every loop, right?
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
-
 	// Bind the g-buffer
 	glBindTextureUnit(0, gBuffer.albedoTexture);
 	glBindTextureUnit(1, gBuffer.materialTexture);
@@ -49,12 +38,11 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 
 	// Bind the shadow map
 	glBindTextureUnit(10, shadowMap.texture);
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_shadow_map), 10);
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightBuffer.framebuffer);
 	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
 
-	glUseProgram(*directionalLightProgram);
+	glUseProgram(directionalLightProgram);
 	{
 		assert(scene.directionalLights.size() == 1);
 		auto& dirLight = scene.directionalLights[0];
@@ -74,4 +62,20 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 	{
 		GuiSystem::Texture(lightBuffer.lightTexture);
 	}
+}
+
+void LightPass::ProgramLoaded(GLuint program)
+{
+	// TODO: What to do when we have more than one program per pass?
+	// We are eventually gonna have more stuff here, for example. Well,
+	// we could check if *someProgram = program and update that one!
+
+	directionalLightProgram = program;
+
+	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
+	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
+	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
+	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
+
+	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_shadow_map), 10);
 }

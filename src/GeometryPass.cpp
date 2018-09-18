@@ -76,16 +76,15 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 
 		if (!depthOnlyProgram)
 		{
-			depthOnlyProgram = ShaderSystem::AddProgram("material/depth_only");
+			ShaderSystem::AddProgram("material/depth_only", this);
 		}
 
-		glUseProgram(*depthOnlyProgram);
-		GLint modelMatrixLoc = glGetUniformLocation(*depthOnlyProgram, "u_world_from_local"); // TODO: Use the predefined location!
+		glUseProgram(depthOnlyProgram);
 		for (const Model& model : geometryToRender)
 		{
-			// TODO: Use linear uniform buffer for transforms instead
+			// TODO: Use linear uniform buffer for transforms instead? Would be very performant in this case!
 			Transform& transform = TransformSystem::Get(model.transformID);
-			glUniformMatrix4fv(modelMatrixLoc, 1, false, glm::value_ptr(transform.matrix));
+			glUniformMatrix4fv(modelMatrixLocation, 1, false, glm::value_ptr(transform.matrix));
 
 			if (model.material->cullBackfaces) glEnable(GL_CULL_FACE);
 			else glDisable(GL_CULL_FACE);
@@ -159,4 +158,10 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		ImGui::Text("Depth:");
 		GuiSystem::Texture(gBuffer.depthTexture);
 	}
+}
+
+void GeometryPass::ProgramLoaded(GLuint program)
+{
+	depthOnlyProgram = program;
+	modelMatrixLocation = glGetUniformLocation(depthOnlyProgram, "u_world_from_local");
 }

@@ -17,7 +17,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 
 	if (!finalProgram)
 	{
-		finalProgram = ShaderSystem::AddProgram("quad.vert.glsl", "post/final.frag.glsl");
+		ShaderSystem::AddProgram("quad.vert.glsl", "post/final.frag.glsl", this);
 	}
 
 	{
@@ -31,8 +31,8 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 
 		if (exposure != lastExposure)
 		{
-			GLint loc = glGetUniformLocation(*finalProgram, "u_exposure");
-			glProgramUniform1f(*finalProgram, loc, exposure);
+			GLint loc = glGetUniformLocation(finalProgram, "u_exposure");
+			glProgramUniform1f(finalProgram, loc, exposure);
 			lastExposure = exposure;
 		}
 	}
@@ -43,10 +43,9 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
 
-	glUseProgram(*finalProgram);
+	glUseProgram(finalProgram);
 	{
-		glBindTextureUnit(10, lightBuffer.lightTexture);
-		glProgramUniform1i(*finalProgram, PredefinedUniformLocation(u_texture), 10);
+		glBindTextureUnit(0, lightBuffer.lightTexture);
 
 		glBindVertexArray(emptyVertexArray);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -54,3 +53,11 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 
 	glEnable(GL_DEPTH_TEST);
 }
+
+void FinalPass::ProgramLoaded(GLuint program)
+{
+	finalProgram = program;
+	glProgramUniform1i(finalProgram, PredefinedUniformLocation(u_texture), 0);
+}
+
+
