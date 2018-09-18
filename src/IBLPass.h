@@ -14,15 +14,12 @@ public:
 
 	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& scene);
 
-	bool directLight = true;
 	bool indirectLight = true;
 
 private:
 
 	GLuint emptyVertexArray{ 0 };
-
-	//GLuint *directIBLProgram{ 0 };
-	GLuint *indirectIBLProgram{ 0 };
+	GLuint *iblProgram{ 0 };
 
 };
 #pragma once

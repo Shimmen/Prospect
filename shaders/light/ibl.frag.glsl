@@ -16,6 +16,7 @@ PredefinedUniformBlock(CameraUniformBlock)
 };
 
 PredefinedUniform(sampler2D, u_g_buffer_albedo);
+PredefinedUniform(sampler2D, u_g_buffer_material);
 PredefinedUniform(sampler2D, u_g_buffer_normal);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 

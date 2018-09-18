@@ -23,8 +23,9 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 		directionalLightProgram = ShaderSystem::AddProgram("light/directional.vert.glsl", "light/directional.frag.glsl");
 
 		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
-		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
+		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
+		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
+		glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
 	}
 
 	if (!directionalLightUniformBuffer)
@@ -36,13 +37,15 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 
 	// TODO: We shouldn't need to do this every loop, right?
 	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 1);
-	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 2);
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
+	glProgramUniform1i(*directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
 
 	// Bind the g-buffer
 	glBindTextureUnit(0, gBuffer.albedoTexture);
-	glBindTextureUnit(1, gBuffer.normalTexture);
-	glBindTextureUnit(2, gBuffer.depthTexture);
+	glBindTextureUnit(1, gBuffer.materialTexture);
+	glBindTextureUnit(2, gBuffer.normalTexture);
+	glBindTextureUnit(3, gBuffer.depthTexture);
 
 	// Bind the shadow map
 	glBindTextureUnit(10, shadowMap.texture);

@@ -34,10 +34,12 @@ GBuffer::RecreateGpuResources(int width, int height)
 
 	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
 	glDeleteTextures(1, &albedoTexture);
+	glDeleteTextures(1, &materialTexture);
 	glDeleteTextures(1, &normalTexture);
 	glDeleteTextures(1, &depthTexture);
 
 	albedoTexture = CreateFlatTexture(width, height, GL_RGBA8);
+	materialTexture = CreateFlatTexture(width, height, GL_RGBA8);
 	normalTexture = CreateFlatTexture(width, height, GL_RGBA8);
 	depthTexture = CreateFlatTexture(width, height, GL_DEPTH_COMPONENT32F);
 
@@ -51,6 +53,7 @@ GBuffer::RecreateGpuResources(int width, int height)
 
 		GLenum drawBuffers[] = {
 			PredefinedOutputLocation(o_g_buffer_albedo),
+			PredefinedOutputLocation(o_g_buffer_material),
 			PredefinedOutputLocation(o_g_buffer_normal)
 		};
 		int numDrawBuffers = sizeof(drawBuffers) / sizeof(GLenum);
@@ -59,6 +62,9 @@ GBuffer::RecreateGpuResources(int width, int height)
 
 	GLenum albedoAttachment = PredefinedOutputLocation(o_g_buffer_albedo);
 	glNamedFramebufferTexture(framebuffer, albedoAttachment, albedoTexture, 0);
+
+	int materialAttachment = PredefinedOutputLocation(o_g_buffer_material);
+	glNamedFramebufferTexture(framebuffer, materialAttachment, materialTexture, 0);
 
 	int normalAttachment = PredefinedOutputLocation(o_g_buffer_normal);
 	glNamedFramebufferTexture(framebuffer, normalAttachment, normalTexture, 0);
