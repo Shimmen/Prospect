@@ -18,6 +18,8 @@
 #include "ShadowMap.h"
 
 #include "Scene.h"
+#include "MaterialFactory.h"
+#include "BasicMaterial.h"
 
 #include "GeometryPass.h"
 #include "ShadowPass.h"
@@ -74,11 +76,20 @@ void IBLDemo::Init()
 
 				Model sphere = model;
 				sphere.transformID = id;
+
+				BasicMaterial *material = new BasicMaterial();
+				MaterialFactory::ManageMaterial(material);
+
+				material->baseColor = { 1, 0, 0 };
+				material->roughness = (float)x / 10.0f;
+				material->metallic = (float)y / 10.0f;
+				sphere.material = material;
+
 				scene.models.emplace_back(sphere);
 			}
 		}
 	});
-	ModelSystem::LoadModel("assets/sphere/sphere.obj");
+	ModelSystem::LoadModel("assets/generic/sphere.obj");
 
 	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 	scene.skyIrradiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");

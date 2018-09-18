@@ -3,7 +3,8 @@
 #include "TextureSystem.h"
 
 // Materials
-#include <Lambertian.h>
+#include "Lambertian.h"
+#include "BasicMaterial.h"
 
 //
 // Data
@@ -21,20 +22,39 @@ MaterialFactory::CreateMaterial(const tinyobj::material_t& materialDescription, 
 	//
 	// TODO: Create materials properly! Don't assume a certain material, do the best possible material given the supplied properties
 	//
-	auto material = new Lambertian();
+	Material *material;
 
 	if (!materialDescription.diffuse_texname.empty())
 	{
-		material->diffuseTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
+		auto mat = new Lambertian();
+
+		mat->diffuseTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
+
+		material = mat;
 	}
 	else
 	{
-		// TODO: Just a placeholder for now...
-		material->diffuseTexture = TextureSystem::LoadLdrImage("assets/images/default.png");
+		auto mat = new BasicMaterial();
+
+		mat->baseColor = glm::vec3(
+			materialDescription.diffuse[0],
+			materialDescription.diffuse[1],
+			materialDescription.diffuse[2]
+		);
+		mat->roughness = 0.5f;
+		mat->metallic = 0.0f;
+
+		material = mat;
 	}
 
 	managedMaterials.push_back(material);
 	return material;
+}
+
+void
+MaterialFactory::ManageMaterial(Material* material)
+{
+	managedMaterials.push_back(material);
 }
 
 void

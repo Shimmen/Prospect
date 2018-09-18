@@ -5,6 +5,7 @@
 struct Lambertian: public Material
 {
 	Lambertian();
+	~Lambertian() = default;
 
 	GLuint diffuseTexture;
 	GLint diffuseTextureLocation;

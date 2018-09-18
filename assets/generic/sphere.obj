@@ -1,6 +1,6 @@
 # Blender v2.79 (sub 0) OBJ File: 'sphere.blend'
 # www.blender.org
-mtllib sphere.mtl
+
 o Sphere
 v 0.000000 0.955573 0.294755
 v 0.000000 0.900969 0.433884
@@ -2630,8 +2630,8 @@ vn 0.1292 0.4985 0.8572
 vn 0.1167 -0.6218 0.7744
 vn 0.1388 0.3641 0.9209
 vn 0.0227 0.9883 0.1508
-g Sphere_Sphere_SphereMaterial
-usemtl SphereMaterial
+
+g Sphere_Sphere
 s 1
 f 1/1/1 12/2/2 2/3/3
 f 7/4/4 27/5/5 841/6/6
