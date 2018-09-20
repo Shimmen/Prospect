@@ -24,9 +24,17 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 		float lastExposure = 0.0f;
 		static float exposure = 1.0f;
 
+		float lastVignette = 0.0f;
+		static float vignette = 0.25f;
+
+		float lastGamma = 0.0f;
+		static float gamma = 2.2f;
+
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{
 			ImGui::SliderFloat("Exposure", &exposure, 0.0f, 32.0f, "%.1f");
+			ImGui::SliderFloat("Vignette amount", &vignette, 0.0f, 2.0f, "%.2f");
+			ImGui::SliderFloat("Gamma", &gamma, 0.1f, 4.0f, "%.1f");
 		}
 
 		if (exposure != lastExposure)
@@ -34,6 +42,20 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 			GLint loc = glGetUniformLocation(finalProgram, "u_exposure");
 			glProgramUniform1f(finalProgram, loc, exposure);
 			lastExposure = exposure;
+		}
+
+		if (vignette != lastVignette)
+		{
+			GLint loc = glGetUniformLocation(finalProgram, "u_vignette_falloff");
+			glProgramUniform1f(finalProgram, loc, vignette);
+			lastVignette = vignette;
+		}
+
+		if (gamma != lastGamma)
+		{
+			GLint loc = glGetUniformLocation(finalProgram, "u_gamma");
+			glProgramUniform1f(finalProgram, loc, gamma);
+			lastGamma = gamma;
 		}
 	}
 	
