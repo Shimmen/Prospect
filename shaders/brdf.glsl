@@ -22,6 +22,14 @@ vec3 F_Schlick(float VdotH, vec3 f0) {
     return f0 + (vec3(1.0) - f0) * pow(1.0 - VdotH, 5.0);
 }
 
+// For when there is no single H-vector to "choose" from (such as for IBL)
+// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
+vec3 F_SchlickRoughnessCompensating(float VdotN, vec3 f0, float roughness)
+{
+    vec3 gloss = vec3(1.0 - roughness);
+    return f0 + (max(gloss, f0) - f0) * pow(1.0 - VdotN, 5.0);
+}
+
 float V_SmithGGXCorrelated(float NdotV, float NdotL, float a) {
     float a2 = a * a;
     float GGXL = NdotV * sqrt((-NdotL * a2 + NdotL) * NdotL + a2);
@@ -31,8 +39,7 @@ float V_SmithGGXCorrelated(float NdotV, float NdotL, float a) {
 
 //
 
-// roughness should be perceptually linear (i.e. squared)!
-vec3 specularBRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float roughness, float metallic)
+vec3 specularBRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float roughness, float metallic, out vec3 F)
 {
     vec3 H = normalize(L + V);
 
@@ -41,19 +48,45 @@ vec3 specularBRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float roughness, float
     float NdotH = clamp(dot(N, H), 0.0, 1.0);
     float LdotH = clamp(dot(L, H), 0.0, 1.0);
 
+    // Use a which is perceptually linear for roughness
+    float a = square(roughness);
+
     vec3 f0 = mix(vec3(DIELECTRIC_REFLECTANCE), baseColor, metallic);
 
-    vec3  F = F_Schlick(LoH, f0);
-    float D = D_GGX(NoH, roughness);
-    float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
+    F = F_Schlick(LdotH, f0);
+    float D = D_GGX(NdotH, a);
+    float V_part = V_SmithGGXCorrelated(NdotV, NdotL, a);
 
-    return F * vec3(D * V);
+    return F * vec3(D * V_part);
 }
-
 
 vec3 diffuseBRDF()
 {
     return vec3(1.0) / vec3(PI);
 }
+
+//
+
+vec3 D_GGX_importanceSample(vec2 xi, vec3 N, float a)
+{
+    float phi = 2.0 * PI * xi.x;
+    float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    // from spherical coordinates to cartesian coordinates
+    vec3 H;
+    H.x = cos(phi) * sinTheta;
+    H.y = sin(phi) * sinTheta;
+    H.z = cosTheta;
+
+    // from tangent-space vector to world-space sample vector
+    vec3 up        = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent   = normalize(cross(up, N));
+    vec3 bitangent = cross(N, tangent);
+
+    vec3 sampleVector = tangent * H.x + bitangent * H.y + N * H.z;
+    return normalize(sampleVector);
+}
+
 
 #endif // BRDF_GLSL

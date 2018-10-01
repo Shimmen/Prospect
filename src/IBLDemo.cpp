@@ -66,9 +66,11 @@ void IBLDemo::Init()
 {
 	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
 	{
-		for (int y = 0; y < 10; ++y)
+		const int gridSize = 10;
+
+		for (int y = 0; y < gridSize; ++y)
 		{
-			for (int x = 0; x < 10; ++x)
+			for (int x = 0; x < gridSize; ++x)
 			{
 				int id = TransformSystem::Create();
 				TransformSystem::Get(id).SetPosition(2.5f * x, 2.5f * y, 0.0f);
@@ -81,8 +83,8 @@ void IBLDemo::Init()
 				MaterialFactory::ManageMaterial(material);
 
 				material->baseColor = { 1, 0, 0 };
-				material->roughness = (float)x / 10.0f;
-				material->metallic = (float)y / 10.0f;
+				material->roughness = (float)y / (float)(gridSize - 1);
+				material->metallic = 1.0f - (float)x / (float)(gridSize - 1);
 				sphere.material = material;
 
 				scene.models.emplace_back(sphere);

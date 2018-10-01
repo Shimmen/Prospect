@@ -281,13 +281,13 @@ ShaderSystem::Update()
 	}
 }
 
-GLuint*
+GLuint *
 ShaderSystem::AddProgram(const std::string& name, ShaderDepandant *shaderDependant)
 {
 	return AddProgram(name + ".vert.glsl", name + ".frag.glsl", shaderDependant);
 }
 
-GLuint*
+GLuint *
 ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant)
 {
 	std::string fullName = vertName + "_" + fragName;
@@ -343,4 +343,49 @@ ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragNam
 		return &publicProgramHandles[fixedLocation];
 	}
 
+}
+
+GLuint *
+ShaderSystem::AddComputeProgram(const std::string& name, ShaderDepandant* shaderDependant)
+{
+	if (managedPrograms.find(name) == managedPrograms.end())
+	{
+		Program program;
+		program.fixedLocation = nextPublicHandleIndex++;
+
+		Shader shader(GL_COMPUTE_SHADER, name);
+		program.shaders.push_back(shader);
+
+		AddManagedFile(name, program);
+
+		if (shaderDependant)
+		{
+			dependantObjects[program.fixedLocation].emplace(shaderDependant);
+		}
+
+		// Trigger the initial load
+		UpdateProgram(program);
+
+		managedPrograms[name] = program.fixedLocation;
+		return &publicProgramHandles[program.fixedLocation];
+	}
+	else
+	{
+		size_t fixedLocation = managedPrograms[name];
+
+		if (shaderDependant)
+		{
+			dependantObjects[fixedLocation].emplace(shaderDependant);
+
+			// Since this exact program is added previously there is a chance that it's already loaded.
+			// If it is, call program loaded immediately so that it can perform its initial setup.
+			GLuint program = publicProgramHandles[fixedLocation];
+			if (program)
+			{
+				shaderDependant->ProgramLoaded(program);
+			}
+		}
+
+		return &publicProgramHandles[fixedLocation];
+	}
 }

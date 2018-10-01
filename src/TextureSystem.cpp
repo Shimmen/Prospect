@@ -66,7 +66,7 @@ CreateEmptyTextureObject()
 }
 
 void
-CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pixel[4])
+CreateMutableTextureFromPixel(GLuint texture, const uint8_t pixel[4])
 {
 	// Note that we can't use the bindless API for this since we need to resize the texture later,
 	// which wouldn't be possible because that API only creates immutable textures (i.e. can't be resized)
@@ -74,7 +74,7 @@ CreateMutableTextureFromPixel(const ImageLoadDescription& dsc, const uint8_t pix
 	GLint lastBoundTexture2D;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastBoundTexture2D);
 	{
-		glBindTexture(GL_TEXTURE_2D, dsc.texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
 	}
 	glBindTexture(GL_TEXTURE_2D, lastBoundTexture2D);
@@ -221,6 +221,17 @@ TextureSystem::IsHdrFile(const std::string& filename)
 }
 
 GLuint
+TextureSystem::CreatePlaceholder()
+{
+	GLuint texture = CreateEmptyTextureObject();
+
+	static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
+	CreateMutableTextureFromPixel(texture, placeholderImageData);
+
+	return texture;
+}
+
+GLuint
 TextureSystem::LoadLdrImage(const std::string& filename)
 {
 	if (IsHdrFile(filename))
@@ -246,7 +257,7 @@ TextureSystem::LoadLdrImage(const std::string& filename)
 	{
 		// Fill texture with placeholder data and request an image load
 		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
-		CreateMutableTextureFromPixel(dsc, placeholderImageData);
+		CreateMutableTextureFromPixel(dsc.texture, placeholderImageData);
 
 		pendingJobs.Push(dsc);
 		runCondition.notify_all();
@@ -279,7 +290,7 @@ TextureSystem::LoadHdrImage(const std::string& filename)
 	else
 	{
 		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
-		CreateMutableTextureFromPixel(dsc, placeholderImageData);
+		CreateMutableTextureFromPixel(dsc.texture, placeholderImageData);
 
 		pendingJobs.Push(dsc);
 		runCondition.notify_all();
@@ -312,7 +323,7 @@ TextureSystem::LoadDataTexture(const std::string& filename)
 	else
 	{
 		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
-		CreateMutableTextureFromPixel(dsc, placeholderImageData);
+		CreateMutableTextureFromPixel(dsc.texture, placeholderImageData);
 
 		pendingJobs.Push(dsc);
 		runCondition.notify_all();

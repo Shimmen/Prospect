@@ -33,7 +33,7 @@ private:
 	const float maxSpeed = 10.0f;
 	const float timeToMaxSpeed = 0.25f;
 	const float timeFromMaxSpeed = 0.60f;
-	const float stopTreshold = 0.01f;
+	const float stopTreshold = 0.02f;
 
 	//
 

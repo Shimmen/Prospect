@@ -1,11 +1,12 @@
 #version 460
 
 #include <common.glsl>
-#include <shader_locations.h>
-#include <camera_uniforms.h>
+#include <brdf.glsl>
 
-#include <shader_types.h>
+#include <shader_locations.h>
 #include <shader_constants.h>
+#include <camera_uniforms.h>
+#include <shader_types.h>
 
 in vec2 v_uv;
 in vec3 v_view_ray;
@@ -21,6 +22,7 @@ PredefinedUniform(sampler2D, u_g_buffer_normal);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
 uniform sampler2D u_irradiance;
+uniform sampler2D u_radiance;
 
 PredefinedOutput(vec4, o_color);
 
@@ -29,6 +31,17 @@ float linearizeDepth(float nonLinearDepth)
     float projectionA = camera_uniforms.near_far.z;
     float projectionB = camera_uniforms.near_far.w;
     return projectionB / (nonLinearDepth - projectionA);
+}
+
+vec3 ggxBrdfApproximation(vec3 specularColor, float roughness, float NdotV)
+{
+    // From https://www.unrealengine.com/en-US/blog/physically-based-shading-on-mobile
+    const vec4 c0 = vec4(-1, -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1, 0.0425, 1.04, -0.04);
+    vec4 r = roughness * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NdotV)) * r.x + r.y;
+    vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
+    return specularColor * AB.x + AB.y;
 }
 
 void main()
@@ -42,22 +55,42 @@ void main()
     vec3 N = unpackNormal(packedNormal);
     vec3 V = -normalize(viewSpacePos.xyz);
 
-    vec3 albedo = texture(u_g_buffer_albedo, v_uv).xyz;
+    // This roughness parameter is supposed to be perceptually linear! Since we use a squared
+    // roughness when prefiltering the radiance map this works itself out in this shader.
+    vec4 material = texture(u_g_buffer_material, v_uv);
+    float roughness = material.x;
+    float metallic = material.y;
 
-    vec3 color = vec3(0.0);
+    vec3 baseColor = texture(u_g_buffer_albedo, v_uv).xyz;
 
-    // Diffuse
+    vec3 f0 = mix(vec3(DIELECTRIC_REFLECTANCE), baseColor, metallic);
+    // (use square roughness here, since we call directly into the brdf-related code)
+    vec3 F = F_SchlickRoughnessCompensating(saturate(dot(V, N)), f0, square(roughness));
+
+    mat3 world_from_view_dir = mat3(camera_uniforms.world_from_view);
+
+    vec3 specular;
     {
-        vec3 dir = mat3(camera_uniforms.world_from_view) * N;
-        dir.y *= -1.0; // TODO: fix direction!
+        vec3 R = world_from_view_dir * reflect(-V, N);
+        R.y *= -1.0; // TODO: Fix image loading y-axis!
 
-        vec2 uv = sphericalFromDirection(dir);
-        vec3 diffuse = albedo * textureLod(u_irradiance, uv, 0).rgb;
-
-        // division by pi is already done in the convolution, right?
-        color += diffuse;
+        float sampleLoD = roughness * float(IBL_RADIANCE_MIPMAP_LAYERS - 1);
+        vec3 prefiltered = textureLod(u_radiance, sphericalUvFromDirection(R), sampleLoD).rgb;
+        specular = prefiltered * ggxBrdfApproximation(F, roughness, saturate(dot(N, V)));
     }
 
-    color = (unlit) ? albedo : color;
+    vec3 diffuse;
+    {
+        vec3 dir = world_from_view_dir * N;
+        dir.y *= -1.0; // TODO: Fix image loading y-axis!
+
+        vec2 uv = sphericalUvFromDirection(dir);
+        diffuse = baseColor * texture(u_irradiance, uv).rgb;
+    }
+
+    vec3 kDiffuse = (vec3(1.0) - F) * vec3(1.0 - metallic);
+    vec3 indirectLight = (kDiffuse * diffuse) + specular;
+
+    vec3 color = (unlit) ? baseColor : indirectLight;
     o_color = vec4(color, 1.0);
 }

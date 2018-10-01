@@ -18,6 +18,7 @@ public:
 private:
 
 	void CreateBrdfIntegrationMap();
+	GLuint FilterRadianceMap(GLuint radianceMap);
 
 	GLuint emptyVertexArray{ 0 };
 	GLuint iblProgram{ 0 };

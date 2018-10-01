@@ -15,6 +15,7 @@ struct Scene
 
 	GLuint skyTexture;
 	GLuint skyIrradiance;
+	GLuint skyRadiance;
 
 	std::vector<Model> models;
 

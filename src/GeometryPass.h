@@ -15,6 +15,7 @@ class GeometryPass : ShaderDepandant
 public:
 
 	bool performDepthPrepass = true;
+	bool wireframeRendering = false;
 
 	void Draw(const GBuffer& gBuffer, Scene& scene);
 	void ProgramLoaded(GLuint program) override;

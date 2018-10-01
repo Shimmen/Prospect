@@ -20,5 +20,5 @@ void main()
     vec4 viewSpacePos = camera_uniforms.view_from_projection * gl_Position;
     vec4 worldSpaceDir = camera_uniforms.world_from_view * vec4(viewSpacePos.xyz / viewSpacePos.w, 0.0);
     v_view_ray = worldSpaceDir.xyz;
-    v_view_ray.y = 1.0 - v_view_ray.y;
+    v_view_ray.y = 1.0 - v_view_ray.y; // TODO: Fix image loading y-axis!
 }

@@ -13,8 +13,9 @@ PredefinedOutput(vec4, o_color);
 void main()
 {
     vec3 viewRay = normalize(v_view_ray);
-    vec2 uv = sphericalFromDirection(viewRay);
+    vec2 uv = sphericalUvFromDirection(viewRay);
 
+    // TODO: Implement blending between left/right edge in sphere map!
     vec3 skyColor = texture(u_texture, uv).rgb;
     o_color = vec4(skyColor, 1.0);
 }

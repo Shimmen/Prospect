@@ -330,6 +330,8 @@ GuiSystem::CharacterInputCallback(GLFWwindow *window, unsigned int codepoint)
 void
 GuiSystem::Texture(GLuint texture, float aspectRatio)
 {
+	if (texture == 0) return;
+
 	ImVec2 windowSize = ImGui::GetWindowSize();
 	float width = windowSize.x;
 	float height = width / aspectRatio;

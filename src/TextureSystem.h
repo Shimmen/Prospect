@@ -23,6 +23,8 @@ namespace TextureSystem
 
 	bool IsHdrFile(const std::string& filename);
 
+	GLuint CreatePlaceholder();
+
 	GLuint LoadLdrImage(const std::string& filename);
 	GLuint LoadHdrImage(const std::string& filename);
 	GLuint LoadDataTexture(const std::string& filename);

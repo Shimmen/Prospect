@@ -37,4 +37,6 @@ namespace ShaderSystem
 	// Add a shader program with the specified names for the vertex and fragment shaders
 	// Supply a shader depandant if there is some object that should be updated with this program
 	GLuint* AddProgram(const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant = nullptr);
+
+	GLuint* AddComputeProgram(const std::string& name, ShaderDepandant *shaderDependant = nullptr);
 }

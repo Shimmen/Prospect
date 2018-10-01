@@ -69,6 +69,8 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
+	glPolygonMode(GL_FRONT_AND_BACK, wireframeRendering ? GL_LINE : GL_FILL);
+
 	if (performDepthPrepass)
 	{
 		glDepthMask(true);
@@ -138,10 +140,12 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 	glDepthMask(true);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_CULL_FACE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	if (ImGui::CollapsingHeader("G-Buffer"))
 	{
 		ImGui::Checkbox("Perform depth-prepass", &performDepthPrepass);
+		ImGui::Checkbox("Draw wireframes", &wireframeRendering);
 
 		if (performDepthPrepass) ImGui::Text("Draw calls: %d (with depth-prepass)", 2 * numDrawCalls);
 		else ImGui::Text("Draw calls: %d", numDrawCalls);
