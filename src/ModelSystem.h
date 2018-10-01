@@ -21,8 +21,6 @@ namespace ModelSystem
 
 	void Update();
 
-	using ModelLoadCallback = std::function<void(Model, const std::string& filename, const std::string& meshname)>;
-	void SetModelLoadCallback(const ModelLoadCallback onModelLoadCallback);
-
-	void LoadModel(const std::string& filename);
+	using ModelLoadCallback = std::function<void(std::vector<Model> models)>;
+	void LoadModel(const std::string& filename, const ModelLoadCallback& callback);
 }

@@ -64,9 +64,11 @@ App::Settings IBLDemo::Setup()
 
 void IBLDemo::Init()
 {
-	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
-	{
+	ModelSystem::LoadModel("assets/generic/sphere.obj", [&](std::vector<Model> models) {
 		const int gridSize = 10;
+
+		assert(models.size() == 1);
+		Model model = models[0];
 
 		for (int y = 0; y < gridSize; ++y)
 		{
@@ -91,7 +93,6 @@ void IBLDemo::Init()
 			}
 		}
 	});
-	ModelSystem::LoadModel("assets/generic/sphere.obj");
 
 	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 	scene.skyIrradiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");

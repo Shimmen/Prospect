@@ -63,21 +63,22 @@ App::Settings TestApp::Setup()
 
 void TestApp::Init()
 {
-	ModelSystem::SetModelLoadCallback([&](Model model, const std::string& filename, const std::string& modelname)
-	{
-		scene.models.emplace_back(model);
-		//Log("Model %s from file %s loaded\n", modelname.c_str(), filename.c_str());
+	ModelSystem::LoadModel("assets/quad/quad.obj", [&](std::vector<Model> models) {
+		assert(models.size() == 1);
+		const Model& model = models[0];
 
-		// TODO: Create proper API for these types of operations
-		if (filename == "assets/quad/quad.obj")
-		{
-			testQuad = model;
-			testQuad.material->cullBackfaces = false;
-		}
+		testQuad = model;
+		testQuad.material->cullBackfaces = false;
+
+		scene.models.emplace_back(model);
 	});
 
-	ModelSystem::LoadModel("assets/quad/quad.obj");
-	ModelSystem::LoadModel("assets/sponza/sponza.obj");
+	ModelSystem::LoadModel("assets/sponza/sponza.obj", [&](std::vector<Model> models) {
+		for (const Model& model : models)
+		{
+			scene.models.emplace_back(model);
+		}
+	});
 
 	shadowMap.RecreateGpuResources(8192);
 
