@@ -6,6 +6,7 @@
 
 #include "Scene.h"
 #include "GuiSystem.h"
+#include "ModelSystem.h"
 #include "TextureSystem.h"
 
 using namespace glm;
@@ -27,14 +28,21 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	}
 
 	if (!brdfIntegrationMap) { CreateBrdfIntegrationMap(); }
-	if (!scene.skyIrradiance) { scene.skyIrradiance = TextureSystem::CreatePlaceholder(); }
-	if (!scene.skyRadiance) { scene.skyRadiance = TextureSystem::CreatePlaceholder(); }
+	if (!scene.skyIrradiance) { scene.skyIrradiance = TextureSystem::CreatePlaceholder(0xDD, 0xDD, 0xDD); }
+	if (!scene.skyRadiance) { scene.skyRadiance = TextureSystem::CreatePlaceholder(0xFF, 0xFF, 0xFF); }
+
+	static bool filteringPerformed = false;
+	if (!filteringPerformed && TextureSystem::IsIdle() && ModelSystem::IsIdle())
+	{
+		//scene.skyIrradiance = FilterIrradianceMap(scene.skyTexture); TODO!
+		scene.skyRadiance = FilterRadianceMap(scene.skyTexture);
+		filteringPerformed = true;
+	}
 
 	if (ImGui::CollapsingHeader("Image Based Lighting (IBL)"))
 	{
-		if (ImGui::Button("Filter!"))
+		if (ImGui::Button("Perform filtering now!"))
 		{
-			// TODO: Instead trigger from when both texture and model systems are 'idle', i.e. are done loading everything in
 			scene.skyRadiance = FilterRadianceMap(scene.skyTexture);
 		}
 

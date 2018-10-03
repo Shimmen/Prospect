@@ -1,6 +1,6 @@
 #include "ModelSystem.h"
 
-#include <limits>
+#include <atomic>
 #include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 
@@ -49,6 +49,7 @@ static std::unordered_map<std::string, std::vector<LoadedModel>> loadedData{};
 // TODO/FIXME: what if we make two calls for the same file with different callbacks?!
 static std::unordered_map<std::string, ModelSystem::ModelLoadCallback> callbackForFile{};
 
+static std::atomic_int currentJobsCounter;
 
 static std::thread             backgroundThread;
 static std::mutex              accessMutex;
@@ -314,6 +315,7 @@ ModelSystem::Init()
 			if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &error, currentFile.c_str(), baseDirectory.c_str(), triangulate))
 			{
 				Log("Could not load model '%s': %s.\n", currentFile.c_str(), error.c_str());
+				currentJobsCounter -= 1;
 				continue;
 			}
 
@@ -371,6 +373,7 @@ ModelSystem::Update()
 			if (loadedModel.indices.size() <= 0 || loadedModel.vertices.size() <= 0)
 			{
 				Log("Ignoring model since it has either no indices or no vertices defined!\n");
+				currentJobsCounter -= 1;
 				continue;
 			}
 
@@ -448,12 +451,23 @@ ModelSystem::Update()
 
 		auto callback = callbackForFile[filename];
 		callback(models);
+
+		currentJobsCounter -= 1;
 	}
+}
+
+bool
+ModelSystem::IsIdle()
+{
+	assert(currentJobsCounter >= 0);
+	return currentJobsCounter == 0;
 }
 
 void
 ModelSystem::LoadModel(const std::string& filename, const ModelLoadCallback& callback)
 {
+	currentJobsCounter += 1;
+
 	if (loadedData.find(filename) != loadedData.end())
 	{
 		// File is already loaded. Immediately push the models to the done queue so that

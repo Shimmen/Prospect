@@ -21,6 +21,8 @@ namespace ModelSystem
 
 	void Update();
 
+	bool IsIdle();
+
 	using ModelLoadCallback = std::function<void(std::vector<Model> models)>;
 	void LoadModel(const std::string& filename, const ModelLoadCallback& callback);
 }

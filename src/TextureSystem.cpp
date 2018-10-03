@@ -3,6 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <atomic>
+
 #include "Logging.h"
 
 //
@@ -32,6 +34,8 @@ struct LoadedImage
 static std::unordered_map<std::string, LoadedImage> loadedImages{};
 static Queue<ImageLoadDescription> pendingJobs{};
 static Queue<ImageLoadDescription> finishedJobs{};
+
+static std::atomic_int currentJobsCounter;
 
 static std::thread             backgroundThread;
 static std::mutex              accessMutex;
@@ -152,6 +156,7 @@ TextureSystem::Init()
 				if (!image.pixels)
 				{
 					Log("Could not load HDR image '%s': %s.\n", filename, stbi_failure_reason());
+					currentJobsCounter -= 1;
 					continue;
 				}
 				image.type = GL_FLOAT;
@@ -162,6 +167,7 @@ TextureSystem::Init()
 				if (!image.pixels)
 				{
 					Log("Could not load image '%s': %s.\n", filename, stbi_failure_reason());
+					currentJobsCounter -= 1;
 					continue;
 				}
 				image.type = GL_UNSIGNED_BYTE;
@@ -211,7 +217,15 @@ TextureSystem::Update()
 		ImageLoadDescription job = finishedJobs.Pop();
 		const LoadedImage& image = loadedImages[job.filename];
 		CreateImmutableTextureFromImage(job, image);
+		currentJobsCounter -= 1;
 	}
+}
+
+bool
+TextureSystem::IsIdle()
+{
+	assert(currentJobsCounter >= 0);
+	return currentJobsCounter == 0;
 }
 
 bool
@@ -221,12 +235,12 @@ TextureSystem::IsHdrFile(const std::string& filename)
 }
 
 GLuint
-TextureSystem::CreatePlaceholder()
+TextureSystem::CreatePlaceholder(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	GLuint texture = CreateEmptyTextureObject();
 
-	static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
-	CreateMutableTextureFromPixel(texture, placeholderImageData);
+	uint8_t pixel[4] = { r, g, b, a };
+	CreateMutableTextureFromPixel(texture, pixel);
 
 	return texture;
 }
@@ -255,8 +269,10 @@ TextureSystem::LoadLdrImage(const std::string& filename)
 	}
 	else
 	{
+		currentJobsCounter += 1;
+
 		// Fill texture with placeholder data and request an image load
-		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
+		static uint8_t placeholderImageData[4] = { 200, 200, 200, 255 };
 		CreateMutableTextureFromPixel(dsc.texture, placeholderImageData);
 
 		pendingJobs.Push(dsc);
@@ -289,6 +305,8 @@ TextureSystem::LoadHdrImage(const std::string& filename)
 	}
 	else
 	{
+		currentJobsCounter += 1;
+
 		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
 		CreateMutableTextureFromPixel(dsc.texture, placeholderImageData);
 
@@ -322,6 +340,8 @@ TextureSystem::LoadDataTexture(const std::string& filename)
 	}
 	else
 	{
+		currentJobsCounter += 1;
+
 		static uint8_t placeholderImageData[4] = { 128, 128, 128, 255 };
 		CreateMutableTextureFromPixel(dsc.texture, placeholderImageData);
 

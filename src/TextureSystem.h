@@ -21,9 +21,11 @@ namespace TextureSystem
 	// Must be called on a regular basis (e.g. in the beginning of every frame)
 	void Update();
 
+	bool IsIdle();
+
 	bool IsHdrFile(const std::string& filename);
 
-	GLuint CreatePlaceholder();
+	GLuint CreatePlaceholder(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFF);
 
 	GLuint LoadLdrImage(const std::string& filename);
 	GLuint LoadHdrImage(const std::string& filename);
