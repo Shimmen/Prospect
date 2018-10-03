@@ -1,6 +1,7 @@
 #include "ModelSystem.h"
 
 #include <limits>
+#include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 
 #include "shader_locations.h"
@@ -15,11 +16,10 @@
 
 struct Vertex
 {
-	float position[3]; // (x, y, z)
-	float normal[3];   // (x, y, z)
-	float texCoord[2]; // (u, v)
-
-					   //float tangents[4];  // (x, y, z, w) ???
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec2 texCoord;
+	glm::vec4 tangent; // (w is bitangent's handedness)
 };
 
 struct LoadedModel
@@ -61,7 +61,7 @@ static bool                    runBackgroundLoop;
 
 void
 ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& filename, const std::string& baseDirectory,
-	tinyobj::attrib_t& attributes, std::vector<tinyobj::material_t> materials)
+	const tinyobj::attrib_t& attributes, const std::vector<tinyobj::material_t> materials)
 {
 	model.filename = filename;
 	model.name = shape.name;
@@ -71,8 +71,8 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 	{
 		if (shape.mesh.material_ids[i] != firstMaterialIndex)
 		{
-			Log("Mesh '%s' in '%s' has more than one material defined. Only the first will be used, "
-				"so some things might not look as intended.\n", shape.name.c_str(), filename.c_str());
+			Log("Mesh shape '%s' in '%s' has more than one material defined. Please export mesh with separate material groups! "
+				"Only the first will be used, so some things might not look as intended.\n", shape.name.c_str(), filename.c_str());
 			break;
 		}
 	}
@@ -88,28 +88,32 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 		model.materialDefined = false;
 	}
 
-	size_t numIndices = shape.mesh.indices.size();
-	assert(numIndices % 3 == 0);
-	model.indices.resize(numIndices);
+	size_t numInputIndices = shape.mesh.indices.size();
+	assert(numInputIndices % 3 == 0);
 
-	// There will be no more vertices than indices (but probably less!)
-	model.vertices.reserve(numIndices);
+	// The number of indices will not change
+	model.indices.reserve(numInputIndices);
+	// There will be no more vertices than indices (but probably and hopefully less!)
+	model.vertices.reserve(numInputIndices);
+
+	int numMissingNormals = 0;
+	int numMissingTexCoords = 0;
+
+	glm::vec3 minVertex{ INFINITY };
+	glm::vec3 maxVertex{ -INFINITY };
 
 	std::unordered_map<uint64_t, uint32_t> indexMap;
 
-	glm::vec3 minVertex{ std::numeric_limits<float>::infinity() };
-	glm::vec3 maxVertex{ -std::numeric_limits<float>::infinity() };
-
-	for (size_t i = 0; i < numIndices; ++i)
+	for (size_t i = 0; i < numInputIndices; ++i)
 	{
 		tinyobj::index_t index = shape.mesh.indices[i];
-		uint64_t hash = (index.vertex_index * 53 + index.normal_index) * 31 + index.texcoord_index;
+		uint64_t hash = (index.vertex_index * 53ULL + index.normal_index) * 37ULL + index.texcoord_index;
 
 		if (indexMap.find(hash) != indexMap.end())
 		{
 			// This exact vertex already exist, push index of that one
 			uint32_t index = indexMap[hash];
-			model.indices[i] = index;
+			model.indices.emplace_back(index);
 		}
 		else
 		{
@@ -117,9 +121,32 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 
 			Vertex v;
 
-			v.position[0] = attributes.vertices[3 * index.vertex_index + 0];
-			v.position[1] = attributes.vertices[3 * index.vertex_index + 1];
-			v.position[2] = attributes.vertices[3 * index.vertex_index + 2];
+			v.position.x = attributes.vertices[3 * index.vertex_index + 0];
+			v.position.y = attributes.vertices[3 * index.vertex_index + 1];
+			v.position.z = attributes.vertices[3 * index.vertex_index + 2];
+
+			if (index.normal_index != -1)
+			{
+				v.normal.x = attributes.normals[3 * index.normal_index + 0];
+				v.normal.y = attributes.normals[3 * index.normal_index + 1];
+				v.normal.z = attributes.normals[3 * index.normal_index + 2];
+			}
+			else
+			{
+				numMissingNormals += 1;
+			}
+
+			if (index.texcoord_index != -1)
+			{
+				v.texCoord.s = attributes.texcoords[2 * index.texcoord_index + 0];
+				v.texCoord.t = attributes.texcoords[2 * index.texcoord_index + 1];
+			}
+			else
+			{
+				numMissingTexCoords += 1;
+			}
+
+			v.tangent = { 0, 0, 0, 0 };
 
 			// Grow the bounding box around the vertex if required
 			{
@@ -132,40 +159,12 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 				maxVertex.z = fmax(maxVertex.z, v.position[2]);
 			}
 
-			bool hasNormal = index.normal_index != -1;
-			bool hasTexCoord = index.texcoord_index != -1;
-
-			if (hasNormal)
-			{
-				v.normal[0] = attributes.normals[3 * index.normal_index + 0];
-				v.normal[1] = attributes.normals[3 * index.normal_index + 1];
-				v.normal[2] = attributes.normals[3 * index.normal_index + 2];
-			}
-			else
-			{
-				// TODO: Calculate normal
-				v.normal[0] = 0.0f;
-				v.normal[1] = 0.0f;
-				v.normal[2] = 0.0f;
-			}
-
-			if (hasTexCoord)
-			{
-				v.texCoord[0] = attributes.texcoords[2 * index.texcoord_index + 0];
-				v.texCoord[1] = attributes.texcoords[2 * index.texcoord_index + 1];
-			}
-
-			if (hasNormal && hasTexCoord)
-			{
-				// TODO: Calculate tangent
-			}
-
 			size_t thisIndex = model.vertices.size();
 			model.vertices.emplace_back(v);
 
 			assert(thisIndex < UINT32_MAX);
 			uint32_t index = static_cast<uint32_t>(thisIndex);
-			model.indices[i] = index;
+			model.indices.emplace_back(index);
 			indexMap[hash] = index;
 		}
 	}
@@ -173,6 +172,100 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 	// Make a bounding sphere around the mesh
 	model.bounds.center = glm::mix(minVertex, maxVertex, 0.5f);
 	model.bounds.radius = glm::distance(model.bounds.center, maxVertex);
+
+	// Generate normals (if not already exists) and tangents (if possible)
+	assert(model.indices.size() % 3 == 0);
+
+	bool generateNewNormals = numMissingNormals > 0;
+
+	// Reset normals if we need to create new ones
+	if (generateNewNormals)
+	{
+		for (Vertex& vertex : model.vertices)
+		{
+			vertex.normal = { 0, 0, 0 };
+		}
+	}
+
+	bool hasTexCoords = numMissingTexCoords == 0;
+	bool generateTangents = hasTexCoords;
+
+	size_t numBitangents = (generateTangents) ? model.vertices.size() : 0;
+	std::vector<glm::vec3> bitangents{ numBitangents };
+
+	// Construct tangents (if possible) and new normals (if requested)
+	for (size_t i = 0; i < model.indices.size(); i += 3)
+	{
+		uint32_t i0 = model.indices[i + 0];
+		uint32_t i1 = model.indices[i + 1];
+		uint32_t i2 = model.indices[i + 2];
+
+		Vertex& v0 = model.vertices[i0];
+		Vertex& v1 = model.vertices[i1];
+		Vertex& v2 = model.vertices[i2];
+
+		glm::vec3 e1 = v1.position - v0.position;
+		glm::vec3 e2 = v2.position - v0.position;
+
+		if (generateNewNormals)
+		{
+			glm::vec3 normal = glm::cross(e1, e2);
+			v0.normal += normal;
+			v1.normal += normal;
+			v2.normal += normal;
+		}
+
+		if (generateTangents)
+		{
+			glm::vec2 tex1 = v1.texCoord - v0.texCoord;
+			glm::vec2 tex2 = v2.texCoord - v0.texCoord;
+
+			float r = 1.0F / (tex1.s * tex2.t - tex2.s * tex1.t);
+
+			glm::vec3 sDir = {
+				(tex2.t * e1.x - tex1.t * e2.x) * r,
+				(tex2.t * e1.y - tex1.t * e2.y) * r,
+				(tex2.t * e1.z - tex1.t * e2.z) * r
+			};
+			glm::vec3 tDir = {
+				(tex1.s * e2.x - tex2.s * e1.x) * r,
+				(tex1.s * e2.y - tex2.s * e1.y) * r,
+				(tex1.s * e2.z - tex2.s * e1.z) * r
+			};
+
+			v0.tangent += glm::vec4(sDir, 0.0f);
+			v1.tangent += glm::vec4(sDir, 0.0f);
+			v2.tangent += glm::vec4(sDir, 0.0f);
+
+			// Save bintangent temporarily
+			bitangents[i0] += tDir;
+			bitangents[i1] += tDir;
+			bitangents[i2] += tDir;
+		}
+	}
+
+	// Normalize new normals and tangents, and set handedness of (bi)tangents
+	for (uint32_t i : model.indices)
+	{
+		Vertex& vertex = model.vertices[i];
+
+		if (generateNewNormals)
+		{
+			vertex.normal = glm::normalize(vertex.normal);
+		}
+		
+		if (generateTangents)
+		{
+			glm::vec3 N = vertex.normal;
+			glm::vec3 B = bitangents[i];
+			glm::vec3 T = glm::vec3(vertex.tangent);
+			T = glm::normalize(T - N * glm::dot(N, T));
+
+			// Calculate handedness and store in w component
+			float handedness = (glm::dot(glm::cross(N, T), B) < 0.0f) ? -1.0f : 1.0f;
+			vertex.tangent = glm::vec4(T, handedness);
+		}
+	}
 }
 
 //
@@ -331,6 +424,10 @@ ModelSystem::Update()
 			glEnableVertexArrayAttrib(vao, PredefinedAttributeLocation(a_tex_coord));
 			glVertexArrayAttribFormat(vao, PredefinedAttributeLocation(a_tex_coord), 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, texCoord));
 			glVertexArrayAttribBinding(vao, PredefinedAttributeLocation(a_tex_coord), vertexArrayBindingIndex);
+
+			glEnableVertexArrayAttrib(vao, PredefinedAttributeLocation(a_tangent));
+			glVertexArrayAttribFormat(vao, PredefinedAttributeLocation(a_tangent), 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, tangent));
+			glVertexArrayAttribBinding(vao, PredefinedAttributeLocation(a_tangent), vertexArrayBindingIndex);
 
 			Model model;
 			model.vao = vao;

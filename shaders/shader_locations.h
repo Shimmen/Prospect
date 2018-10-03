@@ -12,6 +12,7 @@
 #define ATTRIB_a_position  0
 #define ATTRIB_a_normal    1
 #define ATTRIB_a_tex_coord 2
+#define ATTRIB_a_tangent   3
 
 ///////////////////////////////////////////////////////////////////////////////
 // Outputs / render targets
