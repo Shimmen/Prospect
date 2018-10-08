@@ -150,6 +150,16 @@ TextureSystem::Init()
 			const char* filename = currentJob.filename.c_str();
 			LoadedImage image;
 
+			// NOTE: If we add more threads for image loading, this check needs to be more rigorous!
+			// We should never load an image if it's already loaded, but this can happen if we quickly
+			// call some LoadImage function a second time before the first image has finished loading.
+			if (loadedImages.find(filename) != loadedImages.end())
+			{
+				std::lock_guard<std::mutex> lock(accessMutex);
+				finishedJobs.Push(currentJob);
+				continue;
+			}
+
 			if (currentJob.isHdr)
 			{
 				image.pixels = stbi_loadf(filename, &image.width, &image.height, nullptr, STBI_rgb);
@@ -173,21 +183,10 @@ TextureSystem::Init()
 				image.type = GL_UNSIGNED_BYTE;
 			}
 
-			// We should never load an image if it's already loaded, but this can happen if we quickly
-			// call some LoadImage function a second time before the first image has finished loading.
-			if (loadedImages.find(filename) != loadedImages.end())
-			{
-				stbi_image_free(image.pixels);
-			}
-			else
-			{
-				loadedImages[filename] = image;
-			}
+			loadedImages[filename] = image;
 
-			{
-				std::lock_guard<std::mutex> lock(accessMutex);
-				finishedJobs.Push(currentJob);
-			}
+			std::lock_guard<std::mutex> lock(accessMutex);
+			finishedJobs.Push(currentJob);
 		}
 	});
 }
