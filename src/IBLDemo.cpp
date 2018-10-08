@@ -82,8 +82,8 @@ void IBLDemo::Init()
 				sphere.transformID = id;
 
 				CompleteMaterial *material = new CompleteMaterial();
-				material->baseColor = TextureSystem::CreatePlaceholder(0xFF, 0, 0);
-				material->normalMap = TextureSystem::LoadDataTexture("assets/sponza/spnza_bricks_a_ddn.png"); // TODO: probably keep some list of files that will be loaded soon so we don't get this stupid stuff.
+				material->baseColorTexture = TextureSystem::CreatePlaceholder(0xFF, 0, 0);
+				material->normalMap = TextureSystem::LoadDataTexture("assets/sponza/spnza_bricks_a_ddn.png");
 				MaterialFactory::ManageMaterial(material);
 
 				material->roughness = (float)y / (float)(gridSize - 1);

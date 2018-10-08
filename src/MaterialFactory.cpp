@@ -28,7 +28,7 @@ MaterialFactory::CreateMaterial(const tinyobj::material_t& materialDescription, 
 	{
 		auto mat = new CompleteMaterial();
 
-		mat->baseColor = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
+		mat->baseColorTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
 		mat->normalMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.normal_texname);
 
 		material = mat;

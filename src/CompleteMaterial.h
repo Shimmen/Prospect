@@ -14,8 +14,8 @@ struct CompleteMaterial : public Material
 	float roughness;
 	float metallic;
 
-	GLuint baseColor;
-	GLuint normalMap;
+	mutable GLuint baseColorTexture{};
+	mutable GLuint normalMap{};
 
 	virtual void ProgramLoaded(GLuint program) override;
 	virtual void BindUniforms(Transform& transform) const override;

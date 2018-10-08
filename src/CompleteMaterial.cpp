@@ -2,6 +2,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "TextureSystem.h"
+
 CompleteMaterial::CompleteMaterial()
 {
 	ShaderSystem::AddProgram("material/complete", this);
@@ -29,14 +31,24 @@ CompleteMaterial::BindUniforms(Transform& transform) const
 	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(transform.matrix));
 	glUniformMatrix3fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(transform.normalMatrix));
 
-	glUniform1f(roughnessLocation, roughness);
-	glUniform1f(metallicLocation, metallic);
+	if (!baseColorTexture)
+	{
+		baseColorTexture = TextureSystem::LoadLdrImage("assets/default/base_color.png");
+	}
 
 	const GLuint baseColorUnit = 0;
-	glBindTextureUnit(baseColorUnit, baseColor);
+	glBindTextureUnit(baseColorUnit, baseColorTexture);
 	glUniform1i(baseColorLocation, baseColorUnit);
+
+	if (!normalMap)
+	{
+		normalMap = TextureSystem::LoadDataTexture("assets/default/normal.png");
+	}
 
 	const GLuint normalMapUnit = 1;
 	glBindTextureUnit(normalMapUnit, normalMap);
 	glUniform1i(normalMapLocation, normalMapUnit);
+
+	glUniform1f(roughnessLocation, roughness);
+	glUniform1f(metallicLocation, metallic);
 }
