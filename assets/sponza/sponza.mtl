@@ -12,6 +12,7 @@ d 1.000000
 illum 2
 map_Kd lion.png
 map_Ks lion_spec.png
+norm  lion_ddn.png
 
 newmtl m10column_c
 Ns 74.509804
@@ -24,6 +25,7 @@ d 1.000000
 illum 2
 map_Kd sponza_column_c_diff.png
 map_Ks sponza_column_c_spec.png
+norm sponza_column_c_ddn.png
 
 newmtl m11details
 Ns 74.509804
@@ -36,6 +38,7 @@ d 1.000000
 illum 2
 map_Kd sponza_details_diff.png
 map_Ks sponza_details_spec.png
+norm sponza_details_spec_ddn.png
 
 newmtl m19floor
 Ns 74.509804
@@ -48,6 +51,7 @@ d 1.000000
 illum 2
 map_Kd sponza_floor_a_diff.png
 map_Ks sponza_floor_a_spec.png
+norm sponza_floor_a_ddn.png
 
 newmtl m1Material__298
 Ns 74.509804
@@ -60,6 +64,7 @@ d 1.000000
 illum 2
 map_Kd background.png
 map_Ks background_spec.png
+norm background_ddn.png
 
 newmtl m21roof
 Ns 74.509804
@@ -71,6 +76,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd sponza_roof_diff.png
+norm sponza_roof_ddn.png
 
 newmtl m22vase
 Ns 74.509804
@@ -83,6 +89,7 @@ d 1.000000
 illum 2
 map_Kd vase_diff.png
 map_Ks vase_spec.png
+norm vase_ddn.png
 
 newmtl m4arch
 Ns 74.509804
@@ -95,6 +102,7 @@ d 1.000000
 illum 2
 map_Kd sponza_arch_diff.png
 map_Ks sponza_arch_spec.png
+norm sponza_arch_ddn.png
 
 newmtl m5bricks
 Ns 74.509804
@@ -107,6 +115,7 @@ d 1.000000
 illum 2
 map_Kd spnza_bricks_a_diff.png
 map_Ks spnza_bricks_a_spec.png
+norm spnza_bricks_a_ddn.png
 
 newmtl m6ceiling
 Ns 74.509804
@@ -119,6 +128,7 @@ d 1.000000
 illum 2
 map_Kd sponza_ceiling_a_diff.png
 map_Ks sponza_ceiling_a_spec.png
+norm sponza_ceiling_a_ddn.png
 
 newmtl m8column_a
 Ns 74.509804
@@ -131,6 +141,7 @@ d 1.000000
 illum 2
 map_Kd sponza_column_a_diff.png
 map_Ks sponza_column_a_spec.png
+norm sponza_column_a_ddn.png
 
 newmtl m9column_b
 Ns 74.509804
@@ -143,3 +154,4 @@ d 1.000000
 illum 2
 map_Kd sponza_column_b_diff.png
 map_Ks sponza_column_b_spec.png
+norm sponza_column_b_ddn.png

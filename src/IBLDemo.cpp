@@ -19,7 +19,7 @@
 
 #include "Scene.h"
 #include "MaterialFactory.h"
-#include "BasicMaterial.h"
+#include "CompleteMaterial.h"
 
 #include "GeometryPass.h"
 #include "ShadowPass.h"
@@ -81,10 +81,11 @@ void IBLDemo::Init()
 				Model sphere = model;
 				sphere.transformID = id;
 
-				BasicMaterial *material = new BasicMaterial();
+				CompleteMaterial *material = new CompleteMaterial();
+				material->baseColor = TextureSystem::CreatePlaceholder(0xFF, 0, 0);
+				material->normalMap = TextureSystem::LoadDataTexture("assets/sponza/spnza_bricks_a_ddn.png"); // TODO: probably keep some list of files that will be loaded soon so we don't get this stupid stuff.
 				MaterialFactory::ManageMaterial(material);
 
-				material->baseColor = { 1, 0, 0 };
 				material->roughness = (float)y / (float)(gridSize - 1);
 				material->metallic = 1.0f - (float)x / (float)(gridSize - 1);
 				sphere.material = material;

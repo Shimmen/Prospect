@@ -3,8 +3,8 @@
 #include "TextureSystem.h"
 
 // Materials
-#include "Lambertian.h"
 #include "BasicMaterial.h"
+#include "CompleteMaterial.h"
 
 //
 // Data
@@ -24,11 +24,12 @@ MaterialFactory::CreateMaterial(const tinyobj::material_t& materialDescription, 
 	//
 	Material *material;
 
-	if (!materialDescription.diffuse_texname.empty())
+	if (!materialDescription.diffuse_texname.empty() && !materialDescription.normal_texname.empty())
 	{
-		auto mat = new Lambertian();
+		auto mat = new CompleteMaterial();
 
-		mat->diffuseTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
+		mat->baseColor = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
+		mat->normalMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.normal_texname);
 
 		material = mat;
 	}

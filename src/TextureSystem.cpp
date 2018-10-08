@@ -328,8 +328,8 @@ TextureSystem::LoadDataTexture(const std::string& filename)
 	ImageLoadDescription dsc;
 	dsc.filename = filename;
 	dsc.texture = CreateEmptyTextureObject();
-	dsc.format = GL_RGB;
-	dsc.internalFormat = GL_RGB8;
+	dsc.format = GL_RGBA;
+	dsc.internalFormat = GL_RGBA8;
 	dsc.requestMipmaps = true;
 	dsc.isHdr = false;
 
