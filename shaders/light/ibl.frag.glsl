@@ -23,6 +23,7 @@ PredefinedUniform(sampler2D, u_g_buffer_depth);
 
 uniform sampler2D u_irradiance;
 uniform sampler2D u_radiance;
+uniform sampler2D u_brdf_integration_map;
 
 PredefinedOutput(vec4, o_color);
 
@@ -77,6 +78,11 @@ void main()
         float sampleLoD = roughness * float(IBL_RADIANCE_MIPMAP_LAYERS - 1);
         vec3 prefiltered = textureLod(u_radiance, sphericalUvFromDirection(R), sampleLoD).rgb;
         specular = prefiltered * ggxBrdfApproximation(F, roughness, saturate(dot(N, V)));
+
+        // TODO: My current brdf integration map doesn't look exactly right.. too much fresnel
+        // and a little off on some other stuff. But the approximation works for now.
+        //vec2 AB = texture(u_brdf_integration_map, vec2(saturate(dot(N, V)), roughness)).xy;
+        //specular = prefiltered * (F * AB.x + AB.y);
     }
 
     vec3 diffuse;

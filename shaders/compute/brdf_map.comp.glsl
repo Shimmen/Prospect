@@ -26,19 +26,47 @@ vec3 ggxBrdfApproximation(vec3 specularColor, float roughness, float NdotV)
 void main()
 {
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = (vec2(pixelCoord) + vec2(0.5)) / vec2(imageSize(u_brdf_map));
+
+    float NdotV = uv.x;
+    float roughness = uv.y * uv.y;
+
+    const vec3 N = vec3(0.0, 0.0, 1.0);
+    vec3 V = vec3(sqrt(1.0 - NdotV * NdotV), 0.0, NdotV);
+
+    float A = 0.0;
+    float B = 0.0;
 
     const uint NUM_SAMPLES = 1024;
     for (int i = 0; i < NUM_SAMPLES; ++i)
     {
-        // ...
+        vec2 xi = hammersley(i, NUM_SAMPLES);
+        vec3 H = D_GGX_importanceSample(xi, N, roughness);
+        vec3 L = reflect(-V, H);
+
+        float LdotN = max(L.z, 0.0);
+
+        if (LdotN > 0.0)
+        {
+            float NdotV = max(V.z, 0.0);
+            float NdotL = max(L.z, 0.0);
+            float NdotH = max(H.z, 0.0);
+            float VdotH = max(dot(V, H), 0.0);
+
+            float G = G_SmithIBL(NdotV, NdotL, roughness);
+            float G_visibility = (G * VdotH) / (NdotH * NdotV);
+            float F = pow(1.0 - VdotH, 5.0);
+
+            A += (1.0 - F) * G_visibility;
+            B += F * G_visibility;
+        }
     }
 
-    //
-    // TODO: Calculate BRDF integration map for the specular BRDF defined in brdf.glsl!
-    //
+    A /= float(NUM_SAMPLES);
+    B /= float(NUM_SAMPLES);
 
-    vec2 uv = vec2(pixelCoord) / vec2(imageSize(u_brdf_map));
-    vec3 color = ggxBrdfApproximation(vec3(1.0), uv.y, uv.x);
+    //vec2 color = ggxBrdfApproximation(vec3(1.0), uv.y, uv.x).rg;
+    vec2 color = vec2(A, B);
 
-    imageStore(u_brdf_map, pixelCoord, vec4(color, 1.0));
+    imageStore(u_brdf_map, pixelCoord, vec4(color, 0.0, 1.0));
 }

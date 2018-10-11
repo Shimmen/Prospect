@@ -22,6 +22,15 @@ vec3 F_Schlick(float VdotH, vec3 f0) {
     return f0 + (vec3(1.0) - f0) * pow(1.0 - VdotH, 5.0);
 }
 
+float V_SmithGGXCorrelated(float NdotV, float NdotL, float a) {
+    float a2 = a * a;
+    float GGXL = NdotV * sqrt((-NdotL * a2 + NdotL) * NdotL + a2);
+    float GGXV = NdotL * sqrt((-NdotV * a2 + NdotV) * NdotV + a2);
+    return 0.5 / (GGXV + GGXL);
+}
+
+//
+
 // For when there is no single H-vector to "choose" from (such as for IBL)
 // From https://seblagarde.wordpress.com/2011/08/17/hello-world/
 vec3 F_SchlickRoughnessCompensating(float VdotN, vec3 f0, float roughness)
@@ -30,11 +39,19 @@ vec3 F_SchlickRoughnessCompensating(float VdotN, vec3 f0, float roughness)
     return f0 + (max(gloss, f0) - f0) * pow(1.0 - VdotN, 5.0);
 }
 
-float V_SmithGGXCorrelated(float NdotV, float NdotL, float a) {
-    float a2 = a * a;
-    float GGXL = NdotV * sqrt((-NdotL * a2 + NdotL) * NdotL + a2);
-    float GGXV = NdotL * sqrt((-NdotV * a2 + NdotV) * NdotV + a2);
-    return 0.5 / (GGXV + GGXL);
+// For baked BRDF in the IBL calculations
+float G_ShlickGGX(float NdotV, float roughness)
+{
+    float a = roughness; // should it really be roughness squared?!
+    float k = (a * a) / 2.0;
+    return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float G_SmithIBL(float NdotV, float NdotL, float roughness)
+{
+    float GGXV = G_ShlickGGX(NdotV, roughness);
+    float GGXL = G_ShlickGGX(NdotL, roughness);
+    return GGXV * GGXL;
 }
 
 //

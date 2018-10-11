@@ -85,6 +85,7 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 
 	glBindTextureUnit(5, scene.skyIrradiance);
 	glBindTextureUnit(6, scene.skyRadiance);
+	glBindTextureUnit(7, brdfIntegrationMap);
 
 	glBindVertexArray(emptyVertexArray);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -107,6 +108,9 @@ IBLPass::ProgramLoaded(GLuint program)
 
 	GLint locRadiance = glGetUniformLocation(iblProgram, "u_radiance");
 	glProgramUniform1i(iblProgram, locRadiance, 6);
+
+	GLint locBrdf = glGetUniformLocation(iblProgram, "u_brdf_integration_map");
+	glProgramUniform1i(iblProgram, locBrdf, 7);
 }
 
 void
