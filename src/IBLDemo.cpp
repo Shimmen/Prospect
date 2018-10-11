@@ -96,7 +96,9 @@ void IBLDemo::Init()
 	});
 
 	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
+
 	scene.skyIrradiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");
+	glTextureParameteri(scene.skyIrradiance, GL_TEXTURE_WRAP_S, GL_REPEAT); // TODO: move somewhere apropriate!
 
 	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }
