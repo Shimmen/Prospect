@@ -157,7 +157,7 @@ IBLPass::FilterRadianceMap(GLuint radianceMap)
 
 	glTextureParameteri(squareMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(squareMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTextureParameteri(squareMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(squareMap, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(squareMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	static GLuint *resizeProgram = ShaderSystem::AddComputeProgram("compute/resize.comp.glsl");
@@ -183,7 +183,7 @@ IBLPass::FilterRadianceMap(GLuint radianceMap)
 
 	glTextureParameteri(filteredMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(filteredMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	static GLuint *program = ShaderSystem::AddComputeProgram("compute/filter_radiance.comp.glsl");
