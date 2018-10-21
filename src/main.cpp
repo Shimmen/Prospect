@@ -31,6 +31,7 @@
 //
 
 std::unique_ptr<App> app;
+bool renderUI{ true };
 
 // Discards any frame time measuring and assumes everything runs at 60 FPS.
 // This can remove frame jittering in the case where sold 60 FPS is maintained.
@@ -107,10 +108,17 @@ void handle_global_key_commands(GLFWwindow* window, const Input& input)
 		glfwSetInputMode(window, GLFW_CURSOR, newMode);
 	}
 
+	// Enable/disable UI rendering
+	if (input.WasKeyPressed(GLFW_KEY_F2))
+	{
+		renderUI = !renderUI;
+	}
+
 	// Essentially reset everything back to startup state
 	if (input.WasKeyPressed(GLFW_KEY_ESCAPE))
 	{
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		renderUI = true;
 	}
 }
 
@@ -234,8 +242,15 @@ int main()
 		app->Draw(input, deltaTime, accumulatedTime);
 		accumulatedTime += deltaTime;
 
-		ImGui::Render();
-		GuiSystem::RenderDrawData(ImGui::GetDrawData());
+		if (renderUI)
+		{
+			ImGui::Render();
+			GuiSystem::RenderDrawData(ImGui::GetDrawData());
+		}
+		else
+		{
+			ImGui::EndFrame();
+		}
 
 		glfwSwapBuffers(window);
 	}
