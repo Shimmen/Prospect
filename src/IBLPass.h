@@ -18,11 +18,12 @@ public:
 private:
 
 	void CreateBrdfIntegrationMap();
-	GLuint FilterRadianceMap(GLuint radianceMap);
+	void FilterProbe(Probe& probe);
 
 	GLuint emptyVertexArray{ 0 };
 	GLuint iblProgram{ 0 };
 
 	GLuint brdfIntegrationMap{ 0 };
+	GLuint sphereSampleBuffer{ 0 };
 
 };

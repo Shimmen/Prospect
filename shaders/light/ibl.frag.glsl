@@ -21,9 +21,9 @@ PredefinedUniform(sampler2D, u_g_buffer_material);
 PredefinedUniform(sampler2D, u_g_buffer_normal);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
-uniform sampler2D u_irradiance;
 uniform sampler2D u_radiance;
 uniform sampler2D u_brdf_integration_map;
+uniform sampler2D u_irradiance_sh;
 
 PredefinedOutput(vec4, o_color);
 
@@ -90,8 +90,11 @@ void main()
         vec3 dir = world_from_view_dir * N;
         dir.y *= -1.0; // TODO: Fix image loading y-axis!
 
-        vec2 uv = sphericalUvFromDirection(dir);
-        diffuse = baseColor * texture(u_irradiance, uv).rgb;
+        vec3 irradiance = sampleSphericalHarmonic9(dir, u_irradiance_sh);
+        diffuse = baseColor * irradiance;
+
+        //vec2 uv = sphericalUvFromDirection(dir);
+        //diffuse = baseColor * texture(u_irradiance, uv).rgb;
     }
 
     vec3 kDiffuse = (vec3(1.0) - F) * vec3(1.0 - metallic);

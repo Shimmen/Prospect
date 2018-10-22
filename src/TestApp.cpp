@@ -82,7 +82,7 @@ void TestApp::Init()
 
 	shadowMap.RecreateGpuResources(8192);
 
-	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/blue_lagoon/blue_lagoon_2k.hdr");
+	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/blue_lagoon/blue_lagoon_2k.hdr");
 
 	DirectionalLight sunLight;
 	sunLight.worldDirection = glm::vec4(-0.2, -1.0, -0.2, 0);

@@ -82,7 +82,7 @@ void IBLDemo::Init()
 				sphere.transformID = id;
 
 				CompleteMaterial *material = new CompleteMaterial();
-				material->baseColorTexture = TextureSystem::CreatePlaceholder(0xFF, 0, 0);
+				material->baseColorTexture = TextureSystem::CreatePlaceholder(0xFF, 0xFF, 0xFF);
 				material->normalMap = TextureSystem::LoadDataTexture("assets/sponza/spnza_bricks_a_ddn.png");
 				MaterialFactory::ManageMaterial(material);
 
@@ -95,10 +95,10 @@ void IBLDemo::Init()
 		}
 	});
 
-	scene.skyTexture = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
+	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 
-	scene.skyIrradiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");
-	glTextureParameteri(scene.skyIrradiance, GL_TEXTURE_WRAP_S, GL_REPEAT); // TODO: move somewhere apropriate!
+	scene.skyProbe.diffuseIrradianceSh = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");
+	glTextureParameteri(scene.skyProbe.diffuseIrradianceSh, GL_TEXTURE_WRAP_S, GL_REPEAT); // TODO: move somewhere apropriate!
 
 	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }

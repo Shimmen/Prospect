@@ -77,4 +77,35 @@ vec2 hammersley(uint i, uint n)
     return vec2(xi0, xi1);
 }
 
+vec3 sampleSphericalHarmonic9(vec3 N, sampler2D shMap)
+{
+    float Y00     = 0.282095;
+    float Y11     = 0.488603 * N.x;
+    float Y10     = 0.488603 * N.z;
+    float Y1_1    = 0.488603 * N.y;
+    float Y21     = 1.092548 * N.x * N.z;
+    float Y2_1    = 1.092548 * N.y * N.z;
+    float Y2_2    = 1.092548 * N.y * N.x;
+    float Y20     = 0.946176 * N.z * N.z - 0.315392;
+    float Y22     = 0.546274 * (N.x * N.x - N.y * N.y);
+
+    float A0 = PI;
+    float A1 = 2.0 / 3.0 * PI;
+    float A2 = 1.0 / 4.0 * PI;
+
+    vec3 L00  = texelFetch(shMap, ivec2(0,0), 0).rgb;
+    vec3 L11  = texelFetch(shMap, ivec2(1,0), 0).rgb;
+    vec3 L10  = texelFetch(shMap, ivec2(2,0), 0).rgb;
+    vec3 L1_1 = texelFetch(shMap, ivec2(0,1), 0).rgb;
+    vec3 L21  = texelFetch(shMap, ivec2(1,1), 0).rgb;
+    vec3 L2_1 = texelFetch(shMap, ivec2(2,1), 0).rgb;
+    vec3 L2_2 = texelFetch(shMap, ivec2(0,2), 0).rgb;
+    vec3 L20  = texelFetch(shMap, ivec2(1,2), 0).rgb;
+    vec3 L22  = texelFetch(shMap, ivec2(2,2), 0).rgb;
+
+    return A0*Y00*L00
+        + A1*Y1_1*L1_1 + A1*Y10*L10 + A1*Y11*L11
+        + A2*Y2_2*L2_2 + A2*Y2_1*L2_1 + A2*Y20*L20 + A2*Y21*L21 + A2*Y22*L22;
+}
+
 #endif // COMMON_GLSL

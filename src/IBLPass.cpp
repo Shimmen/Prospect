@@ -28,14 +28,13 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	}
 
 	if (!brdfIntegrationMap) { CreateBrdfIntegrationMap(); }
-	if (!scene.skyIrradiance) { scene.skyIrradiance = TextureSystem::CreatePlaceholder(0xDD, 0xDD, 0xDD); }
-	if (!scene.skyRadiance) { scene.skyRadiance = TextureSystem::CreatePlaceholder(0xFF, 0xFF, 0xFF); }
+	if (!scene.skyProbe.diffuseIrradianceSh) { scene.skyProbe.diffuseIrradianceSh = TextureSystem::CreatePlaceholder(0xDD, 0xDD, 0xDD); }
+	if (!scene.skyProbe.filteredRadiance) { scene.skyProbe.filteredRadiance = TextureSystem::CreatePlaceholder(0xFF, 0xFF, 0xFF); }
 
 	static bool filteringPerformed = false;
 	if (!filteringPerformed && TextureSystem::IsIdle() && ModelSystem::IsIdle())
 	{
-		//scene.skyIrradiance = FilterIrradianceMap(scene.skyTexture); TODO!
-		scene.skyRadiance = FilterRadianceMap(scene.skyTexture);
+		FilterProbe(scene.skyProbe);
 		filteringPerformed = true;
 	}
 
@@ -43,14 +42,11 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	{
 		if (ImGui::Button("Perform filtering now!"))
 		{
-			scene.skyRadiance = FilterRadianceMap(scene.skyTexture);
+			FilterProbe(scene.skyProbe);
 		}
 
-		ImGui::Text("Diffuse irradiance");
-		GuiSystem::Texture(scene.skyIrradiance, 2.0f);
-
-		ImGui::Text("Specular radiance");
-		GuiSystem::Texture(scene.skyRadiance, 2.0f);
+		ImGui::Text("Filtered radiance");
+		GuiSystem::Texture(scene.skyProbe.filteredRadiance, 2.0f);
 
 		static bool overrideRoughness = false;
 		bool toggled = ImGui::Checkbox("Overide min roughness", &overrideRoughness);
@@ -61,11 +57,11 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 			ImGui::SliderFloat("Manual min roughness", &roughness, 0.0f, 1.0f);
 
 			float minLod = roughness * float(IBL_RADIANCE_MIPMAP_LAYERS - 1);
-			glTextureParameterf(scene.skyRadiance, GL_TEXTURE_MIN_LOD, minLod);
+			glTextureParameterf(scene.skyProbe.filteredRadiance, GL_TEXTURE_MIN_LOD, minLod);
 		}
 		else if (toggled)
 		{
-			glTextureParameterf(scene.skyRadiance, GL_TEXTURE_MIN_LOD, -1'000.0f);
+			glTextureParameterf(scene.skyProbe.filteredRadiance, GL_TEXTURE_MIN_LOD, -1'000.0f);
 		}
 
 		ImGui::Text("BRDF integration map");
@@ -83,8 +79,8 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	glBindTextureUnit(2, gBuffer.normalTexture);
 	glBindTextureUnit(3, gBuffer.depthTexture);
 
-	glBindTextureUnit(5, scene.skyIrradiance);
-	glBindTextureUnit(6, scene.skyRadiance);
+	glBindTextureUnit(5, scene.skyProbe.diffuseIrradianceSh);
+	glBindTextureUnit(6, scene.skyProbe.filteredRadiance);
 	glBindTextureUnit(7, brdfIntegrationMap);
 
 	glBindVertexArray(emptyVertexArray);
@@ -103,8 +99,8 @@ IBLPass::ProgramLoaded(GLuint program)
 	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
 	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
 
-	GLint locIrradiance = glGetUniformLocation(iblProgram, "u_irradiance");
-	glProgramUniform1i(iblProgram, locIrradiance, 5);
+	GLint locIrradianceSh = glGetUniformLocation(iblProgram, "u_irradiance_sh");
+	glProgramUniform1i(iblProgram, locIrradianceSh, 5);
 
 	GLint locRadiance = glGetUniformLocation(iblProgram, "u_radiance");
 	glProgramUniform1i(iblProgram, locRadiance, 6);
@@ -141,8 +137,8 @@ IBLPass::CreateBrdfIntegrationMap()
 	brdfIntegrationMap = map;
 }
 
-GLuint
-IBLPass::FilterRadianceMap(GLuint radianceMap)
+void
+IBLPass::FilterProbe(Probe& probe)
 {
 	const GLenum format = GL_RGBA16F;
 
@@ -163,7 +159,7 @@ IBLPass::FilterRadianceMap(GLuint radianceMap)
 	static GLuint *resizeProgram = ShaderSystem::AddComputeProgram("compute/resize.comp.glsl");
 
 	glProgramUniform1i(*resizeProgram, glGetUniformLocation(*resizeProgram, "u_source"), 0);
-	glBindTextureUnit(0, radianceMap);
+	glBindTextureUnit(0, probe.radiance);
 
 	glBindImageTexture(0, squareMap, 0, GL_FALSE, 0, GL_WRITE_ONLY, format);
 
@@ -173,38 +169,91 @@ IBLPass::FilterRadianceMap(GLuint radianceMap)
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	glGenerateTextureMipmap(squareMap);
 
-	//
-
-	const int numLevels = IBL_RADIANCE_MIPMAP_LAYERS;
-
-	GLuint filteredMap;
-	glCreateTextures(GL_TEXTURE_2D, 1, &filteredMap);
-	glTextureStorage2D(filteredMap, numLevels, format, IBL_RADIANCE_BASE_SIZE, IBL_RADIANCE_BASE_SIZE);
-
-	glTextureParameteri(filteredMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(filteredMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	static GLuint *program = ShaderSystem::AddComputeProgram("compute/filter_radiance.comp.glsl");
-	glUseProgram(*program);
-
-	glProgramUniform1i(*program, glGetUniformLocation(*program, "u_radiance"), 0);
-	glBindTextureUnit(0, squareMap);
-
-	GLint roughnessLocation = glGetUniformLocation(*program, "u_roughness");
-
-	for (int level = 0; level < numLevels; ++level)
+	// Filtered radiance
 	{
-		float roughness = float(level) / float(numLevels - 1);
+		const int numLevels = IBL_RADIANCE_MIPMAP_LAYERS;
 
-		glProgramUniform1f(*program, roughnessLocation, roughness);
-		glBindImageTexture(0, filteredMap, level, GL_FALSE, 0, GL_WRITE_ONLY, format);
+		GLuint filteredMap;
+		glCreateTextures(GL_TEXTURE_2D, 1, &filteredMap);
+		glTextureStorage2D(filteredMap, numLevels, format, IBL_RADIANCE_BASE_SIZE, IBL_RADIANCE_BASE_SIZE);
 
-		int textureSize = IBL_RADIANCE_BASE_SIZE / int(pow(2, level));
-		int localSize = IBL_RADIANCE_OPT_LOCAL_SIZE;
-		glDispatchCompute(textureSize / localSize, textureSize / localSize, 1);
+		glTextureParameteri(filteredMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(filteredMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		static GLuint *program = ShaderSystem::AddComputeProgram("compute/filter_radiance.comp.glsl");
+		glUseProgram(*program);
+
+		glProgramUniform1i(*program, glGetUniformLocation(*program, "u_radiance"), 0);
+		glBindTextureUnit(0, squareMap);
+
+		GLint roughnessLocation = glGetUniformLocation(*program, "u_roughness");
+
+		for (int level = 0; level < numLevels; ++level)
+		{
+			float roughness = float(level) / float(numLevels - 1);
+
+			glProgramUniform1f(*program, roughnessLocation, roughness);
+			glBindImageTexture(0, filteredMap, level, GL_FALSE, 0, GL_WRITE_ONLY, format);
+
+			int textureSize = IBL_RADIANCE_BASE_SIZE / int(pow(2, level));
+			int localSize = IBL_RADIANCE_OPT_LOCAL_SIZE;
+			glDispatchCompute(textureSize / localSize, textureSize / localSize, 1);
+		}
+
+		probe.filteredRadiance = filteredMap;
 	}
 
-	return filteredMap;
+	// Diffuse irradiance spherical harmonics
+	// TODO: Store in some better way than a texture?
+	{
+		GLuint shMap;
+		glCreateTextures(GL_TEXTURE_2D, 1, &shMap);
+		glTextureStorage2D(shMap, 1, GL_RGBA16F, 3, 3);
+
+		glTextureParameteri(shMap, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureParameteri(shMap, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(shMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(shMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		static GLuint *program = ShaderSystem::AddComputeProgram("compute/create_sh.comp.glsl");
+		glUseProgram(*program);
+
+		if (!sphereSampleBuffer)
+		{
+			std::default_random_engine rng{};
+			std::uniform_real_distribution<float> randomFloat{ -1.0f, 1.0f };
+
+			static float sampleData[SPHERE_SAMPLES_COUNT * 4];
+			for (int i = 0; i < SPHERE_SAMPLES_COUNT; ++i)
+			{
+				float x, y, z;
+				do
+				{
+					x = randomFloat(rng);
+					y = randomFloat(rng);
+					z = randomFloat(rng);
+				} while ((x * x + y * y + z * z) <= 1.0);
+
+				sampleData[4 * i + 0] = x;
+				sampleData[4 * i + 1] = y;
+				sampleData[4 * i + 2] = z;
+				// alpha for padding, so unusued!
+			}
+
+			glCreateBuffers(1, &sphereSampleBuffer);
+			glNamedBufferStorage(sphereSampleBuffer, sizeof(sampleData), sampleData, GL_DYNAMIC_STORAGE_BIT);
+			glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(SphereSampleBuffer), sphereSampleBuffer);
+		}
+
+		glProgramUniform1i(*program, glGetUniformLocation(*program, "u_radiance"), 0);
+		glBindTextureUnit(0, squareMap);
+
+		glBindImageTexture(0, shMap, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+		glDispatchCompute(1, 1, 1);
+
+		probe.diffuseIrradianceSh = shMap;
+	}
 }

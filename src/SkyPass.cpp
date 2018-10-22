@@ -27,7 +27,7 @@ SkyPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 
 	glUseProgram(skyProgram);
 	{
-		glBindTextureUnit(0, scene.skyTexture);
+		glBindTextureUnit(0, scene.skyProbe.radiance);
 
 		glBindVertexArray(emptyVertexArray);
 		glDrawArrays(GL_TRIANGLES, 0, 3);

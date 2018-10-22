@@ -3,6 +3,9 @@
 
 #define SHADOW_MAP_SEGMENT_MAX_COUNT (16)
 
+// How many samples (points in unit sphere) to be defined in the SphereSampleBuffer UBO
+#define SPHERE_SAMPLES_COUNT (4096)
+
 // How many layers in the filtered specular IBL roughness map do we want?
 #define IBL_RADIANCE_MIPMAP_LAYERS (7)
 

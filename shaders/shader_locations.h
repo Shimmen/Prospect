@@ -69,6 +69,8 @@
 
 #define BINDING_DirectionalLightBlock 2
 
+#define BINDING_SphereSampleBuffer 10
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #endif // SHADER_LOCATIONS_H
