@@ -25,6 +25,8 @@ void main()
 {
     for (int i = 0; i < SPHERE_SAMPLES_COUNT; ++i)
     {
+        // TODO: Scale by solid angle so all texels are equally significant!
+
         vec3 N = normalize(u_samples[i].xyz);
         vec2 sampleUv = sphericalUvFromDirection(N);
         vec3 L = texture(u_radiance, sampleUv).rgb;

@@ -6,12 +6,12 @@
 
 #include "Material.h"
 
-namespace MaterialFactory
+namespace MaterialSystem
 {
 	Material *CreateMaterial(const tinyobj::material_t& materialDescription, const std::string& baseDirectory);
 
 	void ManageMaterial(Material* material);
 
-	void DeleteManagedMaterials();
+	void Destroy();
 
 }

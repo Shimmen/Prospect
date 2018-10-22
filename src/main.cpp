@@ -18,7 +18,7 @@
 #include "ShaderSystem.h"
 #include "TextureSystem.h"
 #include "TransformSystem.h"
-#include "MaterialFactory.h"
+#include "MaterialSystem.h"
 
 #include "Input.h"
 #include "AppSelector.h"
@@ -256,12 +256,10 @@ int main()
 	}
 
 	// Destroy global systems (that need to be destroyed)
+	MaterialSystem::Destroy();
 	TextureSystem::Destroy();
 	ModelSystem::Destroy();
 	GuiSystem::Destroy();
-
-	// Delete managed resources
-	MaterialFactory::DeleteManagedMaterials();
 
 	glfwTerminate();
 }

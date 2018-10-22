@@ -1,4 +1,4 @@
-#include "MaterialFactory.h"
+#include "MaterialSystem.h"
 
 #include "TextureSystem.h"
 
@@ -17,7 +17,7 @@ static std::vector<Material *> managedMaterials{};
 //
 
 Material *
-MaterialFactory::CreateMaterial(const tinyobj::material_t& materialDescription, const std::string& baseDirectory)
+MaterialSystem::CreateMaterial(const tinyobj::material_t& materialDescription, const std::string& baseDirectory)
 {
 	//
 	// TODO: Create materials properly! Don't assume a certain material, do the best possible material given the supplied properties
@@ -53,13 +53,13 @@ MaterialFactory::CreateMaterial(const tinyobj::material_t& materialDescription, 
 }
 
 void
-MaterialFactory::ManageMaterial(Material* material)
+MaterialSystem::ManageMaterial(Material* material)
 {
 	managedMaterials.push_back(material);
 }
 
 void
-MaterialFactory::DeleteManagedMaterials()
+MaterialSystem::Destroy()
 {
 	for (Material *material : managedMaterials)
 	{

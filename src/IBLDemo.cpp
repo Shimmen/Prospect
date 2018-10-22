@@ -9,6 +9,7 @@
 #include "GuiSystem.h"
 #include "ShaderSystem.h"
 #include "TransformSystem.h"
+#include "MaterialSystem.h"
 #include "TextureSystem.h"
 #include "ModelSystem.h"
 
@@ -18,7 +19,6 @@
 #include "ShadowMap.h"
 
 #include "Scene.h"
-#include "MaterialFactory.h"
 #include "CompleteMaterial.h"
 
 #include "GeometryPass.h"
@@ -84,7 +84,7 @@ void IBLDemo::Init()
 				CompleteMaterial *material = new CompleteMaterial();
 				material->baseColorTexture = TextureSystem::CreatePlaceholder(0xFF, 0xFF, 0xFF);
 				material->normalMap = TextureSystem::LoadDataTexture("assets/sponza/spnza_bricks_a_ddn.png");
-				MaterialFactory::ManageMaterial(material);
+				MaterialSystem::ManageMaterial(material);
 
 				material->roughness = (float)y / (float)(gridSize - 1);
 				material->metallic = 1.0f - (float)x / (float)(gridSize - 1);
@@ -96,9 +96,6 @@ void IBLDemo::Init()
 	});
 
 	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
-
-	scene.skyProbe.diffuseIrradianceSh = TextureSystem::LoadHdrImage("assets/env/rooftop_night/irradiance.hdr");
-	glTextureParameteri(scene.skyProbe.diffuseIrradianceSh, GL_TEXTURE_WRAP_S, GL_REPEAT); // TODO: move somewhere apropriate!
 
 	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }

@@ -8,7 +8,7 @@
 
 #include "Maths.h"
 #include "Logging.h"
-#include "MaterialFactory.h"
+#include "MaterialSystem.h"
 
 //
 // Internal data structures
@@ -443,7 +443,7 @@ ModelSystem::Update()
 			// Register/create material (must be done here on the main thread!)
 			if (loadedModel.materialDefined)
 			{
-				model.material = MaterialFactory::CreateMaterial(loadedModel.materialDescription, loadedModel.baseDirectory);
+				model.material = MaterialSystem::CreateMaterial(loadedModel.materialDescription, loadedModel.baseDirectory);
 			}
 
 			models.emplace_back(model);
