@@ -63,6 +63,25 @@ vec3 directionFromSphericalUv(vec2 uv)
     );
 }
 
+void reortogonalize(in vec3 v0, inout vec3 v1)
+{
+	// Perform Gram-Schmidt's re-ortogonalization process to make v1 orthagonal to v0
+	v1 = normalize(v1 - dot(v1, v0) * v0);
+}
+
+mat3 createTbnMatrix(vec3 tangent, vec3 bitangent, vec3 normal)
+{
+    reortogonalize(normal, tangent);
+    reortogonalize(tangent, bitangent);
+    reortogonalize(bitangent, normal);
+
+    tangent = normalize(tangent);
+    bitangent = normalize(bitangent);
+    normal = normalize(normal);
+
+    return mat3(tangent, bitangent, normal);
+}
+
 vec2 hammersley(uint i, uint n)
 {
     uint bits = i;

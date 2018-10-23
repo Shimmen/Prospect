@@ -1,5 +1,7 @@
 #version 460
 
+#include <common.glsl>
+
 #include <shader_locations.h>
 #include <camera_uniforms.h>
 
