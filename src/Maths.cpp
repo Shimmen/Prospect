@@ -1,5 +1,7 @@
 #include "Maths.h"
 
+#include <cmath>
+
 void
 ExtractFrustumPlanes(const glm::mat4 & matrix, std::array<glm::vec4, 6>& planes)
 {
@@ -56,6 +58,12 @@ NormalizePlane(glm::vec4& plane)
 {
 	float length = std::sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
 	plane *= 1.0f / length;
+}
+
+float
+VectorMaxComponent(const glm::vec3& vector)
+{
+	return std::max(std::max(vector.x, vector.y), vector.z);
 }
 
 bool

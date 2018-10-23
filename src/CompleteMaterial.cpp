@@ -19,8 +19,8 @@ CompleteMaterial::ProgramLoaded(GLuint program)
 		normalMatrixLocation = glGetUniformLocation(program, "u_world_from_tangent");
 
 		baseColorLocation = glGetUniformLocation(program, "u_base_color");
-		roughnessLocation = glGetUniformLocation(program, "u_roughness");
-		metallicLocation = glGetUniformLocation(program, "u_metallic");
+		roughnessMapLocation = glGetUniformLocation(program, "u_roughness_map");
+		metallicMapLocation = glGetUniformLocation(program, "u_metallic_map");
 		normalMapLocation = glGetUniformLocation(program, "u_normal_map");
 	}
 }
@@ -49,6 +49,11 @@ CompleteMaterial::BindUniforms(Transform& transform) const
 	glBindTextureUnit(normalMapUnit, normalMap);
 	glUniform1i(normalMapLocation, normalMapUnit);
 
-	glUniform1f(roughnessLocation, roughness);
-	glUniform1f(metallicLocation, metallic);
+	const GLuint roughnessMapUnit = 2;
+	glBindTextureUnit(roughnessMapUnit, roughnessMap);
+	glUniform1i(roughnessMapLocation, roughnessMapUnit);
+
+	const GLuint metallicMapUnit = 2;
+	glBindTextureUnit(metallicMapUnit, metallicMap);
+	glUniform1i(metallicMapLocation, metallicMapUnit);
 }

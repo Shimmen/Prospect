@@ -10,12 +10,10 @@ struct CompleteMaterial : public Material
 	CompleteMaterial();
 	~CompleteMaterial() = default;
 
-	// TODO: Replace these with textures later!
-	float roughness;
-	float metallic;
-
 	mutable GLuint baseColorTexture{};
 	mutable GLuint normalMap{};
+	mutable GLuint roughnessMap{};
+	mutable GLuint metallicMap{};
 
 	virtual void ProgramLoaded(GLuint program) override;
 	virtual void BindUniforms(Transform& transform) const override;
@@ -23,8 +21,8 @@ struct CompleteMaterial : public Material
 private:
 
 	GLint baseColorLocation;
-	GLint roughnessLocation;
-	GLint metallicLocation;
+	GLint roughnessMapLocation;
+	GLint metallicMapLocation;
 	GLint normalMapLocation;
 
 	GLint modelMatrixLocation;

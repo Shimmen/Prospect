@@ -44,6 +44,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		auto transform = TransformSystem::Get(model.transformID);
 		BoundingSphere worldSpaceBounds = model.bounds;
 		worldSpaceBounds.center += transform.position;
+		worldSpaceBounds.radius *= VectorMaxComponent(transform.scale);
 		if (!InsideFrustum(frustumPlanes, worldSpaceBounds)) continue;
 
 		geometryToRender.emplace_back(model);

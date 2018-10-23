@@ -1,0 +1,11 @@
+#
+# cerberus.mtl
+#
+newmtl gun_material
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+Tr 0.000000
+map_Kd textures/Cerberus_A.jpg
+map_Pr textures/Cerberus_R.jpg
+map_Pm textures/Cerberus_M.jpg
+norm   textures/Cerberus_N.jpg

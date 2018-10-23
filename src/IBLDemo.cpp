@@ -19,6 +19,7 @@
 #include "ShadowMap.h"
 
 #include "Scene.h"
+#include "BasicMaterial.h"
 #include "CompleteMaterial.h"
 
 #include "GeometryPass.h"
@@ -81,18 +82,31 @@ void IBLDemo::Init()
 				Model sphere = model;
 				sphere.transformID = id;
 
-				CompleteMaterial *material = new CompleteMaterial();
-				material->baseColorTexture = TextureSystem::CreatePlaceholder(0xFF, 0xFF, 0xFF);
-				material->normalMap = TextureSystem::LoadDataTexture("assets/sponza/spnza_bricks_a_ddn.png");
+				BasicMaterial *material = new BasicMaterial();
 				MaterialSystem::ManageMaterial(material);
 
+				material->baseColor = { 1.0, 1.0, 1.0 };
 				material->roughness = (float)y / (float)(gridSize - 1);
 				material->metallic = 1.0f - (float)x / (float)(gridSize - 1);
-				sphere.material = material;
 
+				sphere.material = material;
 				scene.models.emplace_back(sphere);
 			}
 		}
+	});
+
+	ModelSystem::LoadModel("assets/cerberus/cerberus.obj", [&](std::vector<Model> models) {
+		assert(models.size() == 1);
+		Model model = models[0];
+
+		int id = TransformSystem::Create();
+		TransformSystem::Get(id)
+			.SetPosition(35.0f, 10.0f, -10.0f)
+			.SetScale(20.0f);
+		TransformSystem::UpdateMatrices(id);
+		model.transformID = id;
+
+		scene.models.emplace_back(model);
 	});
 
 	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");

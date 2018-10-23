@@ -24,12 +24,19 @@ MaterialSystem::CreateMaterial(const tinyobj::material_t& materialDescription, c
 	//
 	Material *material;
 
-	if (!materialDescription.diffuse_texname.empty() && !materialDescription.normal_texname.empty())
+	bool hasDiffuseTex = !materialDescription.diffuse_texname.empty();
+	bool hasNormalMap = !materialDescription.normal_texname.empty();
+	bool hasRoughnessMap = !materialDescription.roughness_texname.empty();
+	bool hasMetallicMap = !materialDescription.metallic_texname.empty();
+
+	if (hasDiffuseTex && hasNormalMap && hasRoughnessMap && hasMetallicMap)
 	{
 		auto mat = new CompleteMaterial();
 
 		mat->baseColorTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
 		mat->normalMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.normal_texname);
+		mat->roughnessMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.roughness_texname);
+		mat->metallicMap= TextureSystem::LoadDataTexture(baseDirectory + materialDescription.metallic_texname);
 
 		material = mat;
 	}

@@ -52,7 +52,7 @@ struct Transform
 		// From: https://gamedev.stackexchange.com/questions/149006/direction-vector-to-quaternion
 
 		// Switch x and z if 90° off!
-		float halfAngle = atan2(x, z) / 2.0f;;
+		float halfAngle = atan2(x, z) / 2.0f;
 
 		orientation.x = 0.0f;
 		orientation.y = sin(halfAngle);

@@ -13,8 +13,8 @@ in vec3 v_bitangent;
 
 uniform sampler2D u_base_color;
 uniform sampler2D u_normal_map;
-uniform float u_roughness;
-uniform float u_metallic;
+uniform sampler2D u_roughness_map;
+uniform sampler2D u_metallic_map;
 
 PredefinedOutput(vec4, o_g_buffer_albedo);
 PredefinedOutput(vec4, o_g_buffer_material);
@@ -23,7 +23,10 @@ PredefinedOutput(vec4, o_g_buffer_normal);
 void main()
 {
     o_g_buffer_albedo = texture(u_base_color, v_tex_coord);
-    o_g_buffer_material = vec4(u_roughness, u_metallic, 1.0, 1.0);
+
+    float roughness = 1.0 - texture(u_roughness_map, v_tex_coord).r;
+    float metallic = texture(u_metallic_map, v_tex_coord).r;
+    o_g_buffer_material = vec4(roughness, metallic, 1.0, 1.0);
 
     vec3 mapped_normal = unpackNormal(texture(u_normal_map, v_tex_coord).xyz);
     mapped_normal.y *= -1.0; // (flip normal y to get correct up-axis)
