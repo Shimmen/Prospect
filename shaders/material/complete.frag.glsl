@@ -24,7 +24,7 @@ void main()
 {
     o_g_buffer_albedo = texture(u_base_color, v_tex_coord);
 
-    float roughness = 1.0 - texture(u_roughness_map, v_tex_coord).r;
+    float roughness = texture(u_roughness_map, v_tex_coord).r;
     float metallic = texture(u_metallic_map, v_tex_coord).r;
     o_g_buffer_material = vec4(roughness, metallic, 1.0, 1.0);
 

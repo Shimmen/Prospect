@@ -53,7 +53,7 @@ CompleteMaterial::BindUniforms(Transform& transform) const
 	glBindTextureUnit(roughnessMapUnit, roughnessMap);
 	glUniform1i(roughnessMapLocation, roughnessMapUnit);
 
-	const GLuint metallicMapUnit = 2;
+	const GLuint metallicMapUnit = 3;
 	glBindTextureUnit(metallicMapUnit, metallicMap);
 	glUniform1i(metallicMapLocation, metallicMapUnit);
 }
