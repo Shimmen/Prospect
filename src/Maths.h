@@ -10,6 +10,8 @@ struct BoundingSphere
 	float radius;
 };
 
+glm::vec3 SrgbColor(float r, float g, float b);
+
 void ExtractFrustumPlanes(const glm::mat4& matrix, std::array<glm::vec4, 6>& planes);
 void NormalizePlane(glm::vec4& plane);
 

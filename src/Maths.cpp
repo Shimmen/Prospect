@@ -2,6 +2,13 @@
 
 #include <cmath>
 
+glm::vec3
+SrgbColor(float r, float g, float b)
+{
+	glm::vec3 sRGB = glm::pow({ r, g, b }, glm::vec3(2.2f));
+	return sRGB;
+}
+
 void
 ExtractFrustumPlanes(const glm::mat4 & matrix, std::array<glm::vec4, 6>& planes)
 {

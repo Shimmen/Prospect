@@ -85,7 +85,7 @@ void IBLDemo::Init()
 				BasicMaterial *material = new BasicMaterial();
 				MaterialSystem::ManageMaterial(material);
 
-				material->baseColor = { 1.0, 1.0, 1.0 };
+				material->baseColor = SrgbColor(1.0, 1.0, 1.0);
 				material->roughness = (float)y / (float)(gridSize - 1);
 				material->metallic = 1.0f - (float)x / (float)(gridSize - 1);
 
