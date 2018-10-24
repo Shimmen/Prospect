@@ -90,8 +90,8 @@ void main()
         vec3 dir = world_from_view_dir * N;
         dir.y *= -1.0; // TODO: Fix image loading y-axis!
 
-        vec3 irradiance = sampleSphericalHarmonic9(dir, u_irradiance_sh);
-        diffuse = baseColor * irradiance;
+        vec3 irradiance = sampleShIrradiance(dir, u_irradiance_sh);
+        diffuse = baseColor * irradiance / PI;
 
         //vec2 uv = sphericalUvFromDirection(dir);
         //diffuse = baseColor * texture(u_irradiance, uv).rgb;

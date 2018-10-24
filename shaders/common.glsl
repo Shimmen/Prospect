@@ -96,8 +96,9 @@ vec2 hammersley(uint i, uint n)
     return vec2(xi0, xi1);
 }
 
-vec3 sampleSphericalHarmonic9(vec3 N, sampler2D shMap)
+vec3 sampleShIrradiance(vec3 N, sampler2D shMap)
 {
+    // SH basis
     float Y00     = 0.282095;
     float Y11     = 0.488603 * N.x;
     float Y10     = 0.488603 * N.z;
@@ -108,10 +109,7 @@ vec3 sampleSphericalHarmonic9(vec3 N, sampler2D shMap)
     float Y20     = 0.946176 * N.z * N.z - 0.315392;
     float Y22     = 0.546274 * (N.x * N.x - N.y * N.y);
 
-    float A0 = PI;
-    float A1 = 2.0 / 3.0 * PI;
-    float A2 = 1.0 / 4.0 * PI;
-
+    // SH coefficients as RGB
     vec3 L00  = texelFetch(shMap, ivec2(0,0), 0).rgb;
     vec3 L11  = texelFetch(shMap, ivec2(1,0), 0).rgb;
     vec3 L10  = texelFetch(shMap, ivec2(2,0), 0).rgb;
@@ -121,6 +119,12 @@ vec3 sampleSphericalHarmonic9(vec3 N, sampler2D shMap)
     vec3 L2_2 = texelFetch(shMap, ivec2(0,2), 0).rgb;
     vec3 L20  = texelFetch(shMap, ivec2(1,2), 0).rgb;
     vec3 L22  = texelFetch(shMap, ivec2(2,2), 0).rgb;
+
+    // Used for extracting irradiance from the SH, see paper:
+    // https://graphics.stanford.edu/papers/envmap/envmap.pdf
+    float A0 = PI;
+    float A1 = 2.0 / 3.0 * PI;
+    float A2 = 1.0 / 4.0 * PI;
 
     return A0*Y00*L00
         + A1*Y1_1*L1_1 + A1*Y10*L10 + A1*Y11*L11
