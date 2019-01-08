@@ -345,6 +345,106 @@ ShaderSystem::AddProgram(const std::string& vertName, const std::string& fragNam
 
 }
 
+void
+ShaderSystem::AddProgram(GLuint** programOut, const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant)
+{
+	std::string fullName = vertName + "_" + fragName;
+	if (managedPrograms.find(fullName) == managedPrograms.end())
+	{
+		Program program;
+		program.fixedLocation = nextPublicHandleIndex++;
+
+		Shader vertexShader(GL_VERTEX_SHADER, vertName);
+		program.shaders.push_back(vertexShader);
+
+		// Since there can be programs without fragment shaders, consider it optional
+		bool includeFragShader = FileReadable(fragName);
+		if (includeFragShader)
+		{
+			Shader fragmentShader(GL_FRAGMENT_SHADER, fragName);
+			program.shaders.push_back(fragmentShader);
+		}
+
+		AddManagedFile(vertName, program);
+		if (includeFragShader) AddManagedFile(fragName, program);
+
+		if (shaderDependant)
+		{
+			dependantObjects[program.fixedLocation].emplace(shaderDependant);
+		}
+
+		managedPrograms[fullName] = program.fixedLocation;
+		*programOut = &publicProgramHandles[program.fixedLocation];
+
+		// Trigger the initial load
+		UpdateProgram(program);
+	}
+	else
+	{
+		// If this exact program is already added (i.e. same vert & frag names), return that address instead
+		size_t fixedLocation = managedPrograms[fullName];
+		*programOut = &publicProgramHandles[fixedLocation];
+
+		if (shaderDependant)
+		{
+			dependantObjects[fixedLocation].emplace(shaderDependant);
+
+			// Since this exact program is added previously there is a chance that it's already loaded.
+			// If it is, call program loaded immediately so that it can perform its initial setup.
+			GLuint program = publicProgramHandles[fixedLocation];
+			if (program)
+			{
+				shaderDependant->ProgramLoaded(program);
+			}
+
+		}
+	}
+}
+
+void
+ShaderSystem::AddComputeProgram(GLuint** programOut, const std::string& name, ShaderDepandant *shaderDependant)
+{
+	if (managedPrograms.find(name) == managedPrograms.end())
+	{
+		Program program;
+		program.fixedLocation = nextPublicHandleIndex++;
+
+		Shader shader(GL_COMPUTE_SHADER, name);
+		program.shaders.push_back(shader);
+
+		AddManagedFile(name, program);
+
+		if (shaderDependant)
+		{
+			dependantObjects[program.fixedLocation].emplace(shaderDependant);
+		}
+
+		managedPrograms[name] = program.fixedLocation;
+		*programOut = &publicProgramHandles[program.fixedLocation];
+
+		// Trigger the initial load
+		UpdateProgram(program);
+	}
+	else
+	{
+		size_t fixedLocation = managedPrograms[name];
+		*programOut = &publicProgramHandles[fixedLocation];
+
+		if (shaderDependant)
+		{
+			dependantObjects[fixedLocation].emplace(shaderDependant);
+
+			// Since this exact program is added previously there is a chance that it's already loaded.
+			// If it is, call program loaded immediately so that it can perform its initial setup.
+			GLuint program = publicProgramHandles[fixedLocation];
+			if (program)
+			{
+				shaderDependant->ProgramLoaded(program);
+			}
+		}
+	}
+}
+
 GLuint *
 ShaderSystem::AddComputeProgram(const std::string& name, ShaderDepandant* shaderDependant)
 {

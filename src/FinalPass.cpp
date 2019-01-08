@@ -8,7 +8,7 @@
 #include "shader_locations.h"
 
 void
-FinalPass::Draw(const LightBuffer& lightBuffer)
+FinalPass::Draw(const LightBuffer& lightBuffer, const BloomPass& bloomPass)
 {
 	if (!emptyVertexArray)
 	{
@@ -30,11 +30,28 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 		float lastGamma = 0.0f;
 		static float gamma = 2.2f;
 
+		static float lastBloomLevels[5] = { 0 };
+		static float bloomLevels[5];
+		static bool useBloom = false;
+
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{
 			ImGui::SliderFloat("Exposure", &exposure, 0.0f, 32.0f, "%.1f");
 			ImGui::SliderFloat("Vignette amount", &vignette, 0.0f, 2.0f, "%.2f");
 			ImGui::SliderFloat("Gamma", &gamma, 0.1f, 4.0f, "%.1f");
+
+			if (ImGui::TreeNode("Bloom levels"))
+			{
+				ImGui::Checkbox("Use bloom", &useBloom);
+				ImGui::Text("Bloom levels:");
+				ImGui::SliderFloat("L0", &bloomLevels[0], 0.0f, 1.0f, "%.3f", 3.0f);
+				ImGui::SliderFloat("L1", &bloomLevels[1], 0.0f, 1.0f, "%.3f", 3.0f);
+				ImGui::SliderFloat("L2", &bloomLevels[2], 0.0f, 1.0f, "%.3f", 3.0f);
+				ImGui::SliderFloat("L3", &bloomLevels[3], 0.0f, 1.0f, "%.3f", 3.0f);
+				ImGui::SliderFloat("L4", &bloomLevels[4], 0.0f, 1.0f, "%.3f", 3.0f);
+
+				ImGui::TreePop();
+			}
 		}
 
 		if (exposure != lastExposure)
@@ -57,6 +74,15 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 			glProgramUniform1f(finalProgram, loc, gamma);
 			lastGamma = gamma;
 		}
+
+		{
+			for (int i = 0; i < bloomPass.numBlurLevels; i++)
+			{
+				bloomLevels[i] *= float(useBloom);
+			}
+			GLint loc = glGetUniformLocation(finalProgram, "u_bloom_levels[0]");
+			glProgramUniform1fv(finalProgram, loc, bloomPass.numBlurLevels, bloomLevels);
+		}
 	}
 	
 	glDisable(GL_BLEND);
@@ -68,6 +94,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer)
 	glUseProgram(finalProgram);
 	{
 		glBindTextureUnit(0, lightBuffer.lightTexture);
+		glBindTextureUnit(1, bloomPass.bloomResults);
 
 		glBindVertexArray(emptyVertexArray);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -80,6 +107,7 @@ void FinalPass::ProgramLoaded(GLuint program)
 {
 	finalProgram = program;
 	glProgramUniform1i(finalProgram, PredefinedUniformLocation(u_texture), 0);
+	glProgramUniform1i(finalProgram, glGetUniformLocation(finalProgram, "u_bloom_texture"), 1);
 }
 
 

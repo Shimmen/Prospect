@@ -38,5 +38,8 @@ namespace ShaderSystem
 	// Supply a shader depandant if there is some object that should be updated with this program
 	GLuint* AddProgram(const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant = nullptr);
 
+	void AddProgram(GLuint** programOut, const std::string& vertName, const std::string& fragName, ShaderDepandant *shaderDependant = nullptr);
+	void AddComputeProgram(GLuint** programOut, const std::string& name, ShaderDepandant *shaderDependant = nullptr);
+
 	GLuint* AddComputeProgram(const std::string& name, ShaderDepandant *shaderDependant = nullptr);
 }

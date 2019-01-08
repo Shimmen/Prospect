@@ -15,6 +15,11 @@ vec3 rgbFromColor(Color color)
     return vec3(color.rgb * y);
 }
 
+float luminance(vec3 color)
+{
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+}
+
 vec3 packNormal(vec3 normal)
 {
     return normalize(normal) * vec3(0.5) + vec3(0.5);

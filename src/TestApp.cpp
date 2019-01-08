@@ -21,6 +21,7 @@
 
 #include "GeometryPass.h"
 #include "ShadowPass.h"
+#include "BloomPass.h"
 #include "LightPass.h"
 #include "FinalPass.h"
 #include "SkyPass.h"
@@ -46,6 +47,7 @@ namespace
 	ShadowPass shadowPass;
 	LightPass lightPass;
 	SkyPass skyPass;
+	BloomPass bloomPass;
 	FinalPass finalPass;
 };
 
@@ -139,8 +141,8 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	shadowPass.Draw(shadowMap, scene);
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
 	skyPass.Draw(lightBuffer, scene);
-
-	finalPass.Draw(lightBuffer);
+	bloomPass.Draw(lightBuffer);
+	finalPass.Draw(lightBuffer, bloomPass);
 
 	ImGui::End();
 }
