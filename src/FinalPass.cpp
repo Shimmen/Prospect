@@ -6,9 +6,10 @@
 #include "ShaderSystem.h"
 
 #include "shader_locations.h"
+#include <imgui_internal.h>
 
 void
-FinalPass::Draw(const LightBuffer& lightBuffer, const BloomPass& bloomPass)
+FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 {
 	if (!emptyVertexArray)
 	{
@@ -22,7 +23,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer, const BloomPass& bloomPass)
 
 	{
 		float lastExposure = 0.0f;
-		static float exposure = 1.0f;
+		static float exposure = 5.0f;
 
 		float lastVignette = 0.0f;
 		static float vignette = 0.25f;
@@ -30,28 +31,17 @@ FinalPass::Draw(const LightBuffer& lightBuffer, const BloomPass& bloomPass)
 		float lastGamma = 0.0f;
 		static float gamma = 2.2f;
 
-		static float lastBloomLevels[5] = { 0 };
-		static float bloomLevels[5];
-		static bool useBloom = false;
+		float lastBloomAmount = 0.0f;
+		static float bloomAmount = 0.04f;
 
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{
 			ImGui::SliderFloat("Exposure", &exposure, 0.0f, 32.0f, "%.1f");
 			ImGui::SliderFloat("Vignette amount", &vignette, 0.0f, 2.0f, "%.2f");
 			ImGui::SliderFloat("Gamma", &gamma, 0.1f, 4.0f, "%.1f");
-
-			if (ImGui::TreeNode("Bloom levels"))
-			{
-				ImGui::Checkbox("Use bloom", &useBloom);
-				ImGui::Text("Bloom levels:");
-				ImGui::SliderFloat("L0", &bloomLevels[0], 0.0f, 1.0f, "%.3f", 3.0f);
-				ImGui::SliderFloat("L1", &bloomLevels[1], 0.0f, 1.0f, "%.3f", 3.0f);
-				ImGui::SliderFloat("L2", &bloomLevels[2], 0.0f, 1.0f, "%.3f", 3.0f);
-				ImGui::SliderFloat("L3", &bloomLevels[3], 0.0f, 1.0f, "%.3f", 3.0f);
-				ImGui::SliderFloat("L4", &bloomLevels[4], 0.0f, 1.0f, "%.3f", 3.0f);
-
-				ImGui::TreePop();
-			}
+			ImGui::VerticalSeparator();
+			ImGui::SliderFloat("Bloom blur radius", &bloomPass.blurRadius, 0.0f, 0.02f, "%.6f", 3.0f);
+			ImGui::SliderFloat("Bloom amount", &bloomAmount, 0.0f, 1.0f, "%.3f");
 		}
 
 		if (exposure != lastExposure)
@@ -75,16 +65,14 @@ FinalPass::Draw(const LightBuffer& lightBuffer, const BloomPass& bloomPass)
 			lastGamma = gamma;
 		}
 
+		if (bloomAmount != lastBloomAmount)
 		{
-			for (int i = 0; i < bloomPass.numBlurLevels; i++)
-			{
-				bloomLevels[i] *= float(useBloom);
-			}
-			GLint loc = glGetUniformLocation(finalProgram, "u_bloom_levels[0]");
-			glProgramUniform1fv(finalProgram, loc, bloomPass.numBlurLevels, bloomLevels);
+			GLint loc = glGetUniformLocation(finalProgram, "u_bloom_amount");
+			glProgramUniform1f(finalProgram, loc, bloomAmount);
+			lastBloomAmount = bloomAmount;
 		}
 	}
-	
+
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 

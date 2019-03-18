@@ -1,7 +1,5 @@
 #include "BloomPass.h"
 
-#include <imgui.h>
-
 #include "GuiSystem.h"
 #include "ShaderSystem.h"
 
@@ -10,167 +8,167 @@
 void
 BloomPass::Draw(const LightBuffer& lightBuffer)
 {
-	static bool isSetup = false;
-	if (!isSetup)
+	static int lastW = 0;
+	static int lastH = 0;
+	if (lastW != lightBuffer.width || lastH != lightBuffer.height)
 	{
-		Setup();
-		isSetup = true;
-	}
-
-	GLuint highPassed = GetHighPassedLightBuffer(lightBuffer, threshold);
-
-	if (ImGui::CollapsingHeader("Bloom"))
-	{
-		ImGui::SliderFloat("Threshold", &threshold, 0.0f, 100.0f);
-		GuiSystem::Texture(highPassed);
+		Setup(lightBuffer.width, lightBuffer.height);
+		lastW = lightBuffer.width;
+		lastH = lightBuffer.height;
 	}
 
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
-	for (int i = 0; i < 10; ++i)
+	// Render light buffer to mip0 of the sampling texture
 	{
-		glUseProgram(*blurHorizontalProgram);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, downsamplingFramebuffers[0]);
+		glUseProgram(*blitProgram);
+		glBindTextureUnit(0, lightBuffer.lightTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+	}
+
+	glBindTextureUnit(0, downsamplingTexture);
+
+	static std::vector<glm::ivec2> targetSizes;
+	targetSizes.resize(numDownsamples + 1);
+
+	targetSizes[0] = { lightBuffer.width, lightBuffer.height };
+
+	// Iteratively downsample down to the lowest mip level
+	{
+		glUseProgram(*downsampleProgram);
+
+		for (int targetMip = 1; targetMip <= numDownsamples; ++targetMip)
 		{
-			if (i == 0)
+			// See answer for NPOT texture mip sizes: https://computergraphics.stackexchange.com/a/1444
+			// I.e., use integer division and discard the rest. Using NPOT textures won't be optimal for
+			// this task, but hopefully it works fine anyway.
+			targetSizes[targetMip] = targetSizes[targetMip - 1] / glm::ivec2(2);
+			
+			int width = targetSizes[targetMip].x;
+			int height = targetSizes[targetMip].y;
+
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, downsamplingFramebuffers[targetMip]);
+			glViewport(0, 0, width, height);
+
+			glProgramUniform2f(*downsampleProgram, dsTargetTexelSizeLoc, 1.0f / width, 1.0f / height);
+			glProgramUniform1i(*downsampleProgram, dsTargetLodLoc, targetMip);
+
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+		}
+	}
+
+	// Iteratively upsample back to mip0
+	{
+		glUseProgram(*upsampleProgram);
+		glProgramUniform1f(*upsampleProgram, usBlurRadiusLoc, blurRadius);
+
+		for (int targetMip = numDownsamples - 1; targetMip >= 0; --targetMip)
+		{
+			if (targetMip == numDownsamples - 1)
 			{
-				glBindTextureUnit(0, highPassed);
+				glProgramUniform1i(*upsampleProgram, glGetUniformLocation(*upsampleProgram, "u_texture_to_blur"), 0);
 			}
 			else
 			{
-				glBindTextureUnit(0, bloomTextures[1]);
+				// Yes, this is the same texture that we draw to but we don't draw to the same mip as we read from
+				glProgramUniform1i(*upsampleProgram, glGetUniformLocation(*upsampleProgram, "u_texture_to_blur"), 1);
+				glBindTextureUnit(1, upsamplingTexture);
 			}
 
-			int size = blurBaseSize;
-			for (int lod = 0; lod < numBlurLevels; ++lod)
-			{
-				int fbIdx = lod;
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffers[fbIdx]);
-				glViewport(0, 0, size, size);
+			int width = targetSizes[targetMip].x;
+			int height = targetSizes[targetMip].y;
 
-				glUniform1f(blurHtextureSizeLoc, float(size));
-				glUniform1f(blurHtextureLodLoc, float(lod));
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, upsamplingFramebuffers[targetMip]);
+			glViewport(0, 0, width, height);
 
-				glBindVertexArray(emptyVertexArray);
-				glDrawArrays(GL_TRIANGLES, 0, 3);
+			glProgramUniform1f(*upsampleProgram, usTexelAspectLoc, float(width) / float(height));
+			glProgramUniform1i(*upsampleProgram, usTargetLodLoc, targetMip);
 
-				size /= 2;
-			}
-		}
-
-		glUseProgram(*blurVerticalProgram);
-		{
-			glBindTextureUnit(0, bloomTextures[0]);
-
-			int size = blurBaseSize;
-			for (int lod = 0; lod < numBlurLevels; ++lod)
-			{
-				int fbIdx = numBlurLevels + lod;
-				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffers[fbIdx]);
-				glViewport(0, 0, size, size);
-
-				glUniform1f(blurVtextureSizeLoc, float(size));
-				glUniform1f(blurVtextureLodLoc, float(lod));
-
-				glBindVertexArray(emptyVertexArray);
-				glDrawArrays(GL_TRIANGLES, 0, 3);
-
-				size /= 2;
-			}
+			glDrawArrays(GL_TRIANGLES, 0, 3);
 		}
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
+
+	// Make alias for the bloom results texture
+	bloomResults = upsamplingTexture;
+}
+
+void BloomPass::Setup(int width, int height)
+{
+	ShaderSystem::AddProgram(&blitProgram, "quad.vert.glsl", "blit.frag.glsl", this);
+	ShaderSystem::AddProgram(&downsampleProgram, "quad.vert.glsl", "post/bloom_downsample.frag.glsl", this);
+	ShaderSystem::AddProgram(&upsampleProgram, "quad.vert.glsl", "post/bloom_upsample.frag.glsl", this);
+
+	glCreateVertexArrays(1, &emptyVertexArray);
+
+	int numLevelsNeeded = numDownsamples + 1;
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &downsamplingTexture);
+	{
+		glTextureStorage2D(downsamplingTexture, numLevelsNeeded, GL_RGBA16F, width, height);
+
+		glTextureParameteri(downsamplingTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		glTextureParameteri(downsamplingTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glTextureParameteri(downsamplingTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(downsamplingTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	// Need to write to each of the levels for the initial copy and subsequent resamplings
+	downsamplingFramebuffers.resize(numLevelsNeeded);
+	glCreateFramebuffers(numLevelsNeeded, downsamplingFramebuffers.data());
+
+	for (int level = 0; level < numLevelsNeeded; ++level)
+	{
+		glNamedFramebufferTexture(downsamplingFramebuffers[level], GL_COLOR_ATTACHMENT0, downsamplingTexture, level);
+	}
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &upsamplingTexture);
+	{
+		glTextureStorage2D(upsamplingTexture, numLevelsNeeded, GL_RGBA16F, width, height);
+
+		glTextureParameteri(upsamplingTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		glTextureParameteri(upsamplingTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glTextureParameteri(upsamplingTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(upsamplingTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	// Need to write to each of the levels except for the lowest mip
+	int numUpsamplings = numLevelsNeeded - 1;
+	upsamplingFramebuffers.resize(numUpsamplings);
+	glCreateFramebuffers(numUpsamplings, upsamplingFramebuffers.data());
+
+	for (int level = 0; level < numUpsamplings; ++level)
+	{
+		glNamedFramebufferTexture(upsamplingFramebuffers[level], GL_COLOR_ATTACHMENT0, upsamplingTexture, level);
+	}
 }
 
 void BloomPass::ProgramLoaded(GLuint program)
 {
-	if (blurVerticalProgram && program == *blurVerticalProgram)
+	if (blitProgram && program == *blitProgram)
 	{
 		glProgramUniform1i(program, PredefinedUniformLocation(u_texture), 0);
-		blurVtextureSizeLoc = glGetUniformLocation(program, "u_texture_size");
-		blurVtextureLodLoc = glGetUniformLocation(program, "u_texture_lod");
 	}
 
-	if (blurHorizontalProgram && program == *blurHorizontalProgram)
+	if (downsampleProgram && program == *downsampleProgram)
 	{
 		glProgramUniform1i(program, PredefinedUniformLocation(u_texture), 0);
-		blurHtextureSizeLoc = glGetUniformLocation(program, "u_texture_size");
-		blurHtextureLodLoc = glGetUniformLocation(program, "u_texture_lod");
+		dsTargetTexelSizeLoc = glGetUniformLocation(program, "u_target_texel_size");
+		dsTargetLodLoc = glGetUniformLocation(program, "u_target_lod");
 	}
 
-	if (highPassProgram && program == *highPassProgram)
+	if (upsampleProgram && program == *upsampleProgram)
 	{
 		glProgramUniform1i(program, PredefinedUniformLocation(u_texture), 0);
-		highPassTresholdLoc = glGetUniformLocation(program, "u_threshold");
-	}
-}
-
-GLuint BloomPass::GetHighPassedLightBuffer(const LightBuffer& lightBuffer, float threshold)
-{	
-	glUseProgram(*highPassProgram);
-	
-	glBindImageTexture(0, highPassedTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-	glBindTextureUnit(0, lightBuffer.lightTexture);
-
-	//static float lastThreshold = -1.0f;
-	//if (threshold != lastThreshold)
-	{
-		glProgramUniform1f(*highPassProgram, highPassTresholdLoc, threshold);
-		//lastThreshold = threshold;
-	}
-	
-	const int localSize = 32;
-	glDispatchCompute(blurBaseSize / localSize, blurBaseSize / localSize, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	glGenerateTextureMipmap(highPassedTexture);
-
-	return highPassedTexture;
-}
-
-void BloomPass::Setup()
-{
-	glCreateVertexArrays(1, &emptyVertexArray);
-
-	ShaderSystem::AddComputeProgram(&highPassProgram, "post/high_pass.comp.glsl", this);
-	ShaderSystem::AddProgram(&blurVerticalProgram, "quad.vert.glsl", "post/blur_v.frag.glsl", this);
-	ShaderSystem::AddProgram(&blurHorizontalProgram, "quad.vert.glsl", "post/blur_h.frag.glsl", this);
-
-	// Setup texture for storing high passed intermediate data
-	{
-		glCreateTextures(GL_TEXTURE_2D, 1, &highPassedTexture);
-
-		glTextureParameteri(highPassedTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTextureParameteri(highPassedTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTextureParameteri(highPassedTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(highPassedTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glTextureStorage2D(highPassedTexture, numBlurLevels, GL_RGBA16F, blurBaseSize, blurBaseSize);
+		usTexelAspectLoc = glGetUniformLocation(program, "u_texel_aspect");
+		usBlurRadiusLoc = glGetUniformLocation(program, "u_blur_radius");
+		usTargetLodLoc = glGetUniformLocation(program, "u_target_lod");
 	}
 
-	// Setup texture and framebuffer for performing the bloom
-	
-	int numFramebuffers = 2 * numBlurLevels;
-	framebuffers.resize(numFramebuffers);
-	glCreateFramebuffers(numFramebuffers, framebuffers.data());
-
-	glCreateTextures(GL_TEXTURE_2D, 2, bloomTextures);
-	for (int i = 0; i < 2; ++i)
-	{
-		glTextureStorage2D(bloomTextures[i], numBlurLevels, GL_RGBA16F, blurBaseSize, blurBaseSize);
-
-		glTextureParameteri(bloomTextures[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-		glTextureParameteri(bloomTextures[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTextureParameteri(bloomTextures[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(bloomTextures[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		
-		for (int k = 0; k < numBlurLevels; ++k)
-		{
-			int fbIdx = numBlurLevels * i + k;
-			glNamedFramebufferTexture(framebuffers[fbIdx], GL_COLOR_ATTACHMENT0, bloomTextures[i], k);
-		}
-	}
-
-	// Make alias for the bloom results texture
-	bloomResults = bloomTextures[1];
 }

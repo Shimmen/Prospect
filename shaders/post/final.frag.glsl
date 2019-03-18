@@ -17,9 +17,8 @@ uniform float u_exposure;
 uniform float u_vignette_falloff;
 uniform float u_gamma;
 
-#define NUM_BLOOM_LEVELS (5)
-uniform float u_bloom_levels[NUM_BLOOM_LEVELS];
 uniform sampler2D u_bloom_texture;
+uniform float u_bloom_amount;
 
 PredefinedOutput(vec4, o_color);
 
@@ -73,12 +72,8 @@ void main()
 {
     vec3 hdrColor = texture(u_texture, v_uv).rgb;
 
-    for (int i = 0; i < NUM_BLOOM_LEVELS; ++i)
-    {
-        float lod = float(i);
-        vec3 bloom = textureLod(u_bloom_texture, v_uv, lod).rgb;
-        hdrColor += u_bloom_levels[i] * bloom;
-    }
+    vec3 bloom = textureLod(u_bloom_texture, v_uv, 0.0).rgb;
+    hdrColor = mix(hdrColor, bloom, u_bloom_amount);
 
     hdrColor *= u_exposure;
     hdrColor *= naturalVignetting(u_vignette_falloff);

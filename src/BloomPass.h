@@ -14,36 +14,33 @@ public:
 	void Draw(const LightBuffer& lightBuffer);
 	void ProgramLoaded(GLuint program) override;
 
-	float threshold = 22.0f;
+	const int numDownsamples = 6;
 
-	const int blurBaseSize = 1024;
-	const int numBlurLevels = 5;
+	float blurRadius = 0.001f;
 
-	// alias for bloomTextures[1]
+	// accessible alias of downsamplingTexture for getting the results
 	GLuint bloomResults;
 
 private:
 
-	void Setup();
-
-	GLuint GetHighPassedLightBuffer(const LightBuffer& lightBuffer, float threshold);
+	void Setup(int width, int height);
 
 	GLuint emptyVertexArray{ 0 };
+	GLuint *blitProgram;
 
-	GLuint highPassedTexture{};
+	GLuint downsamplingTexture;
+	GLuint upsamplingTexture;
 
-	GLuint *highPassProgram{};
-	GLint highPassTresholdLoc;
+	GLuint *downsampleProgram;
+	GLint dsTargetTexelSizeLoc;
+	GLint dsTargetLodLoc;
 
-	GLuint bloomTextures[2];
-	std::vector<GLuint> framebuffers;
+	GLuint *upsampleProgram;
+	GLint usTexelAspectLoc;
+	GLint usBlurRadiusLoc;
+	GLint usTargetLodLoc;
 
-	GLuint *blurVerticalProgram{ 0 };
-	GLint blurVtextureSizeLoc{};
-	GLint blurVtextureLodLoc{};
-
-	GLuint *blurHorizontalProgram{ 0 };
-	GLint blurHtextureSizeLoc{};
-	GLint blurHtextureLodLoc{};
+	std::vector<GLuint> downsamplingFramebuffers;
+	std::vector<GLuint> upsamplingFramebuffers;
 
 };

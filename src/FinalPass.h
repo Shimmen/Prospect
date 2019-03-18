@@ -10,7 +10,7 @@ class FinalPass : ShaderDepandant
 {
 public:
 
-	void Draw(const LightBuffer& lightBuffer, const BloomPass& bloomPass);
+	void Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass);
 	void ProgramLoaded(GLuint program) override;
 
 private:

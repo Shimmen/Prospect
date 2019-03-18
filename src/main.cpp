@@ -37,7 +37,7 @@ bool renderUI{ true };
 // This can remove frame jittering in the case where sold 60 FPS is maintained.
 // To assert that, use vsync and make sure that the scene can be rendered
 // without dropping any frames etc. In other words, works pretty well for me.
-#define ASSUME_FIXED_60_FPS true
+#define ASSUME_FIXED_60_FPS false
 
 //
 // Callbacks

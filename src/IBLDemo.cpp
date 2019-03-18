@@ -60,6 +60,7 @@ App::Settings IBLDemo::Setup()
 {
 	Settings settings{};
 	settings.window.size = { 1280, 800 };
+	settings.window.vsync = false;
 	settings.window.resizeable = true;
 	settings.context.msaaSamples = 1;
 	return settings;
@@ -111,7 +112,8 @@ void IBLDemo::Init()
 		scene.models.emplace_back(model);
 	});
 
-	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
+	//scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
+	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/aero_lab/aerodynamics_workshop_8k.hdr");
 
 	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }
