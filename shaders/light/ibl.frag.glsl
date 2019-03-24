@@ -90,6 +90,11 @@ void main()
         vec3 dir = world_from_view_dir * N;
         dir.y *= -1.0; // TODO: Fix image loading y-axis!
 
+        // (in case there is a surface with a broken normal, "mask" it out,
+        //  because if it's visible this below will produce NaNs wich will
+        //  be blown up in size due to the bloom)
+        dir = max(dir, 0.0);
+
         vec3 irradiance = sampleShIrradiance(dir, u_irradiance_sh);
         diffuse = baseColor * irradiance / PI;
 
