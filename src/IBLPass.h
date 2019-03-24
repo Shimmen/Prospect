@@ -20,7 +20,6 @@ private:
 	void CreateBrdfIntegrationMap();
 	void FilterProbe(Probe& probe);
 
-	GLuint emptyVertexArray{ 0 };
 	GLuint iblProgram{ 0 };
 
 	GLuint brdfIntegrationMap{ 0 };

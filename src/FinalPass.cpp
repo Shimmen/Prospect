@@ -4,6 +4,8 @@
 
 #include "GuiSystem.h"
 #include "ShaderSystem.h"
+#include "UniformValue.h"
+#include "FullscreenQuad.h"
 
 #include "shader_locations.h"
 #include <imgui_internal.h>
@@ -11,66 +13,52 @@
 void
 FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 {
-	if (!emptyVertexArray)
+
+/*
+	if (!logLumProgram)
 	{
-		glCreateVertexArrays(1, &emptyVertexArray);
+		ShaderSystem::AddComputeProgram(&logLumProgram, "post/log_luminance.comp.glsl", this);
 	}
+
+	{
+		glBindImageTexture(0, lightBuffer.lightTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB16F);
+		glBindImageTexture(1, logLumTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
+
+		glUseProgram(*logLumProgram);
+		glDispatchCompute(4, 4, 1);
+
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		glGenerateTextureMipmap(logLumTexture);
+
+		// TODO!!
+	}
+*/
 
 	if (!finalProgram)
 	{
-		ShaderSystem::AddProgram("quad.vert.glsl", "post/final.frag.glsl", this);
+		ShaderSystem::AddProgram(&finalProgram, "quad.vert.glsl", "post/final.frag.glsl", this);
 	}
 
 	{
-		float lastExposure = 0.0f;
-		static float exposure = 5.0f;
-
-		float lastVignette = 0.0f;
-		static float vignette = 0.25f;
-
-		float lastGamma = 0.0f;
-		static float gamma = 2.2f;
-
-		float lastBloomAmount = 0.0f;
-		static float bloomAmount = 0.04f;
+		static Uniform<float> exposure("u_exposure", 5.0f);
+		static Uniform<float> vignette("u_vignette_falloff", 0.25f);
+		static Uniform<float> gamma("u_gamma", 2.2f);
+		static Uniform<float> bloomAmount("u_bloom_amount", 0.04f);
 
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{
-			ImGui::SliderFloat("Exposure", &exposure, 0.0f, 32.0f, "%.1f");
-			ImGui::SliderFloat("Vignette amount", &vignette, 0.0f, 2.0f, "%.2f");
-			ImGui::SliderFloat("Gamma", &gamma, 0.1f, 4.0f, "%.1f");
+			ImGui::SliderFloat("Exposure", &exposure.value, 0.0f, 32.0f, "%.1f");
+			ImGui::SliderFloat("Vignette amount", &vignette.value, 0.0f, 2.0f, "%.2f");
+			ImGui::SliderFloat("Gamma", &gamma.value, 0.1f, 4.0f, "%.1f");
 			ImGui::VerticalSeparator();
 			ImGui::SliderFloat("Bloom blur radius", &bloomPass.blurRadius, 0.0f, 0.02f, "%.6f", 3.0f);
-			ImGui::SliderFloat("Bloom amount", &bloomAmount, 0.0f, 1.0f, "%.3f");
+			ImGui::SliderFloat("Bloom amount", &bloomAmount.value, 0.0f, 1.0f, "%.3f");
 		}
 
-		if (exposure != lastExposure)
-		{
-			GLint loc = glGetUniformLocation(finalProgram, "u_exposure");
-			glProgramUniform1f(finalProgram, loc, exposure);
-			lastExposure = exposure;
-		}
-
-		if (vignette != lastVignette)
-		{
-			GLint loc = glGetUniformLocation(finalProgram, "u_vignette_falloff");
-			glProgramUniform1f(finalProgram, loc, vignette);
-			lastVignette = vignette;
-		}
-
-		if (gamma != lastGamma)
-		{
-			GLint loc = glGetUniformLocation(finalProgram, "u_gamma");
-			glProgramUniform1f(finalProgram, loc, gamma);
-			lastGamma = gamma;
-		}
-
-		if (bloomAmount != lastBloomAmount)
-		{
-			GLint loc = glGetUniformLocation(finalProgram, "u_bloom_amount");
-			glProgramUniform1f(finalProgram, loc, bloomAmount);
-			lastBloomAmount = bloomAmount;
-		}
+		exposure.UpdateUniformIfNeeded(*finalProgram);
+		vignette.UpdateUniformIfNeeded(*finalProgram);
+		gamma.UpdateUniformIfNeeded(*finalProgram);
+		bloomAmount.UpdateUniformIfNeeded(*finalProgram);
 	}
 
 	glDisable(GL_BLEND);
@@ -79,13 +67,12 @@ FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glViewport(0, 0, lightBuffer.width, lightBuffer.height);
 
-	glUseProgram(finalProgram);
+	glUseProgram(*finalProgram);
 	{
 		glBindTextureUnit(0, lightBuffer.lightTexture);
 		glBindTextureUnit(1, bloomPass.bloomResults);
 
-		glBindVertexArray(emptyVertexArray);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		FullscreenQuad::Draw();
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -93,9 +80,11 @@ FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 
 void FinalPass::ProgramLoaded(GLuint program)
 {
-	finalProgram = program;
-	glProgramUniform1i(finalProgram, PredefinedUniformLocation(u_texture), 0);
-	glProgramUniform1i(finalProgram, glGetUniformLocation(finalProgram, "u_bloom_texture"), 1);
+	if (finalProgram && program == *finalProgram)
+	{
+		glProgramUniform1i(*finalProgram, PredefinedUniformLocation(u_texture), 0);
+		glProgramUniform1i(*finalProgram, glGetUniformLocation(*finalProgram, "u_bloom_texture"), 1);
+	}
 }
 
 

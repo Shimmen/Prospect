@@ -14,7 +14,6 @@ public:
 
 private:
 
-	GLuint emptyVertexArray{ 0 };
 	GLuint skyProgram{ 0 };
 
 };

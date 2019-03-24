@@ -8,6 +8,7 @@
 #include "GuiSystem.h"
 #include "ModelSystem.h"
 #include "TextureSystem.h"
+#include "FullscreenQuad.h"
 
 using namespace glm;
 #include "shader_locations.h"
@@ -17,11 +18,6 @@ using namespace glm;
 void
 IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& scene)
 {
-	if (!emptyVertexArray)
-	{
-		glCreateVertexArrays(1, &emptyVertexArray);
-	}
-
 	if (!iblProgram)
 	{
 		ShaderSystem::AddProgram("light/ibl", this);
@@ -83,8 +79,7 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	glBindTextureUnit(6, scene.skyProbe.filteredRadiance);
 	glBindTextureUnit(7, brdfIntegrationMap);
 
-	glBindVertexArray(emptyVertexArray);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	FullscreenQuad::Draw();
 
 	glEnable(GL_DEPTH_TEST);
 }

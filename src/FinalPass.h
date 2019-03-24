@@ -15,7 +15,7 @@ public:
 
 private:
 
-	GLuint emptyVertexArray{ 0 };
-	GLuint finalProgram{ 0 };
+	GLuint *logLumProgram{ 0 };
+	GLuint *finalProgram{ 0 };
 
 };

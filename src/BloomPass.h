@@ -25,7 +25,6 @@ private:
 
 	void Setup(int width, int height);
 
-	GLuint emptyVertexArray{ 0 };
 	GLuint *blitProgram;
 
 	GLuint downsamplingTexture;

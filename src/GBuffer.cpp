@@ -16,8 +16,8 @@ GLuint CreateFlatTexture(int width, int height, GLenum internalFormat)
 
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	return texture;
 }
@@ -40,7 +40,7 @@ GBuffer::RecreateGpuResources(int width, int height)
 
 	albedoTexture = CreateFlatTexture(width, height, GL_RGBA8);
 	materialTexture = CreateFlatTexture(width, height, GL_RGBA8);
-	normalTexture = CreateFlatTexture(width, height, GL_RGBA8);
+	normalTexture = CreateFlatTexture(width, height, GL_RGBA16F);
 	depthTexture = CreateFlatTexture(width, height, GL_DEPTH_COMPONENT32F);
 
 	// Setup the swizzle for the depth textures so all color channels are depth

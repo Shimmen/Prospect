@@ -1,17 +1,13 @@
 #include "SkyPass.h"
 
 #include "ShaderSystem.h"
+#include "FullscreenQuad.h"
 
 #include "shader_locations.h"
 
 void
 SkyPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 {
-	if (!emptyVertexArray)
-	{
-		glCreateVertexArrays(1, &emptyVertexArray);
-	}
-
 	if (!skyProgram)
 	{
 		ShaderSystem::AddProgram("light/skybox", this);
@@ -28,9 +24,7 @@ SkyPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 	glUseProgram(skyProgram);
 	{
 		glBindTextureUnit(0, scene.skyProbe.radiance);
-
-		glBindVertexArray(emptyVertexArray);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		FullscreenQuad::Draw();
 	}
 
 	glDepthFunc(GL_LEQUAL);

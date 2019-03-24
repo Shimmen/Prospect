@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "GuiSystem.h"
 #include "TextureSystem.h"
+#include "FullscreenQuad.h"
 
 using namespace glm;
 #include "shader_locations.h"
@@ -13,11 +14,6 @@ using namespace glm;
 void
 LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const ShadowMap& shadowMap, Scene& scene)
 {
-	if (!emptyVertexArray)
-	{
-		glCreateVertexArrays(1, &emptyVertexArray);
-	}
-
 	if (!directionalLightProgram)
 	{
 		ShaderSystem::AddProgram("light/directional", this);
@@ -52,8 +48,7 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 
 		glDisable(GL_DEPTH_TEST);
 
-		glBindVertexArray(emptyVertexArray);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		FullscreenQuad::Draw();
 
 		glEnable(GL_DEPTH_TEST);
 	}

@@ -21,8 +21,6 @@ public:
 
 private:
 
-	GLuint emptyVertexArray{ 0 };
-
 	GLuint directionalLightProgram{ 0 };
 	GLuint directionalLightUniformBuffer{ 0 };
 

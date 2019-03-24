@@ -2,6 +2,7 @@
 
 #include "GuiSystem.h"
 #include "ShaderSystem.h"
+#include "FullscreenQuad.h"
 
 #include "shader_locations.h"
 
@@ -25,7 +26,7 @@ BloomPass::Draw(const LightBuffer& lightBuffer)
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, downsamplingFramebuffers[0]);
 		glUseProgram(*blitProgram);
 		glBindTextureUnit(0, lightBuffer.lightTexture);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		FullscreenQuad::Draw();
 	}
 
 	glBindTextureUnit(0, downsamplingTexture);
@@ -55,7 +56,7 @@ BloomPass::Draw(const LightBuffer& lightBuffer)
 			glProgramUniform2f(*downsampleProgram, dsTargetTexelSizeLoc, 1.0f / width, 1.0f / height);
 			glProgramUniform1i(*downsampleProgram, dsTargetLodLoc, targetMip);
 
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			FullscreenQuad::Draw();
 		}
 	}
 
@@ -86,7 +87,7 @@ BloomPass::Draw(const LightBuffer& lightBuffer)
 			glProgramUniform1f(*upsampleProgram, usTexelAspectLoc, float(width) / float(height));
 			glProgramUniform1i(*upsampleProgram, usTargetLodLoc, targetMip);
 
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			FullscreenQuad::Draw();
 		}
 	}
 
@@ -102,8 +103,6 @@ void BloomPass::Setup(int width, int height)
 	ShaderSystem::AddProgram(&blitProgram, "quad.vert.glsl", "blit.frag.glsl", this);
 	ShaderSystem::AddProgram(&downsampleProgram, "quad.vert.glsl", "post/bloom_downsample.frag.glsl", this);
 	ShaderSystem::AddProgram(&upsampleProgram, "quad.vert.glsl", "post/bloom_upsample.frag.glsl", this);
-
-	glCreateVertexArrays(1, &emptyVertexArray);
 
 	int numLevelsNeeded = numDownsamples + 1;
 
