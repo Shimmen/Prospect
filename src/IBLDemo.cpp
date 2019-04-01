@@ -89,8 +89,8 @@ void IBLDemo::Init()
 				MaterialSystem::ManageMaterial(material);
 
 				material->baseColor = SrgbColor(0.972f, 0.960f, 0.915f);
-				material->roughness = (float)y / (float)(gridSize - 1);
-				material->metallic = 1.0f - (float)x / (float)(gridSize - 1);
+				material->roughness = float(y) / float(gridSize - 1);
+				material->metallic = 1.0f - float(x) / float(gridSize - 1);
 
 				sphere.material = material;
 				scene.models.emplace_back(sphere);
@@ -132,6 +132,7 @@ void IBLDemo::Resize(int width, int height)
 void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 {
 	ImGui::Begin("Prospect - IBL demo");
+	ImGui::Text("Frame time: %.1f ms", deltaTime * 1000);
 	if (input.WasKeyPressed(GLFW_KEY_HOME))
 	{
 		ImGui::SetWindowPos(ImVec2(0, 1));

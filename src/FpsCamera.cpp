@@ -174,6 +174,14 @@ FpsCamera::Update(const Input& input, float dt)
 		performUpdate = true;
 	}
 
+	// NOTE: This will force way more updates than maybe required, due to the noisy nature
+	// of a delta time signal. Maybe move to some other smaller uniform buffer?
+	if (cameraUniformData.delta_time != dt)
+	{
+		cameraUniformData.delta_time = dt;
+		performUpdate = true;
+	}
+
 	if (performUpdate)
 	{
 		glNamedBufferSubData(cameraUniformBuffer, 0, sizeof(CameraUniforms), &cameraUniformData);

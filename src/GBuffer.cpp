@@ -1,30 +1,9 @@
 #include "GBuffer.h"
 
 #include "Logging.h"
+#include "TextureSystem.h"
 
 #include "shader_locations.h"
-
-//
-// Internal API
-//
-
-GLuint CreateFlatTexture(int width, int height, GLenum internalFormat)
-{
-	GLuint texture;
-	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-	glTextureStorage2D(texture, 1, internalFormat, width, height);
-
-	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	return texture;
-}
-
-//
-// Public API
-//
 
 void
 GBuffer::RecreateGpuResources(int width, int height)
@@ -38,10 +17,10 @@ GBuffer::RecreateGpuResources(int width, int height)
 	glDeleteTextures(1, &normalTexture);
 	glDeleteTextures(1, &depthTexture);
 
-	albedoTexture = CreateFlatTexture(width, height, GL_RGBA8);
-	materialTexture = CreateFlatTexture(width, height, GL_RGBA8);
-	normalTexture = CreateFlatTexture(width, height, GL_RGBA16F);
-	depthTexture = CreateFlatTexture(width, height, GL_DEPTH_COMPONENT32F);
+	albedoTexture = TextureSystem::CreateTexture(width, height, GL_RGBA8, GL_NEAREST, GL_NEAREST);
+	materialTexture = TextureSystem::CreateTexture(width, height, GL_RGBA8, GL_NEAREST, GL_NEAREST);
+	normalTexture = TextureSystem::CreateTexture(width, height, GL_RGBA16F, GL_NEAREST, GL_NEAREST);
+	depthTexture = TextureSystem::CreateTexture(width, height, GL_DEPTH_COMPONENT32F, GL_NEAREST, GL_NEAREST);
 
 	// Setup the swizzle for the depth textures so all color channels are depth
 	GLenum depthSwizzle[] = { GL_RED, GL_RED, GL_RED, GL_ALPHA };

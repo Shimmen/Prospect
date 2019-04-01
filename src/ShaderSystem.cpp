@@ -189,13 +189,15 @@ UpdateProgram(Program& program)
 			glGetShaderInfoLog(shaderHandle, sizeof(statusBuffer), nullptr, statusBuffer);
 			Log("Shader compilation error ('%s'): %s\n", shader.filename.c_str(), statusBuffer);
 
+			// TODO: Do some proper line mapping and only print relevant (+ surrounding) lines
+			/*
 			int lineNum = 1;
 			std::istringstream iss(source);
 			for (std::string line; std::getline(iss, line); ++lineNum)
 			{
 				Log(" %d: %s\n", lineNum, line.c_str());
 			}
-
+			*/
 		}
 		else
 		{

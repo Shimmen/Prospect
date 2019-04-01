@@ -1,6 +1,7 @@
 #include "LightBuffer.h"
 
 #include "Logging.h"
+#include "TextureSystem.h"
 
 #include "shader_locations.h"
 
@@ -12,14 +13,7 @@ LightBuffer::RecreateGpuResources(int width, int height, const GBuffer& gBuffer)
 
 	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
 	glDeleteTextures(1, &lightTexture);
-
-	glCreateTextures(GL_TEXTURE_2D, 1, &lightTexture);
-	glTextureStorage2D(lightTexture, 1, GL_RGB32F, width, height);
-
-	glTextureParameteri(lightTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(lightTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTextureParameteri(lightTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(lightTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	lightTexture = TextureSystem::CreateTexture(width, height, GL_RGB32F, GL_NEAREST, GL_NEAREST);
 
 	if (!framebuffer)
 	{

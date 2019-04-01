@@ -1,22 +1,27 @@
 #version 460
 
 #include <common.glsl>
+#include <shader_locations.h>
 
 layout(
-    local_size_x = 256,
-    local_size_y = 256
+    local_size_x = 32,
+    local_size_y = 32
 ) in;
 
-layout(binding = 0, rgba16f) restrict readonly  uniform image2D img_source;
-layout(binding = 1, r16f)    restrict writeonly uniform image2D img_target;
+
+PredefinedUniform(sampler2D, u_texture);
+layout(binding = 1, r16f) restrict writeonly uniform image2D img_target;
 
 void main()
 {
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
-    vec3 color = imageRead(img_source, pixelCoord).rgb;
+    vec2 uv = (vec2(pixelCoord) + vec2(0.5)) / imageSize(img_target);
+
+    vec3 color = texture(u_texture, uv).rgb;
 
     float lum = luminance(color);
-    float logLum = log2(lum);
+    const float epsilon = 0.0001;
+    float logLum = log(lum + epsilon);
 
-    imageStore(img_target, pixelCoord, logLum);
+    imageStore(img_target, pixelCoord, vec4(logLum));
 }

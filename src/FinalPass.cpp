@@ -1,38 +1,40 @@
 #include "FinalPass.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include "GuiSystem.h"
 #include "ShaderSystem.h"
 #include "UniformValue.h"
+#include "TextureSystem.h"
 #include "FullscreenQuad.h"
 
 #include "shader_locations.h"
-#include <imgui_internal.h>
 
 void
 FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 {
-
-/*
 	if (!logLumProgram)
 	{
 		ShaderSystem::AddComputeProgram(&logLumProgram, "post/log_luminance.comp.glsl", this);
 	}
 
+	if (!logLumTexture)
 	{
-		glBindImageTexture(0, lightBuffer.lightTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB16F);
+		logLumTexture = TextureSystem::CreateTexture(1024, 1024, GL_R16F);
+	}
+
+	{
+
+		glBindTextureUnit(0, lightBuffer.lightTexture);
 		glBindImageTexture(1, logLumTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
 
 		glUseProgram(*logLumProgram);
-		glDispatchCompute(4, 4, 1);
+		glDispatchCompute(32, 32, 1); //(32 * 32 = 1024)
 
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		glGenerateTextureMipmap(logLumTexture);
-
-		// TODO!!
 	}
-*/
 
 	if (!finalProgram)
 	{
@@ -61,6 +63,11 @@ FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 		bloomAmount.UpdateUniformIfNeeded(*finalProgram);
 	}
 
+	if (!currentLumTexture)
+	{
+		currentLumTexture = TextureSystem::CreateTexture(1, 1, GL_R32F, GL_NEAREST, GL_NEAREST);
+	}
+
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
@@ -71,6 +78,9 @@ FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 	{
 		glBindTextureUnit(0, lightBuffer.lightTexture);
 		glBindTextureUnit(1, bloomPass.bloomResults);
+		glBindTextureUnit(2, logLumTexture);
+
+		glBindImageTexture(0, currentLumTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32F);
 
 		FullscreenQuad::Draw();
 	}
@@ -84,6 +94,7 @@ void FinalPass::ProgramLoaded(GLuint program)
 	{
 		glProgramUniform1i(*finalProgram, PredefinedUniformLocation(u_texture), 0);
 		glProgramUniform1i(*finalProgram, glGetUniformLocation(*finalProgram, "u_bloom_texture"), 1);
+		glProgramUniform1i(*finalProgram, glGetUniformLocation(*finalProgram, "u_avg_log_lum_texture"), 2);
 	}
 }
 
