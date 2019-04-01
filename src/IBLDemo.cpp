@@ -115,12 +115,13 @@ void IBLDemo::Init()
 	//scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/aero_lab/aerodynamics_workshop_8k.hdr");
 
-	scene.mainCamera.LookAt({ 6, 11, -25 }, { 6, 11, 0 });
+	scene.mainCamera.reset(new FpsCamera());
+	scene.mainCamera->LookAt({ 6, 11, -25 }, { 6, 11, 0 });
 }
 
 void IBLDemo::Resize(int width, int height)
 {
-	scene.mainCamera.Resize(width, height);
+	scene.mainCamera->Resize(width, height);
 
 	gBuffer.RecreateGpuResources(width, height);
 	lightBuffer.RecreateGpuResources(width, height, gBuffer);
@@ -139,13 +140,13 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 		ImGui::SetWindowSize(ImVec2(350.0f, lightBuffer.height - 25.0f));
 	}
 
-	scene.mainCamera.Update(input, deltaTime);
+	scene.mainCamera->Update(input, deltaTime);
 
 	geometryPass.Draw(gBuffer, scene);
 	iblPass.Draw(lightBuffer, gBuffer, scene);
 	skyPass.Draw(lightBuffer, scene);
 	bloomPass.Draw(lightBuffer);
-	finalPass.Draw(lightBuffer, bloomPass);
+	finalPass.Draw(lightBuffer, bloomPass, scene);
 
 	ImGui::End();
 }

@@ -4,7 +4,7 @@
 
 #include <glad/glad.h>
 
-#include "FpsCamera.h"
+#include "CameraBase.h"
 #include "Model.h"
 
 struct DirectionalLight;
@@ -23,7 +23,7 @@ struct Probe
 
 struct Scene
 {
-	FpsCamera mainCamera;
+	std::unique_ptr<CameraBase> mainCamera;
 
 	Probe skyProbe;
 

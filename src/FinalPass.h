@@ -5,12 +5,13 @@
 #include "ShaderDependant.h"
 #include "LightBuffer.h"
 #include "BloomPass.h"
+#include "Scene.h"
 
 class FinalPass : ShaderDepandant
 {
 public:
 
-	void Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass);
+	void Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass, Scene& scene);
 	void ProgramLoaded(GLuint program) override;
 
 private:

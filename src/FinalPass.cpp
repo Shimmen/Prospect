@@ -1,7 +1,6 @@
 #include "FinalPass.h"
 
 #include <imgui.h>
-#include <imgui_internal.h>
 
 #include "GuiSystem.h"
 #include "ShaderSystem.h"
@@ -12,7 +11,7 @@
 #include "shader_locations.h"
 
 void
-FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
+FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass, Scene& scene)
 {
 	if (!logLumProgram)
 	{
@@ -25,7 +24,6 @@ FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 	}
 
 	{
-
 		glBindTextureUnit(0, lightBuffer.lightTexture);
 		glBindImageTexture(1, logLumTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
 
@@ -52,9 +50,15 @@ FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass)
 			ImGui::SliderFloat("Exposure", &exposure.value, 0.0f, 32.0f, "%.1f");
 			ImGui::SliderFloat("Vignette amount", &vignette.value, 0.0f, 2.0f, "%.2f");
 			ImGui::SliderFloat("Gamma", &gamma.value, 0.1f, 4.0f, "%.1f");
-			ImGui::VerticalSeparator();
+			ImGui::Spacing();
 			ImGui::SliderFloat("Bloom blur radius", &bloomPass.blurRadius, 0.0f, 0.02f, "%.6f", 3.0f);
 			ImGui::SliderFloat("Bloom amount", &bloomAmount.value, 0.0f, 1.0f, "%.3f");
+
+			if (ImGui::TreeNode("Camera"))
+			{
+				scene.mainCamera->DrawEditorGui();
+				ImGui::TreePop();
+			}
 		}
 
 		exposure.UpdateUniformIfNeeded(*finalProgram);

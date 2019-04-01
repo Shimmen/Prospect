@@ -27,4 +27,6 @@ namespace GuiSystem
 
 	void Texture(GLuint texture, float aspectRatio = 16.0f / 9.0f);
 
+	void SnapSliderFloat(const char *label, float *value, const float *steps, int stepCount, const char *displayFormat = "%.3f");
+
 }

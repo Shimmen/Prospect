@@ -91,12 +91,12 @@ void TestApp::Init()
 	sunLight.color = glm::vec4(1.0, 0.9, 0.9, 0.1);
 	scene.directionalLights.push_back(sunLight);
 
-	scene.mainCamera.LookAt({ -20, 3, 0 }, { 0, 10, 0 });
+	scene.mainCamera->LookAt({ -20, 3, 0 }, { 0, 10, 0 });
 }
 
 void TestApp::Resize(int width, int height)
 {
-	scene.mainCamera.Resize(width, height);
+	scene.mainCamera->Resize(width, height);
 
 	gBuffer.RecreateGpuResources(width, height);
 	lightBuffer.RecreateGpuResources(width, height, gBuffer);
@@ -114,7 +114,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 		ImGui::SetWindowSize(ImVec2(350.0f, lightBuffer.height - 25.0f));
 	}
 
-	scene.mainCamera.Update(input, deltaTime);
+	scene.mainCamera->Update(input, deltaTime);
 
 	for (auto& dirLight : scene.directionalLights)
 	{
@@ -142,7 +142,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
 	skyPass.Draw(lightBuffer, scene);
 	bloomPass.Draw(lightBuffer);
-	finalPass.Draw(lightBuffer, bloomPass);
+	finalPass.Draw(lightBuffer, bloomPass, scene);
 
 	ImGui::End();
 }

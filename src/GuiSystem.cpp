@@ -342,3 +342,19 @@ GuiSystem::Texture(GLuint texture, float aspectRatio)
 	auto imageId = (ImTextureID)static_cast<uint64_t>(texture);
 	ImGui::Image(imageId, ImVec2(width, height), uv0, uv1);
 }
+
+void
+GuiSystem::SnapSliderFloat(const char *label, float *value, const float *steps, int stepCount, const char *displayFormat)
+{
+	ImGui::SliderFloat(label, value, steps[0], steps[stepCount - 1], displayFormat);
+
+	// Snap to closest index
+	int index = 1;
+	for (; index < stepCount && *value >= steps[index]; index += 1) { /* no-op */ }
+
+	float distUp = abs(steps[index] - *value);
+	float distDown = abs(steps[index - 1] - *value);
+	if (distDown < distUp) index -= 1;
+
+	*value = steps[index];
+}

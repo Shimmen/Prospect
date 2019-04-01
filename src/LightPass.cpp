@@ -43,7 +43,7 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 		assert(scene.directionalLights.size() == 1);
 		auto& dirLight = scene.directionalLights[0];
 
-		dirLight.viewDirecion = scene.mainCamera.GetViewMatrix() * dirLight.worldDirection;
+		dirLight.viewDirecion = scene.mainCamera->GetViewMatrix() * dirLight.worldDirection;
 		glNamedBufferSubData(directionalLightUniformBuffer, 0, sizeof(DirectionalLight), &dirLight);
 
 		glDisable(GL_DEPTH_TEST);

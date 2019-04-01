@@ -31,7 +31,7 @@ void
 GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 {
 	std::array<glm::vec4, 6> frustumPlanes{};
-	ExtractFrustumPlanes(scene.mainCamera.GetViewProjectionMatrix(), frustumPlanes);
+	ExtractFrustumPlanes(scene.mainCamera->GetViewProjectionMatrix(), frustumPlanes);
 
 	static std::vector<Model> geometryToRender{};
 	geometryToRender.reserve(scene.models.size());
