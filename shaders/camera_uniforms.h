@@ -10,7 +10,7 @@ struct CameraUniforms
     vec4 near_far; // x=near, y=far, z=(far / (far - near)), w=((-far * near) / (far - near))
 
     float iso;
-    float aperature;
+    float aperture;
     float shutter_speed;
 	float delta_time;
 };

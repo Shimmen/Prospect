@@ -49,7 +49,6 @@ namespace
 	GeometryPass geometryPass;
 	IBLPass iblPass;
 	SkyPass skyPass;
-	BloomPass bloomPass;
 	FinalPass finalPass;
 }
 
@@ -145,8 +144,7 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	geometryPass.Draw(gBuffer, scene);
 	iblPass.Draw(lightBuffer, gBuffer, scene);
 	skyPass.Draw(lightBuffer, scene);
-	bloomPass.Draw(lightBuffer);
-	finalPass.Draw(lightBuffer, bloomPass, scene);
+	finalPass.Draw(lightBuffer, scene);
 
 	ImGui::End();
 }

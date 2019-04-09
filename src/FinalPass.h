@@ -11,10 +11,12 @@ class FinalPass : ShaderDepandant
 {
 public:
 
-	void Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass, Scene& scene);
+	void Draw(const LightBuffer& lightBuffer, Scene& scene);
 	void ProgramLoaded(GLuint program) override;
 
 private:
+
+	BloomPass bloomPass;
 
 	GLuint logLumTexture{ 0 };
 	GLuint currentLumTexture{ 0 };

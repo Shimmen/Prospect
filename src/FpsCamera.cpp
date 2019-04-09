@@ -165,9 +165,9 @@ FpsCamera::Update(const Input& input, float dt)
 		performUpdate = true;
 	}
 
-	if (cameraUniformData.aperature != aperture)
+	if (cameraUniformData.aperture != aperture)
 	{
-		cameraUniformData.aperature = aperture;
+		cameraUniformData.aperture = aperture;
 		performUpdate = true;
 	}
 

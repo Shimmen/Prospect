@@ -47,7 +47,6 @@ namespace
 	ShadowPass shadowPass;
 	LightPass lightPass;
 	SkyPass skyPass;
-	BloomPass bloomPass;
 	FinalPass finalPass;
 };
 
@@ -141,8 +140,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 	shadowPass.Draw(shadowMap, scene);
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
 	skyPass.Draw(lightBuffer, scene);
-	bloomPass.Draw(lightBuffer);
-	finalPass.Draw(lightBuffer, bloomPass, scene);
+	finalPass.Draw(lightBuffer, scene);
 
 	ImGui::End();
 }

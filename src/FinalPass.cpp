@@ -11,8 +11,12 @@
 #include "shader_locations.h"
 
 void
-FinalPass::Draw(const LightBuffer& lightBuffer, BloomPass& bloomPass, Scene& scene)
+FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 {
+	// TODO: Expose here, before the bloom pass!
+
+	bloomPass.Draw(lightBuffer);
+
 	if (!logLumProgram)
 	{
 		ShaderSystem::AddComputeProgram(&logLumProgram, "post/log_luminance.comp.glsl", this);

@@ -71,6 +71,46 @@ float naturalVignetting(float falloff)
     return e;
 }
 
+//
+// The following three functions are from the 'Moving Frostbite to PBR' course notes:
+// https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+//
+
+float computeEV100(float aperture, float shutterTime, float ISO)
+{
+    // EV number is defined as:
+    //   2^EV_s = N^2 / t and EV_s = EV_100 + log2(S/100)
+    // This gives
+    //   EV_s = log2(N^2 / t)
+    //   EV_100 + log2(S/100) = log2 (N^2 / t)
+    //   EV_100 = log2(N^2 / t) - log2(S/100)
+    //   EV_100 = log2(N^2 / t . 100 / S)
+    return log2(square(aperture) / shutterTime * 100.0 / ISO);
+}
+
+float computeEV100FromAvgLuminance(float avgLuminance)
+{
+    // We later use the middle gray at 12.7% in order to have
+    // a middle gray at 18% with a sqrt (2) room for specular highlights
+    // But here we deal with the spot meter measuring the middle gray
+    // which is fixed at 12.5 for matching standard camera
+    // constructor settings (i.e. calibration constant K = 12.5)
+    // Reference : http://en.wikipedia.org/wiki/Film_speed
+    return log2(avgLuminance * 100.0 / 12.5);
+}
+
+float convertEV100ToExposure(float EV100)
+{
+    // Compute the maximum luminance possible with H_sbs sensitivity
+    // maxLum = 78 / (  S * q   ) * N^2 / t
+    //        = 78 / (  S * q   ) * 2^EV_100
+    //        = 78 / (100 * 0.65) * 2^EV_100
+    //        = 1.2 * 2^EV
+    // Reference : http://en.wikipedia.org/wiki/Film_speed
+    float maxLuminance = 1.2 * pow(2.0, EV100);
+    return 1.0 / maxLuminance;
+}
+
 void main()
 {
     vec3 hdrColor = texture(u_texture, v_uv).rgb;
@@ -79,36 +119,51 @@ void main()
     hdrColor = mix(hdrColor, bloom, u_bloom_amount);
 
     // Auto adjusting exposure
-    //
-    // TODO: implement proper camera model. See:
-    //   https://knarkowicz.wordpress.com/2016/01/09/automatic-exposure/
-    //   https://placeholderart.wordpress.com/2014/12/15/implementing-a-physically-based-camera-automatic-exposure/
+    if (false)
     {
         // Sample the middle of the single pixel at the highest LoD. Since we perform a geometric
         // mean and take y=log(x) we undo that here by applying x'=exp(y) to get the average.
         float avgLuminance = exp(textureLod(u_avg_log_lum_texture, vec2(0.5), 99999.9).r);
 
+        float ev100 = computeEV100FromAvgLuminance(avgLuminance);
+
         float adaptionRate = 0.004;
         float exposureKey = 0.1; // ?
-        float lumMin = 0.1;
-        float lumMax = 2.0;
+        float lumMin = -10.0;
+        float lumMax = +10.0;
 
-        float newLum = clamp(avgLuminance, lumMin, lumMax);
-        float oldLum = imageLoad(img_current_lum, ivec2(0)).r;
+        float newEV = clamp(avgLuminance, lumMin, lumMax);
+        float oldEV = imageLoad(img_current_lum, ivec2(0)).r;
 
-        float curLum = oldLum + (newLum - oldLum) * (1.0 - exp(-camera.delta_time * adaptionRate));
-        imageStore(img_current_lum, ivec2(0), vec4(curLum));
+        float curEV = oldEV + (newEV - oldEV) * (1.0 - exp(-camera.delta_time * adaptionRate));
+        imageStore(img_current_lum, ivec2(0), vec4(curEV));
 
-        float autoExposure = exposureKey / curLum;
-        hdrColor *= autoExposure;
+        // TODO: Apply EC (exposure compensation)
+
+        float exposure = convertEV100ToExposure(curEV);
+        hdrColor *= exposure;
+    }
+
+    // Manual exposure control
+    if (true)
+    {
+        float ev100 = computeEV100(camera.aperture, camera.shutter_speed, camera.iso);
+        // TODO: Apply EC (exposure compensation)
+        float exposure = convertEV100ToExposure(ev100);
+
+        hdrColor *= exposure;
+        hdrColor *= 18000.0; // Why is this needed?!
     }
 
     // Manual exposure control/adjust
-    hdrColor *= u_exposure;
+    //hdrColor *= u_exposure;
 
     hdrColor *= naturalVignetting(u_vignette_falloff);
 
+    // TODO: Choose some nice tonemapping function!
     vec3 ldrColor = tonemap(hdrColor);
+    //vec3 ldrColor = hdrColor / (1.0 + luminance(hdrColor));
+
     vec3 gammaCorrectLdr = gammaAdust(ldrColor, u_gamma);
 
     o_color = vec4(gammaCorrectLdr, 1.0);
