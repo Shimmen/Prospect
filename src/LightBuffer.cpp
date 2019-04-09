@@ -13,7 +13,7 @@ LightBuffer::RecreateGpuResources(int width, int height, const GBuffer& gBuffer)
 
 	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
 	glDeleteTextures(1, &lightTexture);
-	lightTexture = TextureSystem::CreateTexture(width, height, GL_RGB32F, GL_NEAREST, GL_NEAREST);
+	lightTexture = TextureSystem::CreateTexture(width, height, GL_RGBA32F, GL_NEAREST, GL_NEAREST);
 
 	if (!framebuffer)
 	{

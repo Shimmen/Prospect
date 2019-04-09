@@ -183,6 +183,12 @@ FpsCamera::Update(const Input& input, float dt)
 		performUpdate = true;
 	}
 
+	if (cameraUniformData.exposure_compensation != exposureComp)
+	{
+		cameraUniformData.exposure_compensation = exposureComp;
+		performUpdate = true;
+	}
+
 	// NOTE: This will force way more updates than maybe required, due to the noisy nature
 	// of a delta time signal. Maybe move to some other smaller uniform buffer?
 	if (cameraUniformData.delta_time != dt)

@@ -13,7 +13,20 @@
 void
 FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 {
-	// TODO: Expose here, before the bloom pass!
+	{
+		if (!exposureProgram)
+		{
+			ShaderSystem::AddComputeProgram(&exposureProgram, "post/expose.comp.glsl", this);
+		}
+
+		int xGroups = int(ceil(lightBuffer.width / 32.0f));
+		int yGroups = int(ceil(lightBuffer.height / 32.0f));
+
+		glUseProgram(*exposureProgram);
+		glBindImageTexture(0, lightBuffer.lightTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+		glDispatchCompute(xGroups, yGroups, 1);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
 
 	bloomPass.Draw(lightBuffer);
 
@@ -44,14 +57,12 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 	}
 
 	{
-		static Uniform<float> exposure("u_exposure", 5.0f);
 		static Uniform<float> vignette("u_vignette_falloff", 0.25f);
 		static Uniform<float> gamma("u_gamma", 2.2f);
 		static Uniform<float> bloomAmount("u_bloom_amount", 0.04f);
 
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{
-			ImGui::SliderFloat("Exposure", &exposure.value, 0.0f, 32.0f, "%.1f");
 			ImGui::SliderFloat("Vignette amount", &vignette.value, 0.0f, 2.0f, "%.2f");
 			ImGui::SliderFloat("Gamma", &gamma.value, 0.1f, 4.0f, "%.1f");
 			ImGui::Spacing();
@@ -65,7 +76,6 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 			}
 		}
 
-		exposure.UpdateUniformIfNeeded(*finalProgram);
 		vignette.UpdateUniformIfNeeded(*finalProgram);
 		gamma.UpdateUniformIfNeeded(*finalProgram);
 		bloomAmount.UpdateUniformIfNeeded(*finalProgram);
@@ -105,5 +115,3 @@ void FinalPass::ProgramLoaded(GLuint program)
 		glProgramUniform1i(*finalProgram, glGetUniformLocation(*finalProgram, "u_avg_log_lum_texture"), 2);
 	}
 }
-
-

@@ -113,6 +113,7 @@ void IBLDemo::Init()
 
 	//scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/aero_lab/aerodynamics_workshop_8k.hdr");
+	//scene.skyProbe.radiance = TextureSystem::CreatePlaceholder(255, 255, 255);
 
 	scene.mainCamera.reset(new FpsCamera());
 	scene.mainCamera->LookAt({ 6, 11, -25 }, { 6, 11, 0 });

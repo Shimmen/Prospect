@@ -36,5 +36,6 @@ protected:
 	float aperture     { 16.0f };
 	float iso          { 400.0f };
 	float shutterSpeed { 1.0f / iso };
+	float exposureComp { 0.0f };
 
 };

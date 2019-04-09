@@ -11,7 +11,7 @@ struct LightBuffer
 
 	GLuint framebuffer;
 
-	// RGB32F: RGB - accumulated light contribution
+	// RGBA32F: RGB - accumulated light contribution, A - unused, for now
 	GLuint lightTexture = 0;
 
 	////////////////////////////

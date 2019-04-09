@@ -77,12 +77,11 @@ void main()
 
         float sampleLoD = roughness * float(IBL_RADIANCE_MIPMAP_LAYERS - 1);
         vec3 prefiltered = textureLod(u_radiance, sphericalUvFromDirection(R), sampleLoD).rgb;
-        specular = prefiltered * ggxBrdfApproximation(F, roughness, saturate(dot(N, V)));
 
-        // TODO: My current brdf integration map doesn't look exactly right.. too much fresnel
-        // and a little off on some other stuff. But the approximation works for now.
-        //vec2 AB = texture(u_brdf_integration_map, vec2(saturate(dot(N, V)), roughness)).xy;
-        //specular = prefiltered * (F * AB.x + AB.y);
+        //vec2 AB = ggxBrdfApproximation(F, roughness, saturate(dot(N, V)));
+        vec2 AB = texture(u_brdf_integration_map, vec2(saturate(dot(N, V)), roughness)).xy;
+
+        specular = prefiltered * (f0 * AB.x + AB.y);
     }
 
     vec3 diffuse;
@@ -95,11 +94,8 @@ void main()
         //  be blown up in size due to the bloom)
         dir = max(dir, 0.0);
 
-        vec3 irradiance = sampleShIrradiance(dir, u_irradiance_sh);
-        diffuse = baseColor * irradiance / PI;
-
-        //vec2 uv = sphericalUvFromDirection(dir);
-        //diffuse = baseColor * texture(u_irradiance, uv).rgb;
+        vec3 irradiance = max(sampleShIrradiance(dir, u_irradiance_sh), vec3(0.0));
+        diffuse = baseColor * irradiance * PI; // Feels like there should be a *divide* by PI here, but this seems to be energy conserving...
     }
 
     vec3 kDiffuse = (vec3(1.0) - F) * vec3(1.0 - metallic);

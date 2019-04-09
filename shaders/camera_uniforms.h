@@ -12,7 +12,9 @@ struct CameraUniforms
     float iso;
     float aperture;
     float shutter_speed;
-	float delta_time;
+    float exposure_compensation;
+
+    float delta_time;
 };
 
 #endif // CAMERA_UNIFORMS_H

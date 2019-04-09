@@ -21,6 +21,7 @@ private:
 	GLuint logLumTexture{ 0 };
 	GLuint currentLumTexture{ 0 };
 
+	GLuint *exposureProgram{ 0 };
 	GLuint *logLumProgram{ 0 };
 	GLuint *finalProgram{ 0 };
 
