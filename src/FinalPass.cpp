@@ -65,9 +65,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		{
 			ImGui::SliderFloat("Vignette amount", &vignette.value, 0.0f, 2.0f, "%.2f");
 			ImGui::SliderFloat("Gamma", &gamma.value, 0.1f, 4.0f, "%.1f");
-			ImGui::Spacing();
-			ImGui::SliderFloat("Bloom blur radius", &bloomPass.blurRadius, 0.0f, 0.02f, "%.6f", 3.0f);
-			ImGui::SliderFloat("Bloom amount", &bloomAmount.value, 0.0f, 1.0f, "%.3f");
+			ImGui::SliderFloat("Bloom amount", &bloomAmount.value, 0.0f, 1.0f, "%.6f", 4.0f);
 
 			if (ImGui::TreeNode("Camera"))
 			{
