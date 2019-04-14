@@ -4,6 +4,7 @@
 
 #include "Scene.h"
 #include "GBuffer.h"
+#include "SSAOPass.h"
 #include "LightBuffer.h"
 
 struct DirectionalLight;
@@ -12,7 +13,7 @@ class IBLPass : ShaderDepandant
 {
 public:
 
-	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& scene);
+	void Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const SSAOPass& ssaoPass, Scene& scene);
 	void ProgramLoaded(GLuint program) override;
 
 private:

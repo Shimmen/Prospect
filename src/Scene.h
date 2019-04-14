@@ -7,6 +7,8 @@
 #include "CameraBase.h"
 #include "Model.h"
 
+#include "shader_types.h"
+
 struct DirectionalLight;
 
 struct Probe

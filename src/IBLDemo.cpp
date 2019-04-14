@@ -23,17 +23,12 @@
 #include "CompleteMaterial.h"
 
 #include "GeometryPass.h"
-#include "ShadowPass.h"
-#include "BloomPass.h"
-#include "LightPass.h"
 #include "IBLPass.h"
 #include "SkyPass.h"
+#include "SSAOPass.h"
 #include "FinalPass.h"
 
 using namespace glm;
-#include "shader_types.h"
-#include "shader_locations.h"
-#include "camera_uniforms.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Data
@@ -49,6 +44,7 @@ namespace
 	GeometryPass geometryPass;
 	IBLPass iblPass;
 	SkyPass skyPass;
+	SSAOPass ssaoPass;
 	FinalPass finalPass;
 }
 
@@ -143,8 +139,11 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	scene.mainCamera->Update(input, deltaTime);
 
 	geometryPass.Draw(gBuffer, scene);
-	iblPass.Draw(lightBuffer, gBuffer, scene);
+	ssaoPass.Draw(gBuffer);
+
+	iblPass.Draw(lightBuffer, gBuffer, ssaoPass, scene);
 	skyPass.Draw(lightBuffer, scene);
+
 	finalPass.Draw(lightBuffer, scene);
 
 	ImGui::End();

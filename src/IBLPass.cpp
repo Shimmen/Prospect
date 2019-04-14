@@ -16,7 +16,7 @@ using namespace glm;
 #include "shader_types.h"
 
 void
-IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& scene)
+IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const SSAOPass& ssaoPass, Scene& scene)
 {
 	if (!iblProgram)
 	{
@@ -79,6 +79,8 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, Scene& sce
 	glBindTextureUnit(6, scene.skyProbe.filteredRadiance);
 	glBindTextureUnit(7, brdfIntegrationMap);
 
+	glBindTextureUnit(8, ssaoPass.occlusionTexture);
+
 	FullscreenQuad::Draw();
 
 	glEnable(GL_DEPTH_TEST);
@@ -102,6 +104,9 @@ IBLPass::ProgramLoaded(GLuint program)
 
 	GLint locBrdf = glGetUniformLocation(iblProgram, "u_brdf_integration_map");
 	glProgramUniform1i(iblProgram, locBrdf, 7);
+
+	GLint locOcclusion = glGetUniformLocation(iblProgram, "u_occlusion_texture");
+	glProgramUniform1i(iblProgram, locOcclusion, 8);
 }
 
 void

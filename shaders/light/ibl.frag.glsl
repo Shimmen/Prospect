@@ -24,6 +24,7 @@ PredefinedUniform(sampler2D, u_g_buffer_depth);
 uniform sampler2D u_radiance;
 uniform sampler2D u_brdf_integration_map;
 uniform sampler2D u_irradiance_sh;
+uniform sampler2D u_occlusion_texture;
 
 PredefinedOutput(vec4, o_color);
 
@@ -100,6 +101,8 @@ void main()
 
     vec3 kDiffuse = (vec3(1.0) - F) * vec3(1.0 - metallic);
     vec3 indirectLight = (kDiffuse * diffuse) + specular;
+
+    indirectLight *= texture(u_occlusion_texture, v_uv).r;
 
     vec3 color = (unlit) ? baseColor : indirectLight;
     o_color = vec4(color, 1.0);
