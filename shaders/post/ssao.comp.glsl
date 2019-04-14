@@ -27,7 +27,8 @@ PredefinedUniformBlock(SSAODataBlock)
 PredefinedUniform(sampler2D, u_g_buffer_normal);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
-layout(binding = 0, r32f) restrict writeonly uniform image2D img_occlusion;
+layout(binding = 0, r16f) restrict writeonly uniform image2D img_occlusion;
+layout(binding = 1, r8)   restrict readonly  uniform image2D img_blue_noise;
 
 vec3 project(vec3 vsPos)
 {
@@ -56,27 +57,38 @@ void main()
 
         // Get view space position of fragment
         vec3 origin = unproject(vec3(uv * vec2(2.0) - vec2(1.0), depth * 2.0 - 1.0));
-        //origin += N * vec3(0.125); // some amount of normal offset that works
+        origin += N * vec3(0.01); // some amount of normal offset that works
 
         // Set up tbn matrix for orienting the kernel. Since we are rotating the TBN-matrix
         // with blue noise we really don't want to introduce any noise here at all, so all
         // noise is fully blue. However, since there isn't one orthogonal vector for any normal
         // we have to compute it here and introduce some noise that way. Fortunately it's
         // somewhat spatially consistent, so it's not very noisy to begin with... so this works.
-        vec3 ortogonal = vec3(-N.y, N.x, 0.0);
-        vec3 tangent = normalize(ortogonal - N * dot(ortogonal, N));
+        vec3 orthogonal = vec3(-N.y, N.x, 0.0);
+        vec3 tangent = normalize(orthogonal - N * dot(orthogonal, N));
         vec3 bitangent = cross(tangent, N);
         mat3 tbn = mat3(tangent, bitangent, N);
 
-        //
-        // TODO: Rotate the TBN-matrix!!!
-        //
+        // Set up matrix for rotating the kernel samples around the normal. This makes sure we
+        // don't get any banding and instead introduce noise. (Note that GLSL has column-major
+        // matrix order, so the rotation is really the transpose of what is shown below.)
+        ivec2 noiseCoords = pixelCoord % ivec2(64);
+        float angle = TWO_PI * imageLoad(img_blue_noise, noiseCoords).r;
+        float cosA = cos(angle);
+        float sinA = sin(angle);
+        mat3 noiseRotation = mat3(
+             cosA, sinA, 0.0,
+            -sinA, cosA, 0.0,
+             0.0,  0.0,  1.0
+        );
+
+        mat3 kernelTransform = tbn * noiseRotation;
 
         float occlusion = 0.0;
         for (int i = 0; i < SSAO_KERNEL_SAMPLE_COUNT; ++i)
         {
             // Calculate sample view space position
-            vec3 samplePos = tbn * ssao.kernel[i].xyz;
+            vec3 samplePos = kernelTransform *  ssao.kernel[i].xyz;
             samplePos = origin + (samplePos * ssao.kernel_radius);
             float vsSampleDepth = samplePos.z;
 
@@ -87,19 +99,17 @@ void main()
             vec3 vsRefPosition = unproject(vec3(projSamplePos.xy, projReferenceDepth * 2.0 - 1.0));
             float vsReferenceDepth = vsRefPosition.z;
 
-            float rangeCheck = 1.0;//smoothstep(0.0, 1.0, ssao.kernel_radius / abs(origin.z - vsReferenceDepth));
-            occlusion += (vsSampleDepth < vsReferenceDepth ? 1.0 : 0.0) * rangeCheck;
+            float rangeCheck = smoothstep(0.0, 1.0, ssao.kernel_radius / abs(origin.z - vsReferenceDepth));
+            occlusion += (vsSampleDepth > vsReferenceDepth ? 1.0 : 0.0) * rangeCheck;
         }
         occlusion /= float(SSAO_KERNEL_SAMPLE_COUNT);
 
         // Intensify the ambient occlusion, i.e. make occluded parts darker
-        occlusion = pow(occlusion, ssao.intensity);
+        occlusion = pow(1.0 - occlusion, ssao.intensity);
 
-        // Ignore non-rendered/background pixels!
-        if (depth >= 1.0)
-        {
-            occlusion = 1.0;
-        }
+        // Ignore non-rendered/background pixels! Since we only apply SSAO for rendered geometry this doesn't really
+        // affect anything, but I think this makes the texture easier to understand when you're looking at it.
+        occlusion = (depth >= 1.0) ? 1.0 : occlusion;
 
         imageStore(img_occlusion, pixelCoord, vec4(occlusion));
     }

@@ -18,8 +18,8 @@ public:
 
 	GLuint occlusionTexture{ 0 };
 
-	float kernelRadius = 1.5f;
-	float intensity = 6.0f;
+	float kernelRadius = 4.0f;
+	float intensity = 7.0f;
 
 private:
 
@@ -28,6 +28,7 @@ private:
 	GLuint kernelNoiseTexture{ 0 };
 
 	GLuint *ssaoProgram{ 0 };
+	GLuint *ssaoBlurProgram{ 0 };
 
 	GLuint ssaoDataBuffer{ 0 };
 	SSAOData ssaoData{};

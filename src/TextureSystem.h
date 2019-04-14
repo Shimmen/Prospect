@@ -2,16 +2,12 @@
 
 #include <mutex>
 #include <thread>
-#include <condition_variable>
 
 #include <string>
-#include <memory>
-#include <stdint.h>
+#include <cstdint>
 #include <unordered_map>
 
 #include <glad/glad.h>
-
-#include "Queue.h"
 
 namespace TextureSystem
 {
@@ -32,5 +28,5 @@ namespace TextureSystem
 
 	GLuint LoadLdrImage(const std::string& filename);
 	GLuint LoadHdrImage(const std::string& filename);
-	GLuint LoadDataTexture(const std::string& filename);
+	GLuint LoadDataTexture(const std::string& filename, GLenum internalFormat = GL_RGBA8);
 }

@@ -6,6 +6,7 @@
 #include <atomic>
 
 #include "Logging.h"
+#include "Queue.h"
 
 //
 // Internal data structures
@@ -332,7 +333,7 @@ TextureSystem::LoadHdrImage(const std::string& filename)
 }
 
 GLuint
-TextureSystem::LoadDataTexture(const std::string& filename)
+TextureSystem::LoadDataTexture(const std::string& filename, GLenum internalFormat)
 {
 	if (IsHdrFile(filename))
 	{
@@ -342,8 +343,8 @@ TextureSystem::LoadDataTexture(const std::string& filename)
 	ImageLoadDescription dsc;
 	dsc.filename = filename;
 	dsc.texture = CreateEmptyTextureObject();
-	dsc.format = GL_RGBA;
-	dsc.internalFormat = GL_RGBA8;
+	dsc.format = GL_RGBA; // (we currently always try to load an RGBA)
+	dsc.internalFormat = internalFormat;
 	dsc.requestMipmaps = true;
 	dsc.isHdr = false;
 

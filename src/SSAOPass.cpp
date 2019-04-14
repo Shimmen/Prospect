@@ -36,12 +36,14 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 	if (!ssaoProgram)
 	{
 		ShaderSystem::AddComputeProgram(&ssaoProgram, "post/ssao.comp.glsl", this);
+		ShaderSystem::AddComputeProgram(&ssaoBlurProgram, "post/ssao_blur.comp.glsl");
 
 		glCreateBuffers(1, &ssaoDataBuffer);
 		glNamedBufferStorage(ssaoDataBuffer, sizeof(SSAOData), nullptr, GL_DYNAMIC_STORAGE_BIT);
 		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(SSAODataBlock), ssaoDataBuffer);
 
 		GenerateAndUpdateKernel();
+		kernelNoiseTexture = TextureSystem::LoadDataTexture("assets/blue_noise/64/LDR_LLL1_0.png", GL_R8);
 	}
 
 	if (ImGui::CollapsingHeader("SSAO"))
@@ -51,7 +53,7 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 			GenerateAndUpdateKernel();
 		}
 
-		ImGui::SliderFloat("Kernel radius", &kernelRadius, 0.01f, 3.0f);
+		ImGui::SliderFloat("Kernel radius", &kernelRadius, 0.01f, 10.0f);
 		ImGui::SliderFloat("Intensity", &intensity, 0.0f, 20.0f);
 		
 		ImGui::Text("Occlusion:");
@@ -67,17 +69,29 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 		glNamedBufferSubData(ssaoDataBuffer, offsetof(SSAOData, intensity), sizeof(SSAOData::intensity), &intensity);
 	}
 
+	int xGroups = int(ceil(gBuffer.width / 32.0f));
+	int yGroups = int(ceil(gBuffer.height / 32.0f));
+
+	// Generate SSAO
+
 	glUseProgram(*ssaoProgram);
 
 	glBindTextureUnit(0, gBuffer.normalTexture);
 	glBindTextureUnit(1, gBuffer.depthTexture);
-	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
-	
-	int xGroups = int(ceil(gBuffer.width / 32.0f));
-	int yGroups = int(ceil(gBuffer.height / 32.0f));
-	glDispatchCompute(xGroups, yGroups, 1);
 
+	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
+	glBindImageTexture(1, kernelNoiseTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
+	
+	glDispatchCompute(xGroups, yGroups, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	// Blur SSAO texture
+
+	glUseProgram(*ssaoBlurProgram);
+	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R16F);
+	glDispatchCompute(xGroups, yGroups, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 }
 
 void
