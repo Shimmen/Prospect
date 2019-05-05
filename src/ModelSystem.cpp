@@ -108,7 +108,7 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 	for (size_t i = 0; i < numInputIndices; ++i)
 	{
 		tinyobj::index_t index = shape.mesh.indices[i];
-		uint64_t hash = (index.vertex_index * 61ULL + index.normal_index) * 39ULL + index.texcoord_index;
+		uint64_t hash = (index.vertex_index * 71ULL + index.normal_index) * 39ULL + index.texcoord_index;
 
 		if (indexMap.find(hash) != indexMap.end())
 		{

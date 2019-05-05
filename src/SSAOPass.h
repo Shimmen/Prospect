@@ -18,8 +18,12 @@ public:
 
 	GLuint occlusionTexture{ 0 };
 
-	float kernelRadius = 4.0f;
+	float kernelRadius = 0.9f;
 	float intensity = 7.0f;
+	bool applyBlur = false;
+
+	// (recompile to change this.. easier this way)
+	bool randomKernelSamples = false;
 
 private:
 

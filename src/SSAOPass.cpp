@@ -24,7 +24,7 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 	{
 		glDeleteTextures(1, &occlusionTexture);
 		occlusionTexture = TextureSystem::CreateTexture(gBuffer.width, gBuffer.height, GL_R16F, GL_NEAREST, GL_NEAREST);
-		
+
 		// Setup the swizzle for the occlusion texture so it's gray scale
 		GLenum swizzle[] = { GL_RED, GL_RED, GL_RED, GL_ALPHA };
 		glTextureParameteriv(occlusionTexture, GL_TEXTURE_SWIZZLE_RGBA, (GLint *)swizzle);
@@ -48,14 +48,16 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 
 	if (ImGui::CollapsingHeader("SSAO"))
 	{
-		if (ImGui::Button("Generate new kernel"))
+		if (randomKernelSamples && ImGui::Button("Generate new kernel"))
 		{
 			GenerateAndUpdateKernel();
 		}
 
-		ImGui::SliderFloat("Kernel radius", &kernelRadius, 0.01f, 10.0f);
+		ImGui::SliderFloat("Kernel radius", &kernelRadius, 0.01f, 3.0f);
 		ImGui::SliderFloat("Intensity", &intensity, 0.0f, 20.0f);
-		
+
+		ImGui::Checkbox("Apply blur", &applyBlur);
+
 		ImGui::Text("Occlusion:");
 		GuiSystem::Texture(occlusionTexture);
 	}
@@ -81,17 +83,19 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 
 	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
 	glBindImageTexture(1, kernelNoiseTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
-	
+
 	glDispatchCompute(xGroups, yGroups, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	// Blur SSAO texture
 
-	glUseProgram(*ssaoBlurProgram);
-	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R16F);
-	glDispatchCompute(xGroups, yGroups, 1);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
+	if (applyBlur)
+	{
+		glUseProgram(*ssaoBlurProgram);
+		glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R16F);
+		glDispatchCompute(xGroups, yGroups, 1);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
 }
 
 void
@@ -115,12 +119,32 @@ SSAOPass::GenerateAndUpdateKernel() const
 
 	for (int i = 0; i < SSAO_KERNEL_SAMPLE_COUNT; i++)
 	{
-		kernel[i].x = randomFloat(rng) * 2.0f - 1.0f;
-		kernel[i].y = randomFloat(rng) * 2.0f - 1.0f;
-		kernel[i].z = randomFloat(rng);
-		kernel[i].w = 0.0f; // (unused)
+		if (randomKernelSamples)
+		{
+			kernel[i].x = randomFloat(rng) * 2.0f - 1.0f;
+			kernel[i].y = randomFloat(rng) * 2.0f - 1.0f;
+			kernel[i].z = randomFloat(rng);
+			kernel[i].w = 0.0f; // (unused)
+		}
+		else
+		{
+			// A spherical Fibonacci lattice sampling strategy. Seems to work pretty fine...
+			// http://extremelearning.com.au/evenly-distributing-points-on-a-sphere/
+			const float phi = (1.0f + sqrtf(5.0f)) / 2.0f;
 
-		float scale = float(i) / float(SSAO_KERNEL_SAMPLE_COUNT);
+			float x1 = float(i) / float(SSAO_KERNEL_SAMPLE_COUNT - 1);
+			float x2 = float(i) / phi;
+
+			float radius = sqrtf(x1);
+			float angle = 2.0f * 3.141593f * x2;
+
+			kernel[i].x = radius * cosf(angle);
+			kernel[i].y = radius * sinf(angle);
+			kernel[i].z = cosf(radius); // (project z-component so the sample lies on the unit sphere)
+			kernel[i].w = 0.0f; // (unused)
+		}
+
+		float scale = float(i) / float(SSAO_KERNEL_SAMPLE_COUNT - 1);
 		scale = mix(0.1f, 1.0f, scale * scale);
 
 		kernel[i] *= (1.0f / length(kernel[i])) * scale;

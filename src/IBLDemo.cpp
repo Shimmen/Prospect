@@ -64,17 +64,19 @@ App::Settings IBLDemo::Setup()
 void IBLDemo::Init()
 {
 	ModelSystem::LoadModel("assets/generic/sphere.obj", [&](std::vector<Model> models) {
-		const int gridSize = 10;
+
+		const int numMetalLevels = 2;
+		const int numRoughnessLevels = 10;
 
 		assert(models.size() == 1);
 		Model model = models[0];
 
-		for (int y = 0; y < gridSize; ++y)
+		for (int y = 0; y < numMetalLevels; ++y)
 		{
-			for (int x = 0; x < gridSize; ++x)
+			for (int x = 0; x < numRoughnessLevels; ++x)
 			{
 				int id = TransformSystem::Create();
-				TransformSystem::Get(id).SetPosition(2.5f * x, 2.5f * y, 0.0f);
+				TransformSystem::Get(id).SetPosition(3.6f * x, 8.0f + 3.6f * y, 0.0f);
 				TransformSystem::UpdateMatrices(id);
 
 				Model sphere = model;
@@ -84,8 +86,8 @@ void IBLDemo::Init()
 				MaterialSystem::ManageMaterial(material);
 
 				material->baseColor = SrgbColor(0.972f, 0.960f, 0.915f);
-				material->roughness = float(y) / float(gridSize - 1);
-				material->metallic = 1.0f - float(x) / float(gridSize - 1);
+				material->roughness = float(x) / float(numRoughnessLevels - 1);
+				material->metallic = 1.0f - float(y) / float(numMetalLevels - 1);
 
 				sphere.material = material;
 				scene.models.emplace_back(sphere);
@@ -99,7 +101,7 @@ void IBLDemo::Init()
 
 		int id = TransformSystem::Create();
 		TransformSystem::Get(id)
-			.SetPosition(35.0f, 10.0f, -10.0f)
+			.SetPosition(38.0f, 10.0f, -10.0f)
 			.SetScale(20.0f);
 		TransformSystem::UpdateMatrices(id);
 		model.transformID = id;
