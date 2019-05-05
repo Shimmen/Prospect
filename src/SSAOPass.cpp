@@ -119,17 +119,22 @@ SSAOPass::GenerateAndUpdateKernel() const
 
 	for (int i = 0; i < SSAO_KERNEL_SAMPLE_COUNT; i++)
 	{
+		kernel[i].w = 0.0f; // (unused)
+
 		if (randomKernelSamples)
 		{
 			kernel[i].x = randomFloat(rng) * 2.0f - 1.0f;
 			kernel[i].y = randomFloat(rng) * 2.0f - 1.0f;
 			kernel[i].z = randomFloat(rng);
-			kernel[i].w = 0.0f; // (unused)
+
+			// Place sample *on* sphere
+			kernel[i] = normalize(kernel[i]);
 		}
 		else
 		{
 			// A spherical Fibonacci lattice sampling strategy. Seems to work pretty fine...
 			// http://extremelearning.com.au/evenly-distributing-points-on-a-sphere/
+
 			const float phi = (1.0f + sqrtf(5.0f)) / 2.0f;
 
 			float x1 = float(i) / float(SSAO_KERNEL_SAMPLE_COUNT - 1);
@@ -140,14 +145,16 @@ SSAOPass::GenerateAndUpdateKernel() const
 
 			kernel[i].x = radius * cosf(angle);
 			kernel[i].y = radius * sinf(angle);
-			kernel[i].z = cosf(radius); // (project z-component so the sample lies on the unit sphere)
-			kernel[i].w = 0.0f; // (unused)
+
+			// Project z-component so the sample lies on the unit sphere.
+			// Also avoid samples too close to the surface / bottom of the kernel
+			kernel[i].z = 0.75f * cosf(radius) + 0.25f;
 		}
 
+		// Scale the samples to the kernel fills its own space
 		float scale = float(i) / float(SSAO_KERNEL_SAMPLE_COUNT - 1);
 		scale = mix(0.1f, 1.0f, scale * scale);
-
-		kernel[i] *= (1.0f / length(kernel[i])) * scale;
+		kernel[i] *= scale;
 	}
 
 	glNamedBufferSubData(ssaoDataBuffer, offsetof(SSAOData, kernel), sizeof(SSAOData::kernel), kernel.data());
