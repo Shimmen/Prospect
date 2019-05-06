@@ -1,5 +1,7 @@
 #include "GuiSystem.h"
 
+#include <algorithm>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

@@ -1,9 +1,12 @@
 #include "ShaderSystem.h"
 
+#include <array>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <functional>
 #include <unordered_set>
+#include <unordered_map>
 
 #ifdef _WIN32
  #include <sys/stat.h>
@@ -39,7 +42,7 @@ struct std::hash<Program>
 {
 	std::size_t operator()(const Program& program) const
 	{
-		return 17 * program.fixedLocation;
+		return program.fixedLocation;
 	}
 };
 
@@ -57,10 +60,11 @@ struct GlslFile
 // Data
 //
 
-// TODO: Make this setable!
 std::string shaderDirectory{ "shaders/" };
 
 std::unordered_map<std::string, GlslFile> managedFiles;
+
+std::unordered_map<std::string, ShaderErrorReport> nonCompilingShaders{};
 
 // Maps from a program name to an index into the publicProgramHandles array
 std::unordered_map<std::string, size_t> managedPrograms{};
@@ -146,7 +150,7 @@ ReadFileWithIncludes(const std::string& filename, const Program& dependableProgr
 			size_t start = line.find('<') + 1;
 			size_t end = line.find('>');
 
-			size_t count = end - start;
+			int count = int(end) - int(start);
 			if (count < 0)
 			{
 				LogError("Invalid include directive: %s\n", line.c_str());
@@ -154,6 +158,47 @@ ReadFileWithIncludes(const std::string& filename, const Program& dependableProgr
 
 			std::string includeFile = line.substr(start, count);
 			ReadFileWithIncludes(includeFile, dependableProgram, sourceBuffer);
+		}
+
+		sourceBuffer << '\n';
+	}
+}
+
+void
+ReadFileWithIncludesTMP(const std::string& filename, std::stringstream& sourceBuffer)
+{
+	auto path = shaderDirectory + filename;
+	std::ifstream ifs(path);
+	if (!ifs.good())
+	{
+		Log("Could not read shader file '%s'.\n", filename.c_str());
+	}
+
+	std::string line;
+	while (std::getline(ifs, line))
+	{
+		size_t commentIndex = line.find("//");
+		size_t index = line.find("#include");
+
+		if (index == -1 || (commentIndex < index && commentIndex != -1))
+		{
+			sourceBuffer << line;
+		}
+		else
+		{
+			// This isn't very precise but it should work assuming that
+			// the programmer isn't doing anything really stupid.
+			size_t start = line.find('<') + 1;
+			size_t end = line.find('>');
+
+			int count = int(end) - int(start);
+			if (count < 0)
+			{
+				LogError("Invalid include directive: %s\n", line.c_str());
+			}
+
+			std::string includeFile = line.substr(start, count);
+			ReadFileWithIncludesTMP(includeFile, sourceBuffer);
 		}
 
 		sourceBuffer << '\n';
@@ -189,20 +234,29 @@ UpdateProgram(Program& program)
 			glGetShaderInfoLog(shaderHandle, sizeof(statusBuffer), nullptr, statusBuffer);
 			Log("Shader compilation error ('%s'): %s\n", shader.filename.c_str(), statusBuffer);
 
-			// TODO: Do some proper line mapping and only print relevant (+ surrounding) lines
-			/*
-			int lineNum = 1;
-			std::istringstream iss(source);
-			for (std::string line; std::getline(iss, line); ++lineNum)
+			ShaderErrorReport report;
 			{
-				Log(" %d: %s\n", lineNum, line.c_str());
+				int lineNum = 1;
+				std::stringstream textWithLineNrs;
+
+				for (std::string line; std::getline(sourceBuffer, line); ++lineNum)
+				{
+					textWithLineNrs << std::setfill(' ') << std::setw(3) << lineNum << "  " << line << std::endl;
+				}
+
+				report.preprocessedSource = textWithLineNrs.str();
+				report.errorMessage = std::string(statusBuffer);
+				report.shaderName = shader.filename;
 			}
-			*/
+			nonCompilingShaders[shader.filename] = report;
 		}
 		else
 		{
 			glAttachShader(programHandle, shaderHandle);
 			shaderHandles.push_back(shaderHandle);
+
+			// In case it previously haven't compiled, now remove it from the list
+			nonCompilingShaders.erase(shader.filename);
 		}
 	}
 
@@ -281,6 +335,18 @@ ShaderSystem::Update()
 	{
 		UpdateProgram(program);
 	}
+}
+
+std::vector<ShaderErrorReport>
+ShaderSystem::GetShaderErrorReports()
+{
+	std::vector<ShaderErrorReport> reports;
+	for (auto& pair : nonCompilingShaders)
+	{
+		reports.push_back(pair.second);
+	}
+
+	return reports;
 }
 
 GLuint *

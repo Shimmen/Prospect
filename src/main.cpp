@@ -122,6 +122,34 @@ void handle_global_key_commands(GLFWwindow* window, const Input& input)
 	}
 }
 
+void display_shader_error_reports()
+{
+	auto reports = ShaderSystem::GetShaderErrorReports();
+	for (auto& report : reports)
+	{
+		ImGui::Begin(("Shader error report for '" + report.shaderName + "'").c_str());
+		{
+			ImGui::Text(report.shaderName.c_str());
+			ImGui::TextColored({ 1, 0, 0, 1 }, report.errorMessage.c_str());
+
+			// NOTE: We will always use the read-only flag here, so this const cast should be perfectly fine!
+			char *data = const_cast<char *>(report.preprocessedSource.data());
+			size_t dataSize = report.preprocessedSource.size();
+
+			// Give a reasonable size the first time a file shows up
+			ImGui::SetWindowSize({ 800, 600 }, ImGuiCond_Once);
+
+			// (this size seems to work fine for fitting all relevant data)
+			ImVec2 panelSize = ImGui::GetWindowSize();
+			panelSize.y -= 50 + ImGui::CalcTextSize(report.errorMessage.c_str()).y + ImGui::CalcTextSize(report.shaderName.c_str()).y;
+			panelSize.x -= 15;
+
+			ImGui::InputTextMultiline("", data, dataSize, panelSize, ImGuiInputTextFlags_ReadOnly);
+		}
+		ImGui::End();
+	}
+}
+
 //
 //
 //
@@ -244,6 +272,8 @@ int main()
 
 		if (renderUI)
 		{
+			display_shader_error_reports();
+
 			ImGui::Render();
 			GuiSystem::RenderDrawData(ImGui::GetDrawData());
 		}
