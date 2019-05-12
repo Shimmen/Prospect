@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 
 #include "Input.h"
+#include "BufferObject.h"
 
 #include "CameraBase.h"
 
@@ -62,7 +63,6 @@ private:
 
 	//
 
-	CameraUniforms cameraUniformData;
-	GLuint cameraUniformBuffer;
+	BufferObject<CameraUniforms> cameraBuffer;
 
 };

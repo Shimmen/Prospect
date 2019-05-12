@@ -5,7 +5,7 @@
 // Attributes
 
 #define PredefinedAttributeLocation(name) ATTRIB_##name
-#define PredefinedAttribte(type, name) layout(location = PredefinedAttributeLocation(name)) in type name
+#define PredefinedAttribute(type, name) layout(location = PredefinedAttributeLocation(name)) in type name
 
 //
 
@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Outputs / render targets
 
+// (i.e. if we're not in a shader/GLSL environment)
 #ifdef GL_COLOR_ATTACHMENT0
  #define PredefinedOutputLocation(name) GL_COLOR_ATTACHMENT0 + TARGET_##name
 #endif

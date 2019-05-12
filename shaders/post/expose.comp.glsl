@@ -17,9 +17,8 @@ PredefinedUniformBlock(CameraUniformBlock)
 
 layout(binding = 0, rgba32f) restrict uniform image2D img_light_buffer;
 
-// TODO: Use this for the automatic exposure!
-//uniform sampler2D u_avg_log_lum_texture;
-//layout(binding = 0, r32f) restrict uniform image2D img_current_lum;
+layout(binding = 1, r32f) restrict readonly uniform image2D img_avg_log_lum;
+layout(binding = 2, r32f) restrict          uniform image2D img_history_lum;
 
 void main()
 {
@@ -30,11 +29,29 @@ void main()
     {
         vec3 hdrColor = imageLoad(img_light_buffer, pixelCoord).rgb;
 
-        // Manual exposure control
+        if (camera.use_automatic_exposure)
         {
-            float ev100 = computeEV100(camera.aperture, camera.shutter_speed, camera.iso);
+            // Read current average luminance
+            float avgLogLuminance = imageLoad(img_avg_log_lum, ivec2(0)).r;
+            float avgLuminance = exp(avgLogLuminance);
+
+            // Read history of average luminances
+            float histLuminance = imageLoad(img_history_lum, ivec2(0)).r;
+
+            // Compute the actual luminance to use, from history & current, and write back to next history sample
+            float realLuminance = histLuminance + (avgLuminance - histLuminance)
+                                                * (1.0 - exp(-camera.delta_time * camera.adaption_rate));
+            imageStore(img_history_lum, ivec2(0), vec4(realLuminance));
+
+            float ev100 = computeEV100FromAvgLuminance(realLuminance);
             ev100 -= camera.exposure_compensation;
 
+            float exposure = convertEV100ToExposure(ev100);
+            hdrColor *= exposure;
+        }
+        else
+        {
+            float ev100 = computeEV100(camera.aperture, camera.shutter_speed, camera.iso);
             float exposure = convertEV100ToExposure(ev100);
             hdrColor *= exposure;
 

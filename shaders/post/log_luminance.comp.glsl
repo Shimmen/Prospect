@@ -10,7 +10,7 @@ layout(
 
 
 PredefinedUniform(sampler2D, u_texture);
-layout(binding = 1, r16f) restrict writeonly uniform image2D img_target;
+layout(binding = 1, r32f) restrict writeonly uniform image2D img_target;
 
 void main()
 {
@@ -23,5 +23,5 @@ void main()
     const float epsilon = 0.0001;
     float logLum = log(lum + epsilon);
 
-    imageStore(img_target, pixelCoord, vec4(logLum));
+    imageStore(img_target, pixelCoord, vec4(vec3(logLum), 1.0));
 }

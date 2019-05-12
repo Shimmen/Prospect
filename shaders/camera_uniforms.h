@@ -15,6 +15,9 @@ struct CameraUniforms
     float exposure_compensation;
 
     float delta_time;
+    float adaption_rate;
+    bool use_automatic_exposure;
+
 };
 
 #endif // CAMERA_UNIFORMS_H

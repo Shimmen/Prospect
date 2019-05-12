@@ -100,7 +100,7 @@ BloomPass::Draw(const LightBuffer& lightBuffer)
 
 void BloomPass::Setup(int width, int height)
 {
-	ShaderSystem::AddProgram(&blitProgram, "quad.vert.glsl", "blit.frag.glsl", this);
+	ShaderSystem::AddProgram(&blitProgram, "quad.vert.glsl", "etc/blit.frag.glsl", this);
 	ShaderSystem::AddProgram(&downsampleProgram, "quad.vert.glsl", "post/bloom_downsample.frag.glsl", this);
 	ShaderSystem::AddProgram(&upsampleProgram, "quad.vert.glsl", "post/bloom_upsample.frag.glsl", this);
 

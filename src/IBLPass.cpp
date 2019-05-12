@@ -45,7 +45,7 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const SSAO
 		GuiSystem::Texture(scene.skyProbe.filteredRadiance, 2.0f);
 
 		static bool overrideRoughness = false;
-		bool toggled = ImGui::Checkbox("Overide min roughness", &overrideRoughness);
+		bool toggled = ImGui::Checkbox("Override min roughness", &overrideRoughness);
 
 		if (overrideRoughness)
 		{
@@ -126,7 +126,7 @@ IBLPass::CreateBrdfIntegrationMap()
 	GLuint unit = 0;
 	glBindImageTexture(unit, map, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
 
-	GLuint program = *ShaderSystem::AddComputeProgram("compute/brdf_map.comp.glsl");
+	GLuint program = *ShaderSystem::AddComputeProgram("ibl/brdf_map.comp.glsl");
 
 	glUseProgram(program);
 	glDispatchCompute(size, size, 1);
@@ -156,7 +156,7 @@ IBLPass::FilterProbe(Probe& probe)
 	glTextureParameteri(squareMap, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(squareMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	static GLuint *resizeProgram = ShaderSystem::AddComputeProgram("compute/resize.comp.glsl");
+	static GLuint *resizeProgram = ShaderSystem::AddComputeProgram("etc/resize.comp.glsl");
 
 	glProgramUniform1i(*resizeProgram, glGetUniformLocation(*resizeProgram, "u_source"), 0);
 	glBindTextureUnit(0, probe.radiance);
@@ -182,7 +182,7 @@ IBLPass::FilterProbe(Probe& probe)
 		glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTextureParameteri(filteredMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		static GLuint *program = ShaderSystem::AddComputeProgram("compute/filter_radiance.comp.glsl");
+		static GLuint *program = ShaderSystem::AddComputeProgram("ibl/filter_radiance.comp.glsl");
 		glUseProgram(*program);
 
 		glProgramUniform1i(*program, glGetUniformLocation(*program, "u_radiance"), 0);
@@ -217,7 +217,7 @@ IBLPass::FilterProbe(Probe& probe)
 		glTextureParameteri(shMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(shMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		static GLuint *program = ShaderSystem::AddComputeProgram("compute/create_sh.comp.glsl");
+		static GLuint *program = ShaderSystem::AddComputeProgram("ibl/create_sh.comp.glsl");
 		glUseProgram(*program);
 
 		if (!sphereSampleBuffer)

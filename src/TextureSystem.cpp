@@ -4,6 +4,7 @@
 #include <stb_image.h>
 
 #include <atomic>
+#include <algorithm>
 
 #include "Logging.h"
 #include "Queue.h"
@@ -248,9 +249,14 @@ TextureSystem::CreatePlaceholder(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 GLuint
 TextureSystem::CreateTexture(int width, int height, GLenum format, GLenum minFilter, GLenum magFilter)
 {
+	// Assume we always potentially want mipmaps with this function. This can avoid annoying situations
+	// where we try to check different mipmaps of textures and nothing seems to happen...
+	int maxSize = std::max(width, height);
+	int numMips = 1 + int(std::floor(std::log2(maxSize)));
+
 	GLuint texture;
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-	glTextureStorage2D(texture, 1, format, width, height);
+	glTextureStorage2D(texture, numMips, format, width, height);
 
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, minFilter);
 	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, magFilter);

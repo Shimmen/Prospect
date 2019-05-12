@@ -9,40 +9,18 @@
 #include "FullscreenQuad.h"
 
 #include "shader_locations.h"
+#include "PerformOnce.h"
 
 void
 FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 {
-	{
-		if (!exposureProgram)
-		{
-			ShaderSystem::AddComputeProgram(&exposureProgram, "post/expose.comp.glsl", this);
-		}
+	PerformOnce(logLumTexture = TextureSystem::CreateTexture(1024, 1024, GL_R32F));
+	PerformOnce(currentLumTexture = TextureSystem::CreateTexture(1, 1, GL_R32F));
 
-		int xGroups = int(ceil(lightBuffer.width / 32.0f));
-		int yGroups = int(ceil(lightBuffer.height / 32.0f));
-
-		glUseProgram(*exposureProgram);
-		glBindImageTexture(0, lightBuffer.lightTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-		glDispatchCompute(xGroups, yGroups, 1);
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	}
-
-	bloomPass.Draw(lightBuffer);
-
-	if (!logLumProgram)
-	{
-		ShaderSystem::AddComputeProgram(&logLumProgram, "post/log_luminance.comp.glsl", this);
-	}
-
-	if (!logLumTexture)
-	{
-		logLumTexture = TextureSystem::CreateTexture(1024, 1024, GL_R16F);
-	}
-
+	PerformOnce(ShaderSystem::AddComputeProgram(&logLumProgram, "post/log_luminance.comp.glsl", this));
 	{
 		glBindTextureUnit(0, lightBuffer.lightTexture);
-		glBindImageTexture(1, logLumTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
+		glBindImageTexture(1, logLumTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
 		glUseProgram(*logLumProgram);
 		glDispatchCompute(32, 32, 1); //(32 * 32 = 1024)
@@ -51,11 +29,23 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		glGenerateTextureMipmap(logLumTexture);
 	}
 
-	if (!finalProgram)
+	PerformOnce(ShaderSystem::AddComputeProgram(&exposureProgram, "post/expose.comp.glsl", this));
 	{
-		ShaderSystem::AddProgram(&finalProgram, "quad.vert.glsl", "post/final.frag.glsl", this);
+		int xGroups = int(ceil(lightBuffer.width / 32.0f));
+		int yGroups = int(ceil(lightBuffer.height / 32.0f));
+
+		glBindImageTexture(0, lightBuffer.lightTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+		glBindImageTexture(1, logLumTexture, 10, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+		glBindImageTexture(2, currentLumTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32F);
+
+		glUseProgram(*exposureProgram);
+		glDispatchCompute(xGroups, yGroups, 1);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
+	bloomPass.Draw(lightBuffer);
+
+	PerformOnce(ShaderSystem::AddProgram(&finalProgram, "quad.vert.glsl", "post/final.frag.glsl", this));
 	{
 		static Uniform<float> vignette("u_vignette_falloff", 0.25f);
 		static Uniform<float> gamma("u_gamma", 2.2f);
@@ -79,11 +69,6 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		bloomAmount.UpdateUniformIfNeeded(*finalProgram);
 	}
 
-	if (!currentLumTexture)
-	{
-		currentLumTexture = TextureSystem::CreateTexture(1, 1, GL_R32F, GL_NEAREST, GL_NEAREST);
-	}
-
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
@@ -95,8 +80,6 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		glBindTextureUnit(0, lightBuffer.lightTexture);
 		glBindTextureUnit(1, bloomPass.bloomResults);
 		glBindTextureUnit(2, logLumTexture);
-
-		glBindImageTexture(0, currentLumTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32F);
 
 		FullscreenQuad::Draw();
 	}
@@ -110,6 +93,5 @@ void FinalPass::ProgramLoaded(GLuint program)
 	{
 		glProgramUniform1i(*finalProgram, PredefinedUniformLocation(u_texture), 0);
 		glProgramUniform1i(*finalProgram, glGetUniformLocation(*finalProgram, "u_bloom_texture"), 1);
-		glProgramUniform1i(*finalProgram, glGetUniformLocation(*finalProgram, "u_avg_log_lum_texture"), 2);
 	}
 }

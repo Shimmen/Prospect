@@ -20,42 +20,65 @@ CameraBase::LookAt(const glm::vec3& position, const glm::vec3& target, const glm
 void
 CameraBase::DrawEditorGui()
 {
-	// Aperture
+	//ImGui::Checkbox("Use automatic exposure", &useAutomaticExposure);
+	if (ImGui::RadioButton("Automatic exposure", useAutomaticExposure)) useAutomaticExposure = true;
+	if (ImGui::RadioButton("Manual exposure", !useAutomaticExposure)) useAutomaticExposure = false;
+
+	if (useAutomaticExposure)
 	{
-		const float apertureSteps[] = { 1.4f, 2.0f, 2.8f, 4.0f, 5.6f, 8.0f, 11.0f, 16.0f };
-		const int apertureStepCount = sizeof(apertureSteps) / sizeof(apertureSteps[0]);
-
-		ImGui::Spacing(); ImGui::Spacing();
-		ImGui::Text("Aperture f/%.1f", aperture);
-		GuiSystem::SnapSliderFloat("aperture", &aperture, apertureSteps, apertureStepCount, "");
-	}
-
-	// Shutter speed
-	{
-		const int shutterDenominators[] = { 1000, 500, 250, 125, 60, 30, 15, 8, 4, 2, 1 };
-		const int shutterDenominatorCount = sizeof(shutterDenominators) / sizeof(shutterDenominators[0]);
-		
-		static int index = 1; // (given default f/16, ISO 400 we want ~1/400 s shutter speed)
-
-		ImGui::Spacing(); ImGui::Spacing();
-		ImGui::Text("Shutter speed  1/%i s", shutterDenominators[index]);
-		ImGui::SliderInt("shutter", &index, 0, shutterDenominatorCount - 1, "");
-
-		shutterSpeed = 1.0f / shutterDenominators[index];
-	}
-
-	// ISO
-	{
-		static int isoHundreds = 0;
-		if (int(iso) / 100 != isoHundreds)
+		// Adaption rate
 		{
-			isoHundreds = int(iso) / 100;
+			ImGui::Spacing(); ImGui::Spacing();
+			ImGui::Text("Adaption rate", &adaptionRate);
+			ImGui::SliderFloat("", &adaptionRate, 0.0001f, 2.0f, "%.4f", 5.0f);
 		}
 
-		ImGui::Spacing(); ImGui::Spacing();
-		ImGui::Text("ISO %i", 100 * isoHundreds);
-		ImGui::SliderInt("ISO", &isoHundreds, 1, 64, "");
+		// Exposure compensation
+		{
+			ImGui::Spacing(); ImGui::Spacing();
+			ImGui::Text("Exposure Compensation", &exposureComp);
+			ImGui::SliderFloat("ECs", &exposureComp, -5.0f, +5.0f, "%.1f");
+		}
+	}
+	else
+	{
+		// Aperture
+		{
+			const float apertureSteps[] = { 1.4f, 2.0f, 2.8f, 4.0f, 5.6f, 8.0f, 11.0f, 16.0f };
+			const int apertureStepCount = sizeof(apertureSteps) / sizeof(apertureSteps[0]);
 
-		iso = float(isoHundreds * 100.0f);
+			ImGui::Spacing(); ImGui::Spacing();
+			ImGui::Text("Aperture f/%.1f", aperture);
+			GuiSystem::SnapSliderFloat("aperture", &aperture, apertureSteps, apertureStepCount, "");
+		}
+
+		// Shutter speed
+		{
+			const int shutterDenominators[] = { 1000, 500, 250, 125, 60, 30, 15, 8, 4, 2, 1 };
+			const int shutterDenominatorCount = sizeof(shutterDenominators) / sizeof(shutterDenominators[0]);
+
+			static int index = 1; // (given default f/16, ISO 400 we want ~1/400 s shutter speed)
+
+			ImGui::Spacing(); ImGui::Spacing();
+			ImGui::Text("Shutter speed  1/%i s", shutterDenominators[index]);
+			ImGui::SliderInt("shutter", &index, 0, shutterDenominatorCount - 1, "");
+
+			shutterSpeed = 1.0f / shutterDenominators[index];
+		}
+
+		// ISO
+		{
+			static int isoHundreds = 0;
+			if (int(iso) / 100 != isoHundreds)
+			{
+				isoHundreds = int(iso) / 100;
+			}
+
+			ImGui::Spacing(); ImGui::Spacing();
+			ImGui::Text("ISO %i", 100 * isoHundreds);
+			ImGui::SliderInt("ISO", &isoHundreds, 1, 64, "");
+
+			iso = float(isoHundreds * 100.0f);
+		}
 	}
 }

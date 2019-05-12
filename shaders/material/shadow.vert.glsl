@@ -2,7 +2,7 @@
 
 #include <shader_locations.h>
 
-PredefinedAttribte(vec3, a_position);
+PredefinedAttribute(vec3, a_position);
 
 PredefinedUniform(mat4, u_projection_from_world);
 PredefinedUniform(mat4, u_world_from_local);

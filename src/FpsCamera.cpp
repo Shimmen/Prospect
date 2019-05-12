@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "GuiSystem.h"
+#include "PerformOnce.h"
 
 #include "shader_locations.h"
 
@@ -132,76 +133,34 @@ FpsCamera::Update(const Input& input, float dt)
 
 	// Update the camera uniform buffer
 
-	if (!cameraUniformBuffer)
-	{
-		glCreateBuffers(1, &cameraUniformBuffer);
-		glNamedBufferStorage(cameraUniformBuffer, sizeof(CameraUniforms), nullptr, GL_DYNAMIC_STORAGE_BIT);
-		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(CameraUniformBlock), cameraUniformBuffer);
-	}
+	// TODO: Don't keep so many redundant copies! A lot of stuff is already stored in the uniform buffer!
 
-	bool performUpdate = false;
+	PerformOnce(cameraBuffer.BindBufferBase(BufferObjectType::Uniform, PredefinedUniformBlockBinding(CameraUniformBlock)));
 
-	if (cameraUniformData.view_from_world != viewFromWorld)
-	{
-		cameraUniformData.view_from_world = viewFromWorld;
-		cameraUniformData.world_from_view = inverse(viewFromWorld);
-		performUpdate = true;
-	}
+	cameraBuffer.memory.view_from_world = viewFromWorld;
+	cameraBuffer.memory.world_from_view = inverse(viewFromWorld);
 
-	if (cameraUniformData.projection_from_view != projectionFromView)
-	{
-		cameraUniformData.projection_from_view = projectionFromView;
-		cameraUniformData.view_from_projection = inverse(projectionFromView);
-		performUpdate = true;
-	}
+	cameraBuffer.memory.projection_from_view = projectionFromView;
+	cameraBuffer.memory.view_from_projection = inverse(projectionFromView);
 
 	float projA = cameraFar / (cameraFar - cameraNear);
 	float projB = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
-
 	vec4 nearFar = vec4(cameraNear, cameraFar, projA, projB);
-	if (cameraUniformData.near_far != nearFar)
-	{
-		cameraUniformData.near_far = nearFar;
-		performUpdate = true;
-	}
+	cameraBuffer.memory.near_far = nearFar;
 
-	if (cameraUniformData.aperture != aperture)
-	{
-		cameraUniformData.aperture = aperture;
-		performUpdate = true;
-	}
+	cameraBuffer.memory.aperture = aperture;
+	cameraBuffer.memory.shutter_speed = shutterSpeed;
+	cameraBuffer.memory.iso = iso;
+	cameraBuffer.memory.exposure_compensation = exposureComp;
 
-	if (cameraUniformData.shutter_speed != shutterSpeed)
-	{
-		cameraUniformData.shutter_speed = shutterSpeed;
-		performUpdate = true;
-	}
-
-	if (cameraUniformData.iso != iso)
-	{
-		cameraUniformData.iso = iso;
-		performUpdate = true;
-	}
-
-	if (cameraUniformData.exposure_compensation != exposureComp)
-	{
-		cameraUniformData.exposure_compensation = exposureComp;
-		performUpdate = true;
-	}
+	cameraBuffer.memory.adaption_rate = adaptionRate;
+	cameraBuffer.memory.use_automatic_exposure = useAutomaticExposure;
 
 	// NOTE: This will force way more updates than maybe required, due to the noisy nature
 	// of a delta time signal. Maybe move to some other smaller uniform buffer?
-	if (cameraUniformData.delta_time != dt)
-	{
-		cameraUniformData.delta_time = dt;
-		performUpdate = true;
-	}
+	cameraBuffer.memory.delta_time = dt;
 
-	if (performUpdate)
-	{
-		glNamedBufferSubData(cameraUniformBuffer, 0, sizeof(CameraUniforms), &cameraUniformData);
-	}
-
+	cameraBuffer.UpdateGpuBuffer();
 }
 
 const mat4&

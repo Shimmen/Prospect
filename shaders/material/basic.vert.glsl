@@ -3,9 +3,9 @@
 #include <shader_locations.h>
 #include <camera_uniforms.h>
 
-PredefinedAttribte(vec3, a_position);
-PredefinedAttribte(vec3, a_normal);
-PredefinedAttribte(vec2, a_tex_coord);
+PredefinedAttribute(vec3, a_position);
+PredefinedAttribute(vec3, a_normal);
+PredefinedAttribute(vec2, a_tex_coord);
 
 PredefinedUniformBlock(CameraUniformBlock)
 {
