@@ -14,11 +14,13 @@ uniform float u_metallic;
 
 PredefinedOutput(vec4, o_g_buffer_albedo);
 PredefinedOutput(vec4, o_g_buffer_material);
-PredefinedOutput(vec4, o_g_buffer_normal);
+PredefinedOutput(vec4, o_g_buffer_norm_vel);
 
 void main()
 {
     o_g_buffer_albedo = vec4(u_base_color, 1.0);
     o_g_buffer_material = vec4(u_roughness, u_metallic, 1.0, 1.0);
-    o_g_buffer_normal = vec4(packNormal(v_normal), 1.0);
+
+    vec3 normal = normalize(v_normal);
+    o_g_buffer_norm_vel = vec4(octahedralEncode(normal), 0.0, 0.0);
 }

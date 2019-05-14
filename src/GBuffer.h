@@ -15,9 +15,8 @@ struct GBuffer
 	// RGBA8: R - roughness, G - metallic, BA - unused
 	GLuint materialTexture = 0;
 
-	// TODO: Compress normals to RG only (with maybe octahedral mapping?) and put xy-velocity in BA
-	// RGBA8: RGB - normal xyz, A - unused
-	GLuint normalTexture = 0;
+	// RGBA16F: RG - octahedral mapped normal, BA - screen space velocity
+	GLuint normVelTexture = 0;
 
 	// DEPTH_COMPONENT32: projected non-linear depth
 	GLuint depthTexture = 0;

@@ -72,7 +72,7 @@ IBLPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const SSAO
 
 	glBindTextureUnit(0, gBuffer.albedoTexture);
 	glBindTextureUnit(1, gBuffer.materialTexture);
-	glBindTextureUnit(2, gBuffer.normalTexture);
+	glBindTextureUnit(2, gBuffer.normVelTexture);
 	glBindTextureUnit(3, gBuffer.depthTexture);
 
 	glBindTextureUnit(5, scene.skyProbe.diffuseIrradianceSh);
@@ -93,7 +93,7 @@ IBLPass::ProgramLoaded(GLuint program)
 
 	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
 	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
-	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
+	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_norm_vel), 2);
 	glProgramUniform1i(iblProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
 
 	GLint locIrradianceSh = glGetUniformLocation(iblProgram, "u_irradiance_sh");

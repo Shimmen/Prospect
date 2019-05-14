@@ -78,7 +78,7 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 
 	glUseProgram(*ssaoProgram);
 
-	glBindTextureUnit(0, gBuffer.normalTexture);
+	glBindTextureUnit(0, gBuffer.normVelTexture);
 	glBindTextureUnit(1, gBuffer.depthTexture);
 
 	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
@@ -103,7 +103,7 @@ SSAOPass::ProgramLoaded(GLuint program)
 {
 	if (ssaoProgram && program == *ssaoProgram)
 	{
-		glProgramUniform1i(*ssaoProgram, PredefinedUniformLocation(u_g_buffer_normal), 0);
+		glProgramUniform1i(*ssaoProgram, PredefinedUniformLocation(u_g_buffer_norm_vel), 0);
 		glProgramUniform1i(*ssaoProgram, PredefinedUniformLocation(u_g_buffer_depth), 1);
 	}
 }

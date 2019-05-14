@@ -18,7 +18,7 @@ uniform sampler2D u_metallic_map;
 
 PredefinedOutput(vec4, o_g_buffer_albedo);
 PredefinedOutput(vec4, o_g_buffer_material);
-PredefinedOutput(vec4, o_g_buffer_normal);
+PredefinedOutput(vec4, o_g_buffer_norm_vel);
 
 void main()
 {
@@ -28,10 +28,9 @@ void main()
     float metallic = texture(u_metallic_map, v_tex_coord).r;
     o_g_buffer_material = vec4(roughness, metallic, 1.0, 1.0);
 
-    vec3 mapped_normal = unpackNormal(texture(u_normal_map, v_tex_coord).xyz);
-    mapped_normal.y *= -1.0; // (flip normal y to get correct up-axis)
+    vec3 mapped_normal = unpackNormalMapNormal(texture(u_normal_map, v_tex_coord).xyz);
 
     mat3 tbn_matrix = createTbnMatrix(v_tangent, v_bitangent, v_normal);
-    vec3 N = tbn_matrix * mapped_normal;
-    o_g_buffer_normal = vec4(packNormal(N), 1.0);
+    vec3 N = normalize(tbn_matrix * mapped_normal);
+    o_g_buffer_norm_vel = vec4(octahedralEncode(N), 0.0, 0.0);
 }

@@ -29,7 +29,7 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 	// Bind the g-buffer
 	glBindTextureUnit(0, gBuffer.albedoTexture);
 	glBindTextureUnit(1, gBuffer.materialTexture);
-	glBindTextureUnit(2, gBuffer.normalTexture);
+	glBindTextureUnit(2, gBuffer.normVelTexture);
 	glBindTextureUnit(3, gBuffer.depthTexture);
 
 	// Bind the shadow map
@@ -69,7 +69,7 @@ void LightPass::ProgramLoaded(GLuint program)
 
 	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
 	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_material), 1);
-	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_normal), 2);
+	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_norm_vel), 2);
 	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_depth), 3);
 
 	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_shadow_map), 10);

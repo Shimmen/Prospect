@@ -32,7 +32,7 @@
 
 #define TARGET_o_g_buffer_albedo   0
 #define TARGET_o_g_buffer_material 1
-#define TARGET_o_g_buffer_normal   2
+#define TARGET_o_g_buffer_norm_vel 2
 
 ///////////////////////////////////////////////////////////////////////////////
 // Uniform locations
@@ -44,7 +44,7 @@
 
 #define LOC_u_g_buffer_albedo   20
 #define LOC_u_g_buffer_material 21
-#define LOC_u_g_buffer_normal   22
+#define LOC_u_g_buffer_norm_vel 22
 #define LOC_u_g_buffer_depth    23
 
 #define LOC_u_gui_projection 40

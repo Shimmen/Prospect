@@ -55,7 +55,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 	glClearTexImage(gBuffer.materialTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, magenta);
 
 	const uint8_t black[] = { 0, 0, 0, 255 };
-	glClearTexImage(gBuffer.normalTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
+	glClearTexImage(gBuffer.normVelTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
 
 	const float farDepth = 1.0f;
 	glClearTexImage(gBuffer.depthTexture, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &farDepth);
@@ -158,8 +158,8 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		GuiSystem::Texture(gBuffer.albedoTexture);
 		ImGui::Text("Material:");
 		GuiSystem::Texture(gBuffer.materialTexture);
-		ImGui::Text("Normal:");
-		GuiSystem::Texture(gBuffer.normalTexture);
+		ImGui::Text("Normals & velocity (not very clear here..):");
+		GuiSystem::Texture(gBuffer.normVelTexture);
 		ImGui::Text("Depth:");
 		GuiSystem::Texture(gBuffer.depthTexture);
 	}

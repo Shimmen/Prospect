@@ -14,12 +14,12 @@ GBuffer::RecreateGpuResources(int width, int height)
 	// Docs: "glDeleteTextures silently ignores 0's and names that do not correspond to existing textures."
 	glDeleteTextures(1, &albedoTexture);
 	glDeleteTextures(1, &materialTexture);
-	glDeleteTextures(1, &normalTexture);
+	glDeleteTextures(1, &normVelTexture);
 	glDeleteTextures(1, &depthTexture);
 
 	albedoTexture = TextureSystem::CreateTexture(width, height, GL_RGBA8, GL_NEAREST, GL_NEAREST);
 	materialTexture = TextureSystem::CreateTexture(width, height, GL_RGBA8, GL_NEAREST, GL_NEAREST);
-	normalTexture = TextureSystem::CreateTexture(width, height, GL_RGBA16F, GL_NEAREST, GL_NEAREST);
+	normVelTexture = TextureSystem::CreateTexture(width, height, GL_RGBA16F, GL_NEAREST, GL_NEAREST);
 	depthTexture = TextureSystem::CreateTexture(width, height, GL_DEPTH_COMPONENT32F, GL_NEAREST, GL_NEAREST);
 
 	// Setup the swizzle for the depth textures so all color channels are depth
@@ -33,7 +33,7 @@ GBuffer::RecreateGpuResources(int width, int height)
 		GLenum drawBuffers[] = {
 			PredefinedOutputLocation(o_g_buffer_albedo),
 			PredefinedOutputLocation(o_g_buffer_material),
-			PredefinedOutputLocation(o_g_buffer_normal)
+			PredefinedOutputLocation(o_g_buffer_norm_vel)
 		};
 		int numDrawBuffers = sizeof(drawBuffers) / sizeof(GLenum);
 		glNamedFramebufferDrawBuffers(framebuffer, numDrawBuffers, drawBuffers);
@@ -45,8 +45,8 @@ GBuffer::RecreateGpuResources(int width, int height)
 	int materialAttachment = PredefinedOutputLocation(o_g_buffer_material);
 	glNamedFramebufferTexture(framebuffer, materialAttachment, materialTexture, 0);
 
-	int normalAttachment = PredefinedOutputLocation(o_g_buffer_normal);
-	glNamedFramebufferTexture(framebuffer, normalAttachment, normalTexture, 0);
+	int normVelAttachment = PredefinedOutputLocation(o_g_buffer_norm_vel);
+	glNamedFramebufferTexture(framebuffer, normVelAttachment, normVelTexture, 0);
 
 	glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 

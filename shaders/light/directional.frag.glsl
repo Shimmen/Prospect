@@ -27,7 +27,7 @@ PredefinedUniformBlock(DirectionalLightBlock)
 
 PredefinedUniform(sampler2D, u_g_buffer_albedo);
 PredefinedUniform(sampler2D, u_g_buffer_material);
-PredefinedUniform(sampler2D, u_g_buffer_normal);
+PredefinedUniform(sampler2D, u_g_buffer_norm_vel);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
 PredefinedUniform(sampler2D, u_shadow_map);
@@ -46,10 +46,10 @@ void main()
     float depth = texture(u_g_buffer_depth, v_uv).x;
     vec4 viewSpacePos = vec4(v_view_ray * linearizeDepth(depth), 1.0);
 
-    vec3 packedNormal = texture(u_g_buffer_normal, v_uv).xyz;
+    vec2 packedNormal = texture(u_g_buffer_norm_vel, v_uv).xy;
     bool unlit = lengthSquared(packedNormal) < 0.0001;
 
-    vec3 N = unpackNormal(packedNormal);
+    vec3 N = octahedralDecode(packedNormal);
     vec3 L = -normalize(directionalLight.viewDirecion.xyz);
 
     vec3 albedo = texture(u_g_buffer_albedo, v_uv).xyz;

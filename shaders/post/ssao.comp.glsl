@@ -24,7 +24,7 @@ PredefinedUniformBlock(SSAODataBlock)
     SSAOData ssao;
 };
 
-PredefinedUniform(sampler2D, u_g_buffer_normal);
+PredefinedUniform(sampler2D, u_g_buffer_norm_vel);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
 layout(binding = 0, r16f) restrict writeonly uniform image2D img_occlusion;
@@ -49,8 +49,7 @@ void main()
 
     if (pixelCoord.x < imagePx.x && pixelCoord.y < imagePx.y)
     {
-        vec3 packedNormal = texelFetch(u_g_buffer_normal, pixelCoord, 0).xyz;
-        vec3 N = unpackNormal(packedNormal);
+        vec3 N = octahedralDecode(texelFetch(u_g_buffer_norm_vel, pixelCoord, 0).xy);
         float depth = texelFetch(u_g_buffer_depth, pixelCoord, 0).r;
 
         vec2 uv = (vec2(pixelCoord) + vec2(0.5)) / imageSize(img_occlusion);
