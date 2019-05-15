@@ -4,6 +4,7 @@
 #include <shader_locations.h>
 #include <camera_uniforms.h>
 #include <camera_model.glsl>
+#include <etc/aces.glsl>
 
 in vec2 v_uv;
 
@@ -32,9 +33,19 @@ void main()
     float aspectRatio = camera.projection_from_view[1][1] / camera.projection_from_view[0][0];
     hdrColor *= naturalVignetting(u_vignette_falloff, aspectRatio, v_uv);
 
-    // TODO: Choose some nice tonemapping function!
-    vec3 ldrColor = tonemap(hdrColor);
-    //vec3 ldrColor = hdrColor / (1.0 + luminance(hdrColor));
+    // Clamp:
+    //vec3 ldrColor = hdrColor;
+
+    // Basic Reinhard
+    //vec3 ldrColor = hdrColor / (vec3(1.0) + hdrColor);
+
+    // Uncharted2:
+    //vec3 ldrColor = uncharted2Tonemap(hdrColor);
+
+    // ACES:
+    vec3 ldrColor = ACES_tonemap(hdrColor);
+
+
 
     vec3 gammaCorrectLdr = gammaAdust(ldrColor, u_gamma);
 

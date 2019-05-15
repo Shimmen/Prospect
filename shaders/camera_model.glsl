@@ -55,7 +55,7 @@ float naturalVignetting(float falloff, float aspectRatio, vec2 uv)
 
 
 const float whiteValue = 11.2;
-vec3 uncharted2Tonemap(vec3 x)
+vec3 uncharted2TonemapPartial(vec3 x)
 {
     const float A = 0.15;
     const float B = 0.50;
@@ -67,12 +67,12 @@ vec3 uncharted2Tonemap(vec3 x)
     return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
-vec3 tonemap(vec3 hdrColor)
+vec3 uncharted2Tonemap(vec3 hdrColor)
 {
     float exposureBias = 1.0;
-    vec3 curr = uncharted2Tonemap(exposureBias * hdrColor);
+    vec3 curr = uncharted2TonemapPartial(exposureBias * hdrColor);
 
-    vec3 whiteScale = vec3(1.0) / uncharted2Tonemap(vec3(whiteValue));
+    vec3 whiteScale = vec3(1.0) / uncharted2TonemapPartial(vec3(whiteValue));
     vec3 color = curr * whiteScale;
 
     return color;
