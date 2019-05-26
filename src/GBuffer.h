@@ -23,7 +23,16 @@ struct GBuffer
 
 	////////////////////////////
 
+	// RGBA8: RGB - visualized normals
+	GLuint debugNormalTexture = 0;
+
+	// RGBA8: RGB - visualized velocity
+	GLuint debugVelocityTexture = 0;
+
+	////////////////////////////
+
 	// Create or recreate the g-buffer textures with the given dimensions
 	void RecreateGpuResources(int width, int height);
 
+	void RenderToDebugTextures() const;
 };

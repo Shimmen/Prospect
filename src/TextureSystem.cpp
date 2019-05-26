@@ -247,12 +247,14 @@ TextureSystem::CreatePlaceholder(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 }
 
 GLuint
-TextureSystem::CreateTexture(int width, int height, GLenum format, GLenum minFilter, GLenum magFilter)
+TextureSystem::CreateTexture(int width, int height, GLenum format, GLenum minFilter, GLenum magFilter, bool useMips)
 {
-	// Assume we always potentially want mipmaps with this function. This can avoid annoying situations
-	// where we try to check different mipmaps of textures and nothing seems to happen...
-	int maxSize = std::max(width, height);
-	int numMips = 1 + int(std::floor(std::log2(maxSize)));
+	int numMips = 1;
+	if (useMips)
+	{
+		int maxSize = std::max(width, height);
+		numMips = 1 + int(std::floor(std::log2(maxSize)));
+	}
 
 	GLuint texture;
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);

@@ -24,7 +24,7 @@ namespace TextureSystem
 	GLuint CreatePlaceholder(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFF);
 
 	GLuint CreateTexture(int width, int height, GLenum format,
-		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, GLenum magFilter = GL_LINEAR);
+		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, GLenum magFilter = GL_LINEAR, bool useMips = true);
 
 	GLuint LoadLdrImage(const std::string& filename);
 	GLuint LoadHdrImage(const std::string& filename);

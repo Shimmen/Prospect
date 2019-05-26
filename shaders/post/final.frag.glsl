@@ -33,6 +33,8 @@ void main()
     float aspectRatio = camera.projection_from_view[1][1] / camera.projection_from_view[0][0];
     hdrColor *= naturalVignetting(u_vignette_falloff, aspectRatio, v_uv);
 
+    // TODO: Add some type of selector in the GUI for this!
+
     // Clamp:
     //vec3 ldrColor = hdrColor;
 
