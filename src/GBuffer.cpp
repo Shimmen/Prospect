@@ -67,12 +67,21 @@ GBuffer::RecreateGpuResources(int width, int height)
 void
 GBuffer::RenderToDebugTextures() const
 {
+	glBindImageTexture(0, normVelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+
 	// Debug normal texture
 	{
-		GLuint filter = *ShaderSystem::AddComputeProgram("etc/unpack_normals.comp.glsl");
-
-		glBindImageTexture(0, normVelTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+		GLuint filter = *ShaderSystem::AddComputeProgram("etc/visualize_normals.comp.glsl");
 		glBindImageTexture(1, debugNormalTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+		glUseProgram(filter);
+		glDispatchCompute((width + 32 - 1) / 32, (height + 32 - 1) / 32, 1);
+	}
+
+	// Debug velocity texture
+	{
+		GLuint filter = *ShaderSystem::AddComputeProgram("etc/visualize_velocity.comp.glsl");
+		glBindImageTexture(1, debugVelocityTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 		glUseProgram(filter);
 		glDispatchCompute((width + 32 - 1) / 32, (height + 32 - 1) / 32, 1);

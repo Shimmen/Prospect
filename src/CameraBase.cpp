@@ -24,18 +24,19 @@ CameraBase::DrawEditorGui()
 	if (ImGui::RadioButton("Automatic exposure", useAutomaticExposure)) useAutomaticExposure = true;
 	if (ImGui::RadioButton("Manual exposure", !useAutomaticExposure)) useAutomaticExposure = false;
 
+	ImGui::Spacing();
+	ImGui::Spacing();
+
 	if (useAutomaticExposure)
 	{
 		// Adaption rate
 		{
-			ImGui::Spacing(); ImGui::Spacing();
 			ImGui::Text("Adaption rate", &adaptionRate);
 			ImGui::SliderFloat("", &adaptionRate, 0.0001f, 2.0f, "%.4f", 5.0f);
 		}
 
 		// Exposure compensation
 		{
-			ImGui::Spacing(); ImGui::Spacing();
 			ImGui::Text("Exposure Compensation", &exposureComp);
 			ImGui::SliderFloat("ECs", &exposureComp, -5.0f, +5.0f, "%.1f");
 		}
@@ -47,7 +48,6 @@ CameraBase::DrawEditorGui()
 			const float apertureSteps[] = { 1.4f, 2.0f, 2.8f, 4.0f, 5.6f, 8.0f, 11.0f, 16.0f };
 			const int apertureStepCount = sizeof(apertureSteps) / sizeof(apertureSteps[0]);
 
-			ImGui::Spacing(); ImGui::Spacing();
 			ImGui::Text("Aperture f/%.1f", aperture);
 			GuiSystem::SnapSliderFloat("aperture", &aperture, apertureSteps, apertureStepCount, "");
 		}
@@ -59,7 +59,6 @@ CameraBase::DrawEditorGui()
 
 			static int index = 1; // (given default f/16, ISO 400 we want ~1/400 s shutter speed)
 
-			ImGui::Spacing(); ImGui::Spacing();
 			ImGui::Text("Shutter speed  1/%i s", shutterDenominators[index]);
 			ImGui::SliderInt("shutter", &index, 0, shutterDenominatorCount - 1, "");
 
@@ -74,7 +73,6 @@ CameraBase::DrawEditorGui()
 				isoHundreds = int(iso) / 100;
 			}
 
-			ImGui::Spacing(); ImGui::Spacing();
 			ImGui::Text("ISO %i", 100 * isoHundreds);
 			ImGui::SliderInt("ISO", &isoHundreds, 1, 64, "");
 

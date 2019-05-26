@@ -14,6 +14,12 @@ namespace prospect
 		}
 
 		template <>
+		inline void PerformUniformUpdate(GLuint program, GLint location, int value)
+		{
+			glProgramUniform1i(program, location, value);
+		}
+
+		template <>
 		inline void PerformUniformUpdate(GLuint program, GLint location, float value)
 		{
 			glProgramUniform1f(program, location, value);
@@ -45,6 +51,8 @@ struct Uniform
 	Uniform(const char *name, T initialValue)
 	{
 		this->name = name;
+
+		assert(value != initialValue);
 		this->value = initialValue;
 	}
 
@@ -72,7 +80,7 @@ struct Uniform
 	}
 
 	GLint location = 0;
-	float value = -1234.5678f;
+	T value = std::numeric_limits<T>::max();
 
 private:
 

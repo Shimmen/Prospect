@@ -3,13 +3,14 @@
 #include <imgui.h>
 
 #include "GuiSystem.h"
+#include "PerformOnce.h"
 #include "ShaderSystem.h"
 #include "UniformValue.h"
 #include "TextureSystem.h"
 #include "FullscreenQuad.h"
 
 #include "shader_locations.h"
-#include "PerformOnce.h"
+#include "shader_constants.h"
 
 void
 FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
@@ -50,12 +51,38 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		static Uniform<float> vignette("u_vignette_falloff", 0.25f);
 		static Uniform<float> gamma("u_gamma", 2.2f);
 		static Uniform<float> bloomAmount("u_bloom_amount", 0.04f);
+		static Uniform<int>   tonemapOperator("u_tonemap_operator_selector", TONEMAP_OP_ACES);
 
 		if (ImGui::CollapsingHeader("Postprocess"))
 		{
 			ImGui::SliderFloat("Vignette amount", &vignette.value, 0.0f, 2.0f, "%.2f");
+			ImGui::SliderFloat("Bloom blend", &bloomAmount.value, 0.0f, 1.0f, "%.6f", 4.0f);
 			ImGui::SliderFloat("Gamma", &gamma.value, 0.1f, 4.0f, "%.1f");
-			ImGui::SliderFloat("Bloom amount", &bloomAmount.value, 0.0f, 1.0f, "%.6f", 4.0f);
+
+			// Tonemapping operator combo box selector
+			{
+				// NOTE: This has to line up with the tonemapping operators in shader_constants.glsl. Obviously not
+				// very nice or neat, but I don't intend on changing these much or adding more operators. This feature
+				// mostly exist so it's possible to compare them a bit etc... It will work for now! :)
+				const char *items[] = { "ACES", "Reinhard", "Uncharted 2", "Clamp" };
+
+				if (ImGui::BeginCombo("Tonemapping operator", items[tonemapOperator.value]))
+				{
+					for (int i = 0; i < IM_ARRAYSIZE(items); ++i)
+					{
+						bool isSelected = i == tonemapOperator.value;
+						if (ImGui::Selectable(items[i], isSelected))
+						{
+							tonemapOperator.value = i;
+						}
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
 
 			if (ImGui::TreeNode("Camera"))
 			{
@@ -67,6 +94,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		vignette.UpdateUniformIfNeeded(*finalProgram);
 		gamma.UpdateUniformIfNeeded(*finalProgram);
 		bloomAmount.UpdateUniformIfNeeded(*finalProgram);
+		tonemapOperator.UpdateUniformIfNeeded(*finalProgram);
 	}
 
 	glDisable(GL_BLEND);
