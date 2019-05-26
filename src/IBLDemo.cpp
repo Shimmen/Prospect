@@ -31,12 +31,30 @@
 using namespace glm;
 
 ///////////////////////////////////////////////////////////////////////////////
+// Util
+
+float RandomFloat(float rmin, float rmax)
+{
+	float rand01 = float(rand()) / float(RAND_MAX);
+	return rmin + rand01 * (rmax - rmin);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Data
+
+struct BouncingModel
+{
+	int transformId;
+	float sineScale;
+	float sineAmplitude;
+	glm::vec3 basePosition;
+	glm::vec3 bounceDirection;
+};
 
 namespace
 {
 	Scene scene{};
-	Model testQuad;
+	std::vector<BouncingModel> bouncingModels{};
 
 	GBuffer gBuffer;
 	LightBuffer lightBuffer;
@@ -65,33 +83,90 @@ void IBLDemo::Init()
 {
 	ModelSystem::LoadModel("assets/generic/sphere.obj", [&](std::vector<Model> models) {
 
-		const int numMetalLevels = 2;
-		const int numRoughnessLevels = 10;
-
 		assert(models.size() == 1);
 		Model model = models[0];
 
-		for (int y = 0; y < numMetalLevels; ++y)
+		// 
+		// Material gallery:
+		//
 		{
-			for (int x = 0; x < numRoughnessLevels; ++x)
+			const int numMetalLevels = 2;
+			const int numRoughnessLevels = 10;
+
+			for (int y = 0; y < numMetalLevels; ++y)
 			{
-				int id = TransformSystem::Create();
-				TransformSystem::Get(id).SetPosition(3.6f * x, 8.0f + 3.6f * y, 0.0f);
-				TransformSystem::UpdateMatrices(id);
+				for (int x = 0; x < numRoughnessLevels; ++x)
+				{
+					int id = TransformSystem::Create();
+					TransformSystem::Get(id).SetPosition(3.6f * x, 8.0f + 3.6f * y, 0.0f);
+					TransformSystem::UpdateMatrices(id);
 
-				Model sphere = model;
-				sphere.transformID = id;
+					Model sphere = model;
+					sphere.transformID = id;
 
-				BasicMaterial *material = new BasicMaterial();
-				MaterialSystem::ManageMaterial(material);
+					BasicMaterial *material = new BasicMaterial();
+					MaterialSystem::ManageMaterial(material);
 
-				material->baseColor = SrgbColor(0.972f, 0.960f, 0.915f);
-				material->roughness = float(x) / float(numRoughnessLevels - 1);
-				material->metallic = 1.0f - float(y) / float(numMetalLevels - 1);
+					material->baseColor = SrgbColor(0.972f, 0.960f, 0.915f);
+					material->roughness = float(x) / float(numRoughnessLevels - 1);
+					material->metallic = 1.0f - float(y) / float(numMetalLevels - 1);
 
-				sphere.material = material;
-				scene.models.emplace_back(sphere);
+					sphere.material = material;
+					scene.models.emplace_back(sphere);
+				}
 			}
+		}
+
+		// 
+		// Bouncing spheres:
+		//
+		std::srand(1234);
+		for (int i = 0; i < 50; ++i)
+		{
+			int id = TransformSystem::Create();
+
+			// Generate random position in cube
+			glm::vec3 position = {
+				RandomFloat(-50.0f, -15.0f),
+				RandomFloat(6.0f, 16.0f),
+				RandomFloat(-50.0f, -15.0f)
+			};
+
+			TransformSystem::Get(id).position = position;
+			TransformSystem::UpdateMatrices(id);
+
+			Model sphere = model;
+			sphere.transformID = id;
+
+			auto *material = new BasicMaterial();
+			MaterialSystem::ManageMaterial(material);
+
+			material->baseColor = SrgbColor(
+				RandomFloat(0.5f, 1.0f),
+				RandomFloat(0.5f, 1.0f),
+				RandomFloat(0.5f, 1.0f)
+			);
+			material->roughness = 0.15f;// RandomFloat(0.2f, 0.8f);
+			material->metallic = 0.0f;// float(rand() % 2);
+
+			sphere.material = material;
+			scene.models.emplace_back(sphere);
+
+			// Generate random direction to "bounce" in
+			glm::vec3 bounceDirection = {
+				RandomFloat(-1.0f, +1.0f),
+				RandomFloat(-1.0f, +1.0f),
+				RandomFloat(-1.0f, +1.0f)
+			};
+			bounceDirection = glm::normalize(bounceDirection);
+
+			BouncingModel bm;
+			bm.transformId = id;
+			bm.basePosition = position;
+			bm.bounceDirection = bounceDirection;
+			bm.sineScale = RandomFloat(1.5f, 6.0f);
+			bm.sineAmplitude = RandomFloat(3.0f, 10.0f);
+			bouncingModels.emplace_back(bm);
 		}
 	});
 
@@ -108,7 +183,7 @@ void IBLDemo::Init()
 
 		scene.models.emplace_back(model);
 	});
-
+	
 	//scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/aero_lab/aerodynamics_workshop_8k.hdr");
 	//scene.skyProbe.radiance = TextureSystem::CreatePlaceholder(255, 255, 255);
@@ -136,6 +211,13 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	{
 		ImGui::SetWindowPos(ImVec2(0, 1));
 		ImGui::SetWindowSize(ImVec2(350.0f, lightBuffer.height - 25.0f));
+	}
+
+	for (auto& bm : bouncingModels)
+	{
+		glm::vec3 pos = bm.basePosition + bm.bounceDirection * std::sinf(runningTime * bm.sineScale) * bm.sineAmplitude;
+		TransformSystem::Get(bm.transformId).position = pos;
+		TransformSystem::UpdateMatrices(bm.transformId);
 	}
 
 	scene.mainCamera->Update(input, deltaTime);
