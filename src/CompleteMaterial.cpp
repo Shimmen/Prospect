@@ -16,6 +16,7 @@ CompleteMaterial::ProgramLoaded(GLuint program)
 	if (program)
 	{
 		modelMatrixLocation = glGetUniformLocation(program, "u_world_from_local");
+		prevModelMatrixLocation = glGetUniformLocation(program, "u_prev_world_from_local");
 		normalMatrixLocation = glGetUniformLocation(program, "u_world_from_tangent");
 
 		baseColorLocation = glGetUniformLocation(program, "u_base_color");
@@ -26,9 +27,10 @@ CompleteMaterial::ProgramLoaded(GLuint program)
 }
 
 void
-CompleteMaterial::BindUniforms(Transform& transform) const
+CompleteMaterial::BindUniforms(Transform& transform, const Transform& prevTransform) const
 {
 	glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(transform.matrix));
+	glUniformMatrix4fv(prevModelMatrixLocation, 1, GL_FALSE, glm::value_ptr(prevTransform.matrix));
 	glUniformMatrix3fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(transform.normalMatrix));
 
 	if (!baseColorTexture)

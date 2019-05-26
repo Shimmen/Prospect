@@ -9,6 +9,8 @@ struct CameraUniforms
     mat4 view_from_projection;
     vec4 near_far; // x=near, y=far, z=(far / (far - near)), w=((-far * near) / (far - near))
 
+    mat4 prev_projection_from_world;
+
     float iso;
     float aperture;
     float shutter_speed;

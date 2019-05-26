@@ -14,5 +14,5 @@ struct Material: public ShaderDepandant
 	virtual void ProgramLoaded(GLuint program) = 0;
 
 	// Call before drawing with material
-	virtual void BindUniforms(Transform& transform) const = 0;
+	virtual void BindUniforms(Transform& transform, const Transform& prevTransform) const = 0;
 };

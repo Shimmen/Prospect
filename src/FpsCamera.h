@@ -38,7 +38,7 @@ private:
 
 	vec3 pitchYawRoll{ 0.0f };
 
-	float rotationMultiplier = 50.0f;
+	float rotationMultiplier = 30.0f;
 	float rotationDampening = 0.000005f;
 
 	quat bankingOrientation{ 1, 0, 0, 0 };

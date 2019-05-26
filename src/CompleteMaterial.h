@@ -15,8 +15,8 @@ struct CompleteMaterial : public Material
 	mutable GLuint roughnessMap{};
 	mutable GLuint metallicMap{};
 
-	virtual void ProgramLoaded(GLuint program) override;
-	virtual void BindUniforms(Transform& transform) const override;
+	void ProgramLoaded(GLuint program) override;
+	void BindUniforms(Transform& transform, const Transform& prevTransform) const override;
 
 private:
 
@@ -26,6 +26,7 @@ private:
 	GLint normalMapLocation;
 
 	GLint modelMatrixLocation;
+	GLint prevModelMatrixLocation;
 	GLint normalMatrixLocation;
 
 };

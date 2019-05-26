@@ -127,7 +127,8 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		}
 
 		Transform& transform = TransformSystem::Get(model.transformID);
-		model.material->BindUniforms(transform);
+		const Transform& prevTransform = TransformSystem::GetPrevious(model.transformID);
+		model.material->BindUniforms(transform, prevTransform);
 
 		if (model.material->cullBackfaces) glEnable(GL_CULL_FACE);
 		else glDisable(GL_CULL_FACE);

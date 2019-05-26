@@ -65,6 +65,13 @@ TransformSystem::Get(int transformID)
 	return transform;
 }
 
+const Transform&
+TransformSystem::GetPrevious(int transformID)
+{
+	const Transform& transform = oldTransforms[transformID];
+	return transform;
+}
+
 void
 TransformSystem::UpdateMatrices(int transformID)
 {

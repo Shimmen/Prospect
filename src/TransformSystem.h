@@ -72,7 +72,10 @@ namespace TransformSystem
 	void Update();
 
 	int Create();
+	
 	Transform& Get(int transformID);
+	const Transform& GetPrevious(int transformID);
+
 	void UpdateMatrices(int transformID);
 
 };

@@ -13,8 +13,8 @@ struct BasicMaterial : public Material
 	float roughness;
 	float metallic;
 
-	virtual void ProgramLoaded(GLuint program) override;
-	virtual void BindUniforms(Transform& transform) const override;
+	void ProgramLoaded(GLuint program) override;
+	void BindUniforms(Transform& transform, const Transform& prevTransform) const override;
 
 private:
 
@@ -23,6 +23,7 @@ private:
 	GLint metallicLocation;
 
 	GLint modelMatrixLocation;
+	GLint prevModelMatrixLocation;
 	GLint normalMatrixLocation;
 
 };

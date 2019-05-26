@@ -117,6 +117,10 @@ FpsCamera::Update(const Input& input, float dt)
 	}
 	fieldOfView = mix(fieldOfView, targetFieldOfView, 1.0f - pow(0.01f, dt));
 
+	// Save previous projection from view matrix
+
+	cameraBuffer.memory.prev_projection_from_world = projectionFromView * viewFromWorld;
+
 	// Create the view matrix
 
 	auto preAdjustedUp = rotate(orientation, vec3(0, 1, 0));

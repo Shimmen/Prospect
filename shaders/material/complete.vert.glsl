@@ -16,6 +16,7 @@ PredefinedUniformBlock(CameraUniformBlock)
 };
 
 uniform mat4 u_world_from_local;
+uniform mat4 u_prev_world_from_local;
 uniform mat3 u_world_from_tangent;
 
 out vec2 v_tex_coord;
@@ -24,6 +25,9 @@ out vec3 v_position;
 out vec3 v_normal;
 out vec3 v_tangent;
 out vec3 v_bitangent;
+
+out vec4 v_curr_proj_pos;
+out vec4 v_prev_proj_pos;
 
 void main()
 {
@@ -40,4 +44,7 @@ void main()
     v_bitangent = cross(view_space_normal, view_space_tangent) * a_tangent.w;
 
     gl_Position = camera_uniforms.projection_from_view * view_space_position;
+
+    v_curr_proj_pos = gl_Position;
+    v_prev_proj_pos = camera_uniforms.prev_projection_from_world * u_prev_world_from_local * vec4(a_position, 1.0);
 }
