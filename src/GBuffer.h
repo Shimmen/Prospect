@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <glad/glad.h>
 
 struct GBuffer
@@ -35,4 +37,6 @@ struct GBuffer
 	void RecreateGpuResources(int width, int height);
 
 	void RenderToDebugTextures() const;
+
+	void RenderGui(const std::string& message) const;
 };

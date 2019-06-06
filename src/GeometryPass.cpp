@@ -144,7 +144,7 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 	glEnable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	if (ImGui::CollapsingHeader("G-Buffer"))
+	if (ImGui::CollapsingHeader("Geometry pass"))
 	{
 		ImGui::Checkbox("Perform depth-prepass", &performDepthPrepass);
 		ImGui::Checkbox("Draw wireframes", &wireframeRendering);
@@ -152,21 +152,6 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		if (performDepthPrepass) ImGui::Text("Draw calls: %d (with depth-prepass)", 2 * numDrawCalls);
 		else ImGui::Text("Draw calls: %d", numDrawCalls);
 		ImGui::Text("Triangles:  %d", numTriangles);
-
-		ImGui::Separator();
-
-		gBuffer.RenderToDebugTextures();
-
-		ImGui::Text("Albedo:");
-		GuiSystem::Texture(gBuffer.albedoTexture);
-		ImGui::Text("Material:");
-		GuiSystem::Texture(gBuffer.materialTexture);
-		ImGui::Text("Normals (debug view):");
-		GuiSystem::Texture(gBuffer.debugNormalTexture);
-		ImGui::Text("Velocity (debug view):");
-		GuiSystem::Texture(gBuffer.debugVelocityTexture);
-		ImGui::Text("Depth:");
-		GuiSystem::Texture(gBuffer.depthTexture);
 	}
 }
 

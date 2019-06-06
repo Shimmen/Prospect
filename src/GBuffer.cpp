@@ -1,6 +1,9 @@
 #include "GBuffer.h"
 
+#include <imgui.h>
+
 #include "Logging.h"
+#include "GuiSystem.h"
 #include "ShaderSystem.h"
 #include "TextureSystem.h"
 
@@ -85,5 +88,25 @@ GBuffer::RenderToDebugTextures() const
 
 		glUseProgram(filter);
 		glDispatchCompute((width + 32 - 1) / 32, (height + 32 - 1) / 32, 1);
+	}
+}
+
+void
+GBuffer::RenderGui(const std::string& message) const
+{
+	if (ImGui::CollapsingHeader(("G-Buffer - " + message).c_str()))
+	{
+		RenderToDebugTextures();
+
+		ImGui::Text("Albedo:");
+		GuiSystem::Texture(albedoTexture);
+		ImGui::Text("Material:");
+		GuiSystem::Texture(materialTexture);
+		ImGui::Text("Normals (debug view):");
+		GuiSystem::Texture(debugNormalTexture);
+		ImGui::Text("Velocity (debug view):");
+		GuiSystem::Texture(debugVelocityTexture);
+		ImGui::Text("Depth:");
+		GuiSystem::Texture(depthTexture);
 	}
 }

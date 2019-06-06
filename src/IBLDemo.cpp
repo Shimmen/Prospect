@@ -226,8 +226,9 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	ssaoPass.Draw(gBuffer);
 
 	iblPass.Draw(lightBuffer, gBuffer, ssaoPass, scene);
-	skyPass.Draw(lightBuffer, scene);
-
+	skyPass.Draw(lightBuffer, gBuffer, scene);
+	
+	gBuffer.RenderGui("before final");
 	finalPass.Draw(lightBuffer, scene);
 
 	ImGui::End();

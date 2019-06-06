@@ -5,10 +5,18 @@
 
 PredefinedUniformBlock(CameraUniformBlock)
 {
-    CameraUniforms camera_uniforms;
+    CameraUniforms camera;
 };
 
+out vec2 v_uv;
 out vec3 v_view_ray;
+
+vec3 getViewDirection(mat4 viewFromProj, mat4 worldFromView)
+{
+    vec4 viewSpacePos = viewFromProj * gl_Position;
+    viewSpacePos.xyz /= viewSpacePos.w;
+    return mat3(worldFromView) * viewSpacePos.xyz;
+}
 
 void main()
 {
@@ -17,8 +25,9 @@ void main()
     vec2 uv = vec2(gl_VertexID & 2, (gl_VertexID << 1) & 2);
     gl_Position = vec4(uv * 2.0 - 1.0, 1.0, 1.0);
 
-    vec4 viewSpacePos = camera_uniforms.view_from_projection * gl_Position;
-    vec4 worldSpaceDir = camera_uniforms.world_from_view * vec4(viewSpacePos.xyz / viewSpacePos.w, 0.0);
-    v_view_ray = worldSpaceDir.xyz;
-    v_view_ray.y = 1.0 - v_view_ray.y; // TODO: Fix image loading y-axis!
+    v_uv = uv;
+    v_view_ray = getViewDirection(camera.view_from_projection, camera.world_from_view);
+
+    // TODO: Fix image loading y-axis!
+    v_view_ray.y = 1.0 - v_view_ray.y;
 }

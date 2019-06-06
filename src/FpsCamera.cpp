@@ -117,8 +117,10 @@ FpsCamera::Update(const Input& input, float dt)
 	}
 	fieldOfView = mix(fieldOfView, targetFieldOfView, 1.0f - pow(0.01f, dt));
 
-	// Save previous projection from view matrix
+	// Save previous view-related matrix
 
+	//cameraBuffer.memory.prev_world_from_view = glm::inverse(viewFromWorld);
+	//cameraBuffer.memory.prev_view_from_projection = glm::inverse(projectionFromView);
 	cameraBuffer.memory.prev_projection_from_world = projectionFromView * viewFromWorld;
 
 	// Create the view matrix

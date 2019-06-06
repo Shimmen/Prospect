@@ -139,7 +139,7 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 
 	shadowPass.Draw(shadowMap, scene);
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
-	skyPass.Draw(lightBuffer, scene);
+	skyPass.Draw(lightBuffer, gBuffer, scene);
 	finalPass.Draw(lightBuffer, scene);
 
 	ImGui::End();
