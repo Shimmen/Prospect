@@ -7,7 +7,7 @@ layout(
     local_size_y = 32
 ) in;
 
-uniform float u_velocity_scale = 75.0;
+uniform float u_velocity_scale = 4.5;
 
 layout(binding = 0, rgba16f) restrict readonly  uniform image2D img_g_buffer_norm_vel;
 layout(binding = 1, rgba8)   restrict writeonly uniform image2D img_velocity_vis;
