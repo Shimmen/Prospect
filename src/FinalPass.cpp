@@ -13,7 +13,7 @@
 #include "shader_constants.h"
 
 void
-FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
+FinalPass::Draw(const GBuffer& gBuffer, const LightBuffer& lightBuffer, Scene& scene)
 {
 	PerformOnce(logLumTexture = TextureSystem::CreateTexture(1024, 1024, GL_R32F));
 	PerformOnce(currentLumTexture = TextureSystem::CreateTexture(1, 1, GL_R32F));
@@ -44,6 +44,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
+	taaPass.Draw(lightBuffer, gBuffer);
 	bloomPass.Draw(lightBuffer);
 
 	PerformOnce(ShaderSystem::AddProgram(&finalProgram, "quad.vert.glsl", "post/final.frag.glsl", this));
@@ -105,7 +106,7 @@ FinalPass::Draw(const LightBuffer& lightBuffer, Scene& scene)
 
 	glUseProgram(*finalProgram);
 	{
-		glBindTextureUnit(0, lightBuffer.lightTexture);
+		glBindTextureUnit(0, taaPass.outputTexture);	
 		glBindTextureUnit(1, bloomPass.bloomResults);
 		glBindTextureUnit(2, logLumTexture);
 

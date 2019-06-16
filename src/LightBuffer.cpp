@@ -31,4 +31,10 @@ LightBuffer::RecreateGpuResources(int width, int height, const GBuffer& gBuffer)
 	{
 		Log("The Light buffer framebuffer is not complete!");
 	}
+
+	for (int i = 0; i < 2; ++i)
+	{
+		glDeleteTextures(1, &taaHistoryTextures[i]);
+		taaHistoryTextures[i] = TextureSystem::CreateTexture(width, height, GL_RGBA32F, GL_LINEAR, GL_LINEAR, false);
+	}
 }

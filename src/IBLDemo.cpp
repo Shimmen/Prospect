@@ -229,7 +229,7 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	skyPass.Draw(lightBuffer, gBuffer, scene);
 	
 	gBuffer.RenderGui("before final");
-	finalPass.Draw(lightBuffer, scene);
+	finalPass.Draw(gBuffer, lightBuffer, scene);
 
 	ImGui::End();
 }
