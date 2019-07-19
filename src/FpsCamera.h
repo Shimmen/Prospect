@@ -25,6 +25,9 @@ public:
 	const mat4& GetViewMatrix() override;
 	const mat4& GetProjectionMatrix() override;
 
+	const vec3& GetPosition() { return position; }
+	const quat& GetOrientation() { return orientation; }
+
 private:
 
 	vec3 velocity{};

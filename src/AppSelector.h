@@ -7,6 +7,7 @@
 // Include apps below //
 #include "TestApp.h"
 #include "IBLDemo.h"
+#include "PointcloudExplorer.h"
 ////////////////////////
 
 namespace AppSelector
