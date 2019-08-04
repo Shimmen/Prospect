@@ -7,7 +7,6 @@
 #include <imgui.h>
 
 #include "GuiSystem.h"
-#include "ShaderSystem.h"
 #include "TransformSystem.h"
 #include "MaterialSystem.h"
 #include "TextureSystem.h"
@@ -15,18 +14,10 @@
 
 #include "FpsCamera.h"
 #include "GBuffer.h"
-#include "LightBuffer.h"
-#include "ShadowMap.h"
 
 #include "Scene.h"
 #include "BasicMaterial.h"
-#include "CompleteMaterial.h"
-
-#include "GeometryPass.h"
-#include "IBLPass.h"
-#include "SkyPass.h"
-#include "SSAOPass.h"
-#include "FinalPass.h"
+#include "RenderPipeline.h"
 
 using namespace glm;
 
@@ -56,14 +47,10 @@ namespace
 	Scene scene{};
 	std::vector<BouncingModel> bouncingModels{};
 
-	GBuffer gBuffer;
-	LightBuffer lightBuffer;
+	int screenWidth;
+	int screenHeight;
 
-	GeometryPass geometryPass;
-	IBLPass iblPass;
-	SkyPass skyPass;
-	SSAOPass ssaoPass;
-	FinalPass finalPass;
+	RenderPipeline renderPipeline;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,7 +73,7 @@ void IBLDemo::Init()
 		assert(models.size() == 1);
 		Model model = models[0];
 
-		// 
+		//
 		// Material gallery:
 		//
 		{
@@ -117,7 +104,7 @@ void IBLDemo::Init()
 			}
 		}
 
-		// 
+		//
 		// Bouncing spheres:
 		//
 		std::srand(1234);
@@ -183,7 +170,7 @@ void IBLDemo::Init()
 
 		scene.models.emplace_back(model);
 	});
-	
+
 	//scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");
 	scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/aero_lab/aerodynamics_workshop_8k.hdr");
 	//scene.skyProbe.radiance = TextureSystem::CreatePlaceholder(255, 255, 255);
@@ -194,10 +181,11 @@ void IBLDemo::Init()
 
 void IBLDemo::Resize(int width, int height)
 {
-	scene.mainCamera->Resize(width, height);
+	screenWidth = width;
+	screenHeight = height;
 
-	gBuffer.RecreateGpuResources(width, height);
-	lightBuffer.RecreateGpuResources(width, height, gBuffer);
+	scene.mainCamera->Resize(width, height);
+	renderPipeline.Resize(width, height);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -210,7 +198,7 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	if (input.WasKeyPressed(GLFW_KEY_HOME))
 	{
 		ImGui::SetWindowPos(ImVec2(0, 1));
-		ImGui::SetWindowSize(ImVec2(350.0f, lightBuffer.height - 25.0f));
+		ImGui::SetWindowSize(ImVec2(350.0f, screenHeight - 25.0f));
 	}
 
 	for (auto& bm : bouncingModels)
@@ -221,15 +209,7 @@ void IBLDemo::Draw(const Input& input, float deltaTime, float runningTime)
 	}
 
 	scene.mainCamera->Update(input, deltaTime);
-
-	geometryPass.Draw(gBuffer, scene);
-	ssaoPass.Draw(gBuffer);
-
-	iblPass.Draw(lightBuffer, gBuffer, ssaoPass, scene);
-	skyPass.Draw(lightBuffer, gBuffer, scene);
-	
-	gBuffer.RenderGui("before final");
-	finalPass.Draw(gBuffer, lightBuffer, scene);
+	renderPipeline.Render(scene, input, deltaTime, runningTime);
 
 	ImGui::End();
 }

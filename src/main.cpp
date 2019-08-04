@@ -3,13 +3,7 @@
 
 #include <imgui.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <string>
-#include <sstream>
-#include <fstream>
-#include <cassert>
 #include <stdlib.h>
 
 #include "Logging.h"

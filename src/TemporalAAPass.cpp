@@ -48,7 +48,7 @@ void TemporalAAPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer
 		inputTexture = lightBuffer.taaHistoryTextures[1];
 		outputTexture = lightBuffer.taaHistoryTextures[0];
 	}
-	
+
 	glBindTextureUnit(0, inputTexture);
 	glBindImageTexture(0, outputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
@@ -84,6 +84,6 @@ bool TemporalAAPass::ShouldSetFirstFrame(int width, int height, int frameCount) 
 		lastHeight = height;
 		return true;
 	}
-	
+
 	return false;
 }

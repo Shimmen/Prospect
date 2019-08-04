@@ -2,11 +2,50 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <imgui.h>
 
 #include "GuiSystem.h"
+#include "PerformOnce.h"
+
+#include "shader_locations.h"
+
+void CameraBase::CommitToGpu(float deltaTimeREMOVEME_AND_PUT_IN_SOME_OTHER_BUFFER)
+{
+	PerformOnce(cameraBuffer.BindBufferBase(BufferObjectType::Uniform, PredefinedUniformBlockBinding(CameraUniformBlock)));
+
+	// Save previous frame matrices before changing anything
+	const mat4 prevMvp = cameraBuffer.memory.projection_from_view * cameraBuffer.memory.view_from_world;
+	cameraBuffer.memory.prev_projection_from_world = prevMvp;
+
+	cameraBuffer.memory.view_from_world = viewFromWorld;
+	cameraBuffer.memory.world_from_view = inverse(viewFromWorld);
+
+	cameraBuffer.memory.projection_from_view = projectionFromView;
+	cameraBuffer.memory.view_from_projection = inverse(projectionFromView);
+
+	float projA = zFar / (zFar - zNear);
+	float projB = (-zFar * zNear) / (zFar - zNear);
+	vec4 nearFar = vec4(zNear, zFar, projA, projB);
+	cameraBuffer.memory.near_far = nearFar;
+
+	cameraBuffer.memory.frustum_jitter = vec4(frustumJitterUv, 0.0f, 0.0f);
+
+	cameraBuffer.memory.aperture = aperture;
+	cameraBuffer.memory.shutter_speed = shutterSpeed;
+	cameraBuffer.memory.iso = iso;
+	cameraBuffer.memory.exposure_compensation = exposureComp;
+
+	cameraBuffer.memory.adaption_rate = adaptionRate;
+	cameraBuffer.memory.use_automatic_exposure = useAutomaticExposure;
+
+	// NOTE: This will force way more updates than maybe required, due to the noisy nature
+	// of a delta time signal. Maybe move to some other smaller uniform buffer?
+	cameraBuffer.memory.delta_time = deltaTimeREMOVEME_AND_PUT_IN_SOME_OTHER_BUFFER;
+
+	cameraBuffer.UpdateGpuBuffer();
+}
 
 void
 CameraBase::LookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up)
@@ -16,6 +55,28 @@ CameraBase::LookAt(const glm::vec3& position, const glm::vec3& target, const glm
 	auto direction = glm::normalize(target - position);
 	this->orientation = glm::quatLookAtLH(direction, up);
 }
+
+void CameraBase::Resize(int width, int height)
+{
+	targetPixelsWidth = width;
+	targetPixelsHeight = height;
+}
+
+void CameraBase::ApplyFrustumJitter(const glm::vec2& jitterPixels)
+{
+	glm::vec2 jitterUv = jitterPixels / glm::vec2(targetPixelsWidth, targetPixelsHeight);
+
+	const float jitterScale = 0.70f; // TODO: Parameterize!
+	jitterUv *= jitterScale;
+
+	glm::mat4 offsetMatrix = glm::translate(glm::vec3(jitterUv, 0.0f));
+	projectionFromView = offsetMatrix * projectionFromView;
+
+	// Save jitter to be able to "unjitter" the signal for the velocity map
+	frustumJitterUv = jitterUv - prevFrustumJitterUv;
+	prevFrustumJitterUv = jitterUv;
+}
+
 
 void
 CameraBase::DrawEditorGui()

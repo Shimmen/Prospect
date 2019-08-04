@@ -5,15 +5,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "GuiSystem.h"
-#include "PerformOnce.h"
-
-#include "shader_locations.h"
-
-void
-FpsCamera::Resize(int width, int height)
-{
-	aspectRatio = float(width) / float(height);
-}
 
 void
 FpsCamera::Update(const Input& input, float dt)
@@ -38,7 +29,7 @@ FpsCamera::Update(const Input& input, float dt)
 	}
 	else
 	{
-		// If no input and movement to acceleration deaccelerate insted
+		// If no input and movement to acceleration deaccelerate instead
 		if (length2(velocity) < stopThreshold)
 		{
 			velocity = vec3(0, 0, 0);
@@ -102,7 +93,7 @@ FpsCamera::Update(const Input& input, float dt)
 	pitchYawRoll *= pow(rotationDampening, dt);
 
 	// Apply rotation
-	
+
 	orientation = angleAxis(pitchYawRoll.y, right) * orientation;
 	orientation = angleAxis(pitchYawRoll.x, vec3(0, 1, 0)) * orientation;
 
@@ -117,12 +108,6 @@ FpsCamera::Update(const Input& input, float dt)
 	}
 	fieldOfView = mix(fieldOfView, targetFieldOfView, 1.0f - pow(0.01f, dt));
 
-	// Save previous view-related matrix
-
-	//cameraBuffer.memory.prev_world_from_view = glm::inverse(viewFromWorld);
-	//cameraBuffer.memory.prev_view_from_projection = glm::inverse(projectionFromView);
-	cameraBuffer.memory.prev_projection_from_world = projectionFromView * viewFromWorld;
-
 	// Create the view matrix
 
 	auto preAdjustedUp = rotate(orientation, vec3(0, 1, 0));
@@ -133,50 +118,7 @@ FpsCamera::Update(const Input& input, float dt)
 
 	// Create the projection matrix
 
-	float cameraNear = 0.2f;
-	float cameraFar = 1000.0f;
-	projectionFromView = perspectiveLH(fieldOfView, aspectRatio, cameraNear, cameraFar);
+	float aspectRatio = float(targetPixelsWidth) / float(targetPixelsHeight);
+	projectionFromView = glm::perspectiveLH(fieldOfView, aspectRatio, zNear, zFar);
 
-	// Update the camera uniform buffer
-
-	// TODO: Don't keep so many redundant copies! A lot of stuff is already stored in the uniform buffer!
-
-	PerformOnce(cameraBuffer.BindBufferBase(BufferObjectType::Uniform, PredefinedUniformBlockBinding(CameraUniformBlock)));
-
-	cameraBuffer.memory.view_from_world = viewFromWorld;
-	cameraBuffer.memory.world_from_view = inverse(viewFromWorld);
-
-	cameraBuffer.memory.projection_from_view = projectionFromView;
-	cameraBuffer.memory.view_from_projection = inverse(projectionFromView);
-
-	float projA = cameraFar / (cameraFar - cameraNear);
-	float projB = (-cameraFar * cameraNear) / (cameraFar - cameraNear);
-	vec4 nearFar = vec4(cameraNear, cameraFar, projA, projB);
-	cameraBuffer.memory.near_far = nearFar;
-
-	cameraBuffer.memory.aperture = aperture;
-	cameraBuffer.memory.shutter_speed = shutterSpeed;
-	cameraBuffer.memory.iso = iso;
-	cameraBuffer.memory.exposure_compensation = exposureComp;
-
-	cameraBuffer.memory.adaption_rate = adaptionRate;
-	cameraBuffer.memory.use_automatic_exposure = useAutomaticExposure;
-
-	// NOTE: This will force way more updates than maybe required, due to the noisy nature
-	// of a delta time signal. Maybe move to some other smaller uniform buffer?
-	cameraBuffer.memory.delta_time = dt;
-
-	cameraBuffer.UpdateGpuBuffer();
-}
-
-const mat4&
-FpsCamera::GetViewMatrix()
-{
-	return viewFromWorld;
-}
-
-const mat4&
-FpsCamera::GetProjectionMatrix()
-{
-	return projectionFromView;
 }

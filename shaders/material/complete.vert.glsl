@@ -12,7 +12,7 @@ PredefinedAttribute(vec4, a_tangent);
 
 PredefinedUniformBlock(CameraUniformBlock)
 {
-    CameraUniforms camera_uniforms;
+    CameraUniforms camera;
 };
 
 uniform mat4 u_world_from_local;
@@ -33,18 +33,18 @@ void main()
 {
     v_tex_coord = a_tex_coord;
 
-    vec4 view_space_position  = camera_uniforms.view_from_world * u_world_from_local * vec4(a_position, 1.0);
+    vec4 view_space_position  = camera.view_from_world * u_world_from_local * vec4(a_position, 1.0);
     v_position = view_space_position.xyz;
 
-    vec3 view_space_normal = mat3(camera_uniforms.view_from_world) * u_world_from_tangent * a_normal;
-    vec3 view_space_tangent = mat3(camera_uniforms.view_from_world) * u_world_from_tangent * a_tangent.xyz;
+    vec3 view_space_normal = mat3(camera.view_from_world) * u_world_from_tangent * a_normal;
+    vec3 view_space_tangent = mat3(camera.view_from_world) * u_world_from_tangent * a_tangent.xyz;
 
     v_normal = view_space_normal;
     v_tangent = view_space_tangent;
     v_bitangent = cross(view_space_normal, view_space_tangent) * a_tangent.w;
 
-    gl_Position = camera_uniforms.projection_from_view * view_space_position;
+    gl_Position = camera.projection_from_view * view_space_position;
 
     v_curr_proj_pos = gl_Position;
-    v_prev_proj_pos = camera_uniforms.prev_projection_from_world * u_prev_world_from_local * vec4(a_position, 1.0);
+    v_prev_proj_pos = camera.prev_projection_from_world * u_prev_world_from_local * vec4(a_position, 1.0);
 }

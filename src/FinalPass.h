@@ -13,7 +13,7 @@ class FinalPass : ShaderDepandant
 {
 public:
 
-	void Draw(const GBuffer& gBuffer, const LightBuffer& lightBuffer, Scene& scene);
+	void Draw(const GBuffer& gBuffer, const LightBuffer& lightBuffer, Scene& scene, bool *useTaa);
 	void ProgramLoaded(GLuint program) override;
 
 private:

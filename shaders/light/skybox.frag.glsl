@@ -38,6 +38,7 @@ void main()
         vec2 prevUv = (prevNdc * 0.5 + 0.5).xy;
 
         vec2 screenSpaceVelocity = v_uv - prevUv;
+        screenSpaceVelocity -= camera.frustum_jitter.xy;
         o_g_buffer_norm_vel = vec4(0.0, 0.0, screenSpaceVelocity);
     }
 }

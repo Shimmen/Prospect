@@ -13,7 +13,7 @@
 #include "shader_constants.h"
 
 void
-FinalPass::Draw(const GBuffer& gBuffer, const LightBuffer& lightBuffer, Scene& scene)
+FinalPass::Draw(const GBuffer& gBuffer, const LightBuffer& lightBuffer, Scene& scene, bool *useTaa)
 {
 	PerformOnce(logLumTexture = TextureSystem::CreateTexture(1024, 1024, GL_R32F));
 	PerformOnce(currentLumTexture = TextureSystem::CreateTexture(1, 1, GL_R32F));
@@ -44,6 +44,8 @@ FinalPass::Draw(const GBuffer& gBuffer, const LightBuffer& lightBuffer, Scene& s
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
+	// TODO: Fixme, this is chaos
+	*useTaa = taaPass.enabled;
 	taaPass.Draw(lightBuffer, gBuffer);
 	bloomPass.Draw(lightBuffer);
 

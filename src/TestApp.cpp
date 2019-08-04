@@ -135,12 +135,14 @@ void TestApp::Draw(const Input& input, float deltaTime, float runningTime)
 
 	//
 
+	bool useTaa = true;
+
 	geometryPass.Draw(gBuffer, scene);
 
 	shadowPass.Draw(shadowMap, scene);
 	lightPass.Draw(lightBuffer, gBuffer, shadowMap, scene);
 	skyPass.Draw(lightBuffer, gBuffer, scene);
-	finalPass.Draw(gBuffer, lightBuffer, scene);
+	finalPass.Draw(gBuffer, lightBuffer, scene, &useTaa);
 
 	ImGui::End();
 }
