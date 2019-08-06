@@ -123,12 +123,13 @@ SSAOPass::GenerateAndUpdateKernel() const
 
 		if (randomKernelSamples)
 		{
-			kernel[i].x = randomFloat(rng) * 2.0f - 1.0f;
-			kernel[i].y = randomFloat(rng) * 2.0f - 1.0f;
-			kernel[i].z = randomFloat(rng);
+			float xi = randomFloat(rng);
+			float radius = sqrtf(xi);
 
-			// Place sample *on* sphere
-			kernel[i] = normalize(kernel[i]);
+			float theta = randomFloat(rng) * 2.0f * 3.141593f;
+			kernel[i].x = radius * cosf(theta);
+			kernel[i].y = radius * cosf(theta);
+			kernel[i].z = 1.0 - xi;
 		}
 		else
 		{
