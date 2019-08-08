@@ -10,6 +10,7 @@
 #include "ShaderSystem.h"
 #include "GuiSystem.h"
 #include "Logging.h"
+#include "Model.h"
 
 using namespace glm;
 #include "shader_locations.h"

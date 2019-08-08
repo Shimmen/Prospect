@@ -1,5 +1,6 @@
 #version 460
 
+#include <brdf.glsl>
 #include <common.glsl>
 #include <shader_locations.h>
 #include <camera_uniforms.h>
@@ -51,17 +52,8 @@ void main()
 
     vec3 N = octahedralDecode(packedNormal);
     vec3 L = -normalize(directionalLight.viewDirecion.xyz);
+    vec3 V = -normalize(viewSpacePos.xyz);
 
-    vec3 albedo = texture(u_g_buffer_albedo, v_uv).xyz;
-    vec3 lightColor = rgbFromColor(directionalLight.color);
-
-    vec3 color = vec3(0.0);
-
-    // ambient term
-    const float ambient = 0.02;
-    color += albedo * lightColor * ambient * float(!unlit);
-
-    // shadow factor
     float shadowFactor = 1.0;
     {
         int segmentIdx = directionalLight.shadowMapSegmentIndex.x;
@@ -78,17 +70,27 @@ void main()
         shadowFactor = (mapDepth < actualDepth) ? 0.0 : 1.0;
 
         // Fragments outside the shadow map should be considered to be in shadow
+        // (Maybe not for large scale renders, but for smaller scenes I think this makes sense)
         bool insideBounds = posInShadowMap.xy == clamp(posInShadowMap.xy, vec2(-1.0), vec2(1.0));
         shadowFactor = (insideBounds) ? shadowFactor : 0.0;
     }
 
-    // diffuse term
-    float LdotN = dot(L, N);
-    if (LdotN > 0.0)
-    {
-        color += albedo * lightColor * LdotN * shadowFactor;
-    }
+    vec3 lightColor = rgbFromColor(directionalLight.color);
+    vec3 directLight = lightColor * shadowFactor;
 
-    color = (unlit) ? albedo : color;
+    vec3 baseColor = texture(u_g_buffer_albedo, v_uv).rgb;
+    vec4 material = texture(u_g_buffer_material, v_uv);
+    float roughness = material.x + 0.01;
+    float metallic = material.y;
+
+    vec3 specular = specularBRDF(L, V, N, baseColor, roughness, metallic);
+    vec3 diffuseColor = vec3(1.0 - metallic) * baseColor;
+    vec3 diffuse = diffuseColor * diffuseBRDF();
+    vec3 brdf = diffuse + specular;
+
+    float LdotN = max(dot(L, N), 0.0);
+    vec3 color = brdf * directLight * LdotN;
+
+    color = (unlit) ? baseColor : color;
     o_color = vec4(color, 1.0);
 }

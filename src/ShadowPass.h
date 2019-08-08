@@ -1,11 +1,8 @@
 #pragma once
 
-#include <vector>
-
 #include <glad/glad.h>
 
 #include "Scene.h"
-#include "Model.h"
 #include "ShadowMap.h"
 
 struct ShadowMapSegment;

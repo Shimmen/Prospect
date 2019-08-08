@@ -7,6 +7,9 @@
 #include "IBLPass.h"
 #include "GeometryPass.h"
 #include "FinalPass.h"
+#include "ShadowMap.h"
+#include "LightPass.h"
+#include "ShadowPass.h"
 
 class Input;
 struct Scene;
@@ -30,12 +33,19 @@ private:
 	int width;
 	int height;
 
+	GLuint blueNoiseTexture;
+
 	GBuffer gBuffer{};
 	LightBuffer lightBuffer{};
+	ShadowMap shadowMapAtlas{};
 
 	GeometryPass geometryPass{};
+	ShadowPass shadowPass{};
+	LightPass lightPass{};
+
 	IBLPass iblPass{};
 	SkyPass skyPass{};
+
 	SSAOPass ssaoPass{};
 	FinalPass finalPass{};
 

@@ -7,12 +7,12 @@
 #define PI     (3.14159265358979323846)
 #define TWO_PI (2.0 * PI)
 
-// color.rgb is the color [0, 1] and color.a is [0, 1] but maps to a [0, 1000] exponential scale y=2^(10x)
+// color.rgb is the color [0, 1] and color.a is [0, 1] but maps to a [0, 63] exponential scale y=2^(6x)-1
 // see shader_types.h for definitions
 vec3 rgbFromColor(Color color)
 {
     float x = color.a;
-    float y = pow(2.0, 10.0*x);
+    float y = pow(2.0, 5.0 * x) - 1.0;
     return vec3(color.rgb * y);
 }
 

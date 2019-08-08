@@ -57,8 +57,9 @@ void main()
 
             //
             // Why is this needed?!
+            // (well I guess I don't use physically based light light intensities..)
             //
-            hdrColor *= 120000.0;
+            hdrColor *= 12000.0;
         }
 
         // TODO: Maybe we wanna put the luminance in alpha or something like that?

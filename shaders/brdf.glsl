@@ -15,7 +15,8 @@
 float D_GGX(float NdotH, float a) {
     float a2 = a * a;
     float f = (NdotH * a2 - NdotH) * NdotH + 1.0;
-    return a2 / (PI * f * f);
+    float x = a2 / (PI * f * f + 1e-20);
+    return x;
 }
 
 vec3 F_Schlick(float VdotH, vec3 f0) {
@@ -56,7 +57,7 @@ float G_SmithIBL(float NdotV, float NdotL, float roughness)
 
 //
 
-vec3 specularBRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float roughness, float metallic, out vec3 F)
+vec3 specularBRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float roughness, float metallic)
 {
     vec3 H = normalize(L + V);
 
@@ -70,7 +71,7 @@ vec3 specularBRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float roughness, float
 
     vec3 f0 = mix(vec3(DIELECTRIC_REFLECTANCE), baseColor, metallic);
 
-    F = F_Schlick(LdotH, f0);
+    vec3 F = F_Schlick(LdotH, f0);
     float D = D_GGX(NdotH, a);
     float V_part = V_SmithGGXCorrelated(NdotV, NdotL, a);
 

@@ -129,7 +129,7 @@ SSAOPass::GenerateAndUpdateKernel() const
 			float theta = randomFloat(rng) * 2.0f * 3.141593f;
 			kernel[i].x = radius * cosf(theta);
 			kernel[i].y = radius * cosf(theta);
-			kernel[i].z = 1.0 - xi;
+			kernel[i].z = 1.0f - xi;
 		}
 		else
 		{

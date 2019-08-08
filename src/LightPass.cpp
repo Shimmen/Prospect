@@ -46,25 +46,27 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 		dirLight.viewDirecion = scene.mainCamera->GetViewMatrix() * dirLight.worldDirection;
 		glNamedBufferSubData(directionalLightUniformBuffer, 0, sizeof(DirectionalLight), &dirLight);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
+
 		glDisable(GL_DEPTH_TEST);
 
 		FullscreenQuad::Draw();
 
 		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
 	}
 
-	if (ImGui::CollapsingHeader("Light buffer"))
+	if (ImGui::CollapsingHeader("Light pass"))
 	{
+		ImGui::SliderFloat("Sun intensity", &scene.directionalLights[0].color.a, 0.0f, 1.0f);
 		GuiSystem::Texture(lightBuffer.lightTexture);
 	}
 }
 
 void LightPass::ProgramLoaded(GLuint program)
 {
-	// TODO: What to do when we have more than one program per pass?
-	// We are eventually gonna have more stuff here, for example. Well,
-	// we could check if *someProgram = program and update that one!
-
 	directionalLightProgram = program;
 
 	glProgramUniform1i(directionalLightProgram, PredefinedUniformLocation(u_g_buffer_albedo), 0);
