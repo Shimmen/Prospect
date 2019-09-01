@@ -2,9 +2,7 @@
 
 #include <glad/glad.h>
 
-#include <glm/glm.hpp>
-
-#include <vector>
+//#include "LightPass.h"
 
 struct ShadowMap
 {
@@ -18,5 +16,7 @@ struct ShadowMap
 	////////////////////////////
 
 	void RecreateGpuResources(int size);
+
+	//void AssignShadowMapSegments(std::vector<DirectionalLight>& dirLights/* TODO: Add the other lights here as well!*/);
 
 };

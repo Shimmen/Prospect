@@ -59,10 +59,11 @@ namespace
 App::Settings IBLDemo::Setup()
 {
 	Settings settings{};
-	settings.window.size = { 1280, 800 };
+	settings.window.fullscreen = false;
+	settings.window.size = { 1920, 1080 };
 	settings.window.vsync = false;
 	settings.window.resizeable = true;
-	settings.context.msaaSamples = 1;
+	settings.context.msaaSamples = 0;
 	return settings;
 }
 
@@ -171,8 +172,24 @@ void IBLDemo::Init()
 		scene.models.emplace_back(model);
 	});
 
+	ModelSystem::LoadModel("assets/test_room/test_room.obj", [&](std::vector<Model> models)
+	{
+		for (Model& model : models)
+		{
+			int id = TransformSystem::Create();
+			TransformSystem::Get(id)
+				.SetPosition(18.0f, 12.0f, 25.0f)
+				.SetDirection(5, 0, 2)
+				.SetScale(2.8f);
+			TransformSystem::UpdateMatrices(id);
+			model.transformID = id;
+
+			scene.models.emplace_back(model);
+		}
+	});
+
 	DirectionalLight sun;
-	sun.worldDirection = glm::normalize(glm::vec4(-1.0f, -0.3f, +1.85f, 0.0f));
+	sun.worldDirection = glm::normalize(glm::vec4(-1.0f, -0.5f, +1.85f, 0.0f));
 	sun.color = Color(1, 1, 1, 0.55f);
 	scene.directionalLights.push_back(sun);
 

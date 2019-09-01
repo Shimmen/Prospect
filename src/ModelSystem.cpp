@@ -108,13 +108,14 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 	for (size_t i = 0; i < numInputIndices; ++i)
 	{
 		tinyobj::index_t index = shape.mesh.indices[i];
-		uint64_t hash = (index.vertex_index * 71ULL + index.normal_index) * 39ULL + index.texcoord_index;
+		uint64_t hash = (index.vertex_index * 5723873ULL + index.normal_index) * 39239ULL + index.texcoord_index;
 
-		if (indexMap.find(hash) != indexMap.end())
+		auto it = indexMap.find(hash);
+		if (it != indexMap.end())
 		{
 			// This exact vertex already exist, push index of that one
-			uint32_t index = indexMap[hash];
-			model.indices.emplace_back(index);
+			uint32_t singleIndex = it->second;
+			model.indices.emplace_back(singleIndex);
 		}
 		else
 		{
@@ -151,22 +152,22 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 
 			// Grow the bounding box around the vertex if required
 			{
-				minVertex.x = fmin(minVertex.x, v.position[0]);
-				minVertex.y = fmin(minVertex.y, v.position[1]);
-				minVertex.z = fmin(minVertex.z, v.position[2]);
+				minVertex.x = fmin(minVertex.x, v.position.x);
+				minVertex.y = fmin(minVertex.y, v.position.y);
+				minVertex.z = fmin(minVertex.z, v.position.z);
 
-				maxVertex.x = fmax(maxVertex.x, v.position[0]);
-				maxVertex.y = fmax(maxVertex.y, v.position[1]);
-				maxVertex.z = fmax(maxVertex.z, v.position[2]);
+				maxVertex.x = fmax(maxVertex.x, v.position.x);
+				maxVertex.y = fmax(maxVertex.y, v.position.y);
+				maxVertex.z = fmax(maxVertex.z, v.position.z);
 			}
 
 			size_t thisIndex = model.vertices.size();
 			model.vertices.emplace_back(v);
 
 			assert(thisIndex < UINT32_MAX);
-			uint32_t index = static_cast<uint32_t>(thisIndex);
-			model.indices.emplace_back(index);
-			indexMap[hash] = index;
+			uint32_t singleIndex = static_cast<uint32_t>(thisIndex);
+			model.indices.emplace_back(singleIndex);
+			indexMap[hash] = singleIndex;
 		}
 	}
 
@@ -254,7 +255,7 @@ ReadObjShape(LoadedModel& model, tinyobj::shape_t& shape, const std::string& fil
 		{
 			vertex.normal = glm::normalize(vertex.normal);
 		}
-		
+
 		if (generateTangents)
 		{
 			glm::vec3 N = vertex.normal;

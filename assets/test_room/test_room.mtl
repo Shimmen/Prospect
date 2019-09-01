@@ -1,0 +1,51 @@
+# Blender MTL File: 'test_room.blend'
+# Material Count: 4
+
+newmtl BasicConcrete
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd textures/Concrete14_col.jpg
+map_Pr textures/Concrete14_rgh.jpg
+norm   textures/Concrete14_nrm.jpg
+
+newmtl Bricks
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd textures/Bricks18_col.jpg
+map_Pr textures/Bricks18_rgh.jpg
+norm   textures/Bricks18_nrm.jpg
+
+newmtl ConcreteTiles
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd textures/Concrete13_col.jpg
+map_Pr textures/Concrete13_rgh.jpg
+norm   textures/Concrete13_nrm.jpg
+
+newmtl Dragon
+Ns 125.539035
+Ka 1.000000 1.000000 1.000000
+Kd 0.010058 0.130464 0.024993
+Ks 1.000000 1.000000 1.000000
+Ke 0.0 0.0 0.0
+Ni 1.000000
+d 1.000000
+illum 3

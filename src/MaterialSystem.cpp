@@ -29,14 +29,23 @@ MaterialSystem::CreateMaterial(const tinyobj::material_t& materialDescription, c
 	bool hasRoughnessMap = !materialDescription.roughness_texname.empty();
 	bool hasMetallicMap = !materialDescription.metallic_texname.empty();
 
-	if (hasDiffuseTex && hasNormalMap && hasRoughnessMap && hasMetallicMap)
+	if (hasDiffuseTex && hasNormalMap && hasRoughnessMap)
 	{
 		auto mat = new CompleteMaterial();
 
 		mat->baseColorTexture = TextureSystem::LoadLdrImage(baseDirectory + materialDescription.diffuse_texname);
 		mat->normalMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.normal_texname);
 		mat->roughnessMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.roughness_texname);
-		mat->metallicMap= TextureSystem::LoadDataTexture(baseDirectory + materialDescription.metallic_texname);
+
+		if (hasMetallicMap)
+		{
+			mat->metallicMap = TextureSystem::LoadDataTexture(baseDirectory + materialDescription.metallic_texname);
+		}
+		else
+		{
+			// Assume not metal if no map is specified
+			mat->metallicMap = TextureSystem::CreatePlaceholder(0, 0, 0, 0);
+		}
 
 		material = mat;
 	}
@@ -49,8 +58,8 @@ MaterialSystem::CreateMaterial(const tinyobj::material_t& materialDescription, c
 			materialDescription.diffuse[1],
 			materialDescription.diffuse[2]
 		);
-		mat->roughness = 0.5f;
-		mat->metallic = 0.0f;
+		mat->roughness = materialDescription.roughness;
+		mat->metallic = materialDescription.metallic;
 
 		material = mat;
 	}

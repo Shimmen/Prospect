@@ -32,3 +32,37 @@ ShadowMap::RecreateGpuResources(int size)
 	}
 
 }
+
+/*
+void
+ShadowMap::AssignShadowMapSegments(std::vector<DirectionalLight>& dirLights)
+{
+	size_t totalLightCount = dirLights.size();
+
+	glm::mat4 toUv = glm::translate(vec3(0.5f)) * glm::scale(vec3(0.5f));
+
+	if (totalLightCount <= 4)
+	{
+		glm::mat4 uvScale = glm::scale(glm::vec3(0.5f));
+		glm::mat4 uvBias = glm::translate(glm::vec3(0.5f));
+
+		int mid = size / 2;
+
+		// TODO Make some automatic way of calculating the UV transform!
+		// i.e. Just by specifying the min and max xy and the total size!
+
+		ShadowMapSegment segments[4] = {
+			{ 0, mid, 0, mid, uvScale * toUv, glm::mat4() },
+			{ 0, mid, mid, size, uvBias * uvScale * toUv, glm::mat4() },
+			{ 0, mid, 0, mid, uvBias * uvScale * toUv, glm::mat4() },
+			{ 0, mid, 0, mid, uvBias * uvScale * toUv, glm::mat4() }
+		};
+	}
+	else
+	{
+		// TODO: Handle this case as well!
+		assert(false);
+	}
+
+}
+*/
