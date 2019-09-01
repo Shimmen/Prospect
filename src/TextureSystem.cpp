@@ -105,6 +105,9 @@ CreateImmutableTextureFromImage(const ImageLoadDescription& dsc, const LoadedIma
 		glTextureStorage2D(dsc.texture, numLevels, dsc.internalFormat, image.width, image.height);
 		glTextureSubImage2D(dsc.texture, 0, 0, 0, image.width, image.height, dsc.format, image.type, image.pixels);
 		glGenerateTextureMipmap(dsc.texture);
+
+		// Since we now are using TAA (at least in most cases) add a -1 mip bias to sharpen everything a bit!
+		glTextureParameterf(dsc.texture, GL_TEXTURE_LOD_BIAS, -1.0f);
 	}
 	else
 	{
