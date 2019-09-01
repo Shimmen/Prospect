@@ -24,18 +24,17 @@ public:
 		struct
 		{
 			std::string title{ "Prospect Renderer" };
-			union
-			{
-				struct { int width; int height; };
-				bool fullscreen = false;
-			} size;
+
+			struct { int width; int height; } size;
+			bool fullscreen = false;
+
 			bool resizeable = false;
 			bool vsync = true;
 		} window;
 
 		struct
 		{
-			int msaaSamples = 1;
+			int msaaSamples = 0;
 		} context;
 	};
 

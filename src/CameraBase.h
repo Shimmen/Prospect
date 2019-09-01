@@ -60,7 +60,7 @@ protected:
 	float shutterSpeed { 1.0f / iso };
 	float exposureComp { 0.0f };
 
-	float adaptionRate { 0.0007f };
+	float adaptionRate { 0.0018f };
 	bool useAutomaticExposure { true };
 
 	BufferObject<CameraUniforms> cameraBuffer;

@@ -44,7 +44,8 @@ GeometryPass::Draw(const GBuffer& gBuffer, Scene& scene)
 		auto transform = TransformSystem::Get(model.transformID);
 		BoundingSphere worldSpaceBounds = model.bounds;
 		worldSpaceBounds.center += transform.position;
-		worldSpaceBounds.radius *= VectorMaxComponent(transform.scale);
+		worldSpaceBounds.radius *= VectorMaxComponent(transform.scale); // TODO: We can't use max-component, rather we would need the largest singular value!
+		                                                                //https://math.stackexchange.com/questions/2758341/reasonably-good-bounding-sphere-of-an-affine-transformed-sphere
 		if (!InsideFrustum(frustumPlanes, worldSpaceBounds)) continue;
 
 		geometryToRender.emplace_back(model);

@@ -170,7 +170,7 @@ int main()
 
 	// Create window
 	GLFWwindow *window = nullptr;
-	if (settings.window.size.fullscreen)
+	if (settings.window.fullscreen)
 	{
 		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
