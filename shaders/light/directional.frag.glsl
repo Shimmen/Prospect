@@ -35,6 +35,60 @@ PredefinedUniform(sampler2D, u_shadow_map);
 
 PredefinedOutput(vec4, o_color);
 
+// 9 samples in a Fibbonaci spiral with radius 1.0f
+const int numFibShadowSamples = 9;
+const vec2 fibShadowSamples[] = vec2[numFibShadowSamples](
+    vec2(0.0, 0.0),
+    vec2(-0.2457896260261067, -0.22516343142050776),
+    vec2(0.041212881865007774, 0.46959953214478733),
+    vec2(0.3512823401715744, -0.45818560738735076),
+    vec2(-0.6564756568769521, 0.11612130025287623),
+    vec2(0.6288980651919658, 0.40005347036784666),
+    vec2(-0.2119660273461883, -0.7885030563781865),
+    vec2(-0.4064817883047546, 0.7826559483926168),
+    vec2(0.8856006111249612, -0.3234199228000402)
+);
+
+float calculateShadowFactor(vec4 viewSpacePos, float LdotN)
+{
+    int segmentIdx = directionalLight.shadowMapSegmentIndex.x;
+    ShadowMapSegment segment = shadowMapSegments[segmentIdx];
+    vec2 shadowTexelSize = vec2(1.0) / vec2(textureSize(u_shadow_map, 0));
+
+    const float fibRadius = 3.0; // TODO: Adjust/make parameter!
+    float bias = 0.0006 - 0.0006 * pow(LdotN, 10.0);
+    mat4 lightProjectionFromView = segment.lightViewProjection * camera_uniforms.world_from_view;
+
+    // Generate rotation from a blue-noise value
+    ivec2 noiseCoord = ivec2(gl_FragCoord.xy);// % ivec2(64);
+    //float noise = fract(float(uFrameCount + 1) * goldenRatio * texelFetch(uBlueNoise, noiseCoord, 0).r);
+    float noise = fract(122359.384549 * float(noiseCoord.x) + 239223.2435894 * float(noiseCoord.y));
+    float rot = 6.283185 * noise;
+    mat2 sampleRot = mat2(cos(rot), sin(rot), -sin(rot), cos(rot));
+
+    float shadowAcc = 0.0;
+    for (int i = 0; i < numFibShadowSamples; ++i)
+    {
+        vec4 posInShadowMap = lightProjectionFromView * viewSpacePos;
+        posInShadowMap.xyz /= posInShadowMap.w;
+
+        // Compare depths for shadows
+        vec2 shadowMapUv = (segment.uvTransform * vec4(posInShadowMap.xy, 0.0, 1.0)).xy;
+        vec2 offset = sampleRot * fibShadowSamples[i];
+        shadowMapUv += fibRadius * shadowTexelSize * offset;
+        float mapDepth = texture(u_shadow_map, shadowMapUv).x;
+
+        float actualDepth = posInShadowMap.z * 0.5 + 0.5;
+        float shadowFactor = (mapDepth < actualDepth + bias) ? 0.0 : 1.0;
+
+        // TODO: Implement a proper UV-based way of detecting if we sample outside the shadow map segment
+
+        shadowAcc += shadowFactor;
+    }
+
+    return shadowAcc / numFibShadowSamples;
+}
+
 float linearizeDepth(float nonLinearDepth)
 {
     float projectionA = camera_uniforms.near_far.z;
@@ -55,32 +109,8 @@ void main()
     vec3 V = -normalize(viewSpacePos.xyz);
     float LdotN = max(dot(L, N), 0.0);
 
-    float shadowFactor = 1.0;
-    {
-        int segmentIdx = directionalLight.shadowMapSegmentIndex.x;
-        ShadowMapSegment segment = shadowMapSegments[segmentIdx];
-
-        mat4 lightProjectionFromView = segment.lightViewProjection * camera_uniforms.world_from_view;
-        vec4 posInShadowMap = lightProjectionFromView * viewSpacePos;
-        posInShadowMap.xyz /= posInShadowMap.w;
-
-        //float bias = 0.001 * pow(1.0 - LdotN, 0.5);
-        float bias = 0.0006 - 0.0006 * pow(LdotN, 10.0);
-
-        // Compare depths for shadows
-        float actualDepth = posInShadowMap.z * 0.5 + 0.5;
-        vec2 shadowMapUv = (segment.uvTransform * vec4(posInShadowMap.xy, 0.0, 1.0)).xy;
-        float mapDepth = texture(u_shadow_map, shadowMapUv).x;
-        shadowFactor = (mapDepth < actualDepth + bias) ? 0.0 : 1.0;
-
-        // Fragments outside the shadow map should be considered to be in shadow
-        // (Maybe not for large scale renders, but for smaller scenes I think this makes sense)
-        bool insideBounds = posInShadowMap.xy == clamp(posInShadowMap.xy, vec2(-1.0), vec2(1.0));
-        shadowFactor = (insideBounds) ? shadowFactor : 0.0;
-    }
-
     vec3 lightColor = rgbFromColor(directionalLight.color);
-    vec3 directLight = lightColor * shadowFactor;
+    vec3 directLight = lightColor * calculateShadowFactor(viewSpacePos, LdotN);
 
     vec3 baseColor = texture(u_g_buffer_albedo, v_uv).rgb;
     vec4 material = texture(u_g_buffer_material, v_uv);
