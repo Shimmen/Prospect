@@ -55,7 +55,6 @@ float calculateShadowFactor(vec4 viewSpacePos, float LdotN)
     ShadowMapSegment segment = shadowMapSegments[segmentIdx];
     vec2 shadowTexelSize = vec2(1.0) / vec2(textureSize(u_shadow_map, 0));
 
-    const float fibRadius = 3.0; // TODO: Adjust/make parameter!
     float bias = 0.0006 - 0.0006 * pow(LdotN, 10.0);
     mat4 lightProjectionFromView = segment.lightViewProjection * camera_uniforms.world_from_view;
 
@@ -75,7 +74,7 @@ float calculateShadowFactor(vec4 viewSpacePos, float LdotN)
         // Compare depths for shadows
         vec2 shadowMapUv = (segment.uvTransform * vec4(posInShadowMap.xy, 0.0, 1.0)).xy;
         vec2 offset = sampleRot * fibShadowSamples[i];
-        shadowMapUv += fibRadius * shadowTexelSize * offset;
+        shadowMapUv += directionalLight.softness.x * shadowTexelSize * offset;
         float mapDepth = texture(u_shadow_map, shadowMapUv).x;
 
         float actualDepth = posInShadowMap.z * 0.5 + 0.5;

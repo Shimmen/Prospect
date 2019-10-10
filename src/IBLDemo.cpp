@@ -191,6 +191,7 @@ void IBLDemo::Init()
 	DirectionalLight sun;
 	sun.worldDirection = glm::normalize(glm::vec4(-1.0f, -0.5f, +1.85f, 0.0f));
 	sun.color = Color(1, 1, 1, 0.55f);
+	sun.softness.x = 2.3f;
 	scene.directionalLights.push_back(sun);
 
 	//scene.skyProbe.radiance = TextureSystem::LoadHdrImage("assets/env/rooftop_night/sky_2k.hdr");

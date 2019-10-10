@@ -61,6 +61,7 @@ LightPass::Draw(const LightBuffer& lightBuffer, const GBuffer& gBuffer, const Sh
 	if (ImGui::CollapsingHeader("Light pass"))
 	{
 		ImGui::SliderFloat("Sun intensity", &scene.directionalLights[0].color.a, 0.0f, 1.0f);
+		ImGui::SliderFloat("Sun softness", &scene.directionalLights[0].softness.x, 0.0f, 7.0f);
 		GuiSystem::Texture(lightBuffer.lightTexture);
 	}
 }

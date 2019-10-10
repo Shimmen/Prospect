@@ -20,6 +20,9 @@ struct DirectionalLight
 
     Color color;
 
+	// x = softness, yzw = unused
+	vec4 softness;
+
 	// x = index, yzw = unused
 	ivec4 shadowMapSegmentIndex;
 };
