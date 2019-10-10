@@ -53,6 +53,7 @@ void main()
     vec3 N = octahedralDecode(packedNormal);
     vec3 L = -normalize(directionalLight.viewDirecion.xyz);
     vec3 V = -normalize(viewSpacePos.xyz);
+    float LdotN = max(dot(L, N), 0.0);
 
     float shadowFactor = 1.0;
     {
@@ -63,11 +64,14 @@ void main()
         vec4 posInShadowMap = lightProjectionFromView * viewSpacePos;
         posInShadowMap.xyz /= posInShadowMap.w;
 
+        //float bias = 0.001 * pow(1.0 - LdotN, 0.5);
+        float bias = 0.0006 - 0.0006 * pow(LdotN, 10.0);
+
         // Compare depths for shadows
         float actualDepth = posInShadowMap.z * 0.5 + 0.5;
         vec2 shadowMapUv = (segment.uvTransform * vec4(posInShadowMap.xy, 0.0, 1.0)).xy;
         float mapDepth = texture(u_shadow_map, shadowMapUv).x;
-        shadowFactor = (mapDepth < actualDepth) ? 0.0 : 1.0;
+        shadowFactor = (mapDepth < actualDepth + bias) ? 0.0 : 1.0;
 
         // Fragments outside the shadow map should be considered to be in shadow
         // (Maybe not for large scale renders, but for smaller scenes I think this makes sense)
@@ -84,11 +88,15 @@ void main()
     float metallic = material.y;
 
     vec3 specular = specularBRDF(L, V, N, baseColor, roughness, metallic);
+    // TODO: Add the multiscatter estimation from Filament 4.7.2:
+    // vec3 energyCompensation = 1.0 + f0 * (1.0 / dfg.y - 1.0);
+    // // Scale the specular lobe to account for multiscattering
+    // Fr *= pixel.energyCompensation;
+
     vec3 diffuseColor = vec3(1.0 - metallic) * baseColor;
     vec3 diffuse = diffuseColor * diffuseBRDF();
     vec3 brdf = diffuse + specular;
 
-    float LdotN = max(dot(L, N), 0.0);
     vec3 color = brdf * directLight * LdotN;
 
     color = (unlit) ? baseColor : color;
