@@ -1,6 +1,7 @@
 #version 460
 
 #include <common.glsl>
+#include <scene_uniforms.h>
 #include <camera_model.glsl>
 #include <camera_uniforms.h>
 #include <shader_locations.h>
@@ -10,10 +11,8 @@ layout(
     local_size_y = 32
 ) in;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
+PredefinedUniformBlock(SceneUniformBlock, scene);
 
 layout(binding = 0, rgba32f) restrict uniform image2D img_light_buffer;
 
@@ -40,7 +39,7 @@ void main()
 
             // Compute the actual luminance to use, from history & current, and write back to next history sample
             float realLuminance = histLuminance + (avgLuminance - histLuminance)
-                                                * (1.0 - exp(-camera.delta_time * camera.adaption_rate));
+                                                * (1.0 - exp(-scene.delta_time * camera.adaption_rate));
             imageStore(img_history_lum, ivec2(0), vec4(realLuminance));
 
             float ev100 = computeEV100FromAvgLuminance(realLuminance);

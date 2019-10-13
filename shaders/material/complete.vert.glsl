@@ -10,10 +10,7 @@ PredefinedAttribute(vec3, a_normal);
 PredefinedAttribute(vec2, a_tex_coord);
 PredefinedAttribute(vec4, a_tangent);
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 uniform mat4 u_world_from_local;
 uniform mat4 u_prev_world_from_local;

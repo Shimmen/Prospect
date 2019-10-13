@@ -17,7 +17,6 @@ struct CameraUniforms
     float shutter_speed;
     float exposure_compensation;
 
-    float delta_time;
     float adaption_rate;
     bool use_automatic_exposure;
 

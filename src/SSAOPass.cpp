@@ -43,7 +43,6 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 		glBindBufferBase(GL_UNIFORM_BUFFER, PredefinedUniformBlockBinding(SSAODataBlock), ssaoDataBuffer);
 
 		GenerateAndUpdateKernel();
-		kernelNoiseTexture = TextureSystem::LoadDataTexture("assets/blue_noise/64/LDR_LLL1_0.png", GL_R8);
 	}
 
 	if (ImGui::CollapsingHeader("SSAO"))
@@ -82,7 +81,6 @@ SSAOPass::Draw(const GBuffer& gBuffer)
 	glBindTextureUnit(1, gBuffer.depthTexture);
 
 	glBindImageTexture(0, occlusionTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
-	glBindImageTexture(1, kernelNoiseTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
 
 	glDispatchCompute(xGroups, yGroups, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

@@ -11,7 +11,7 @@ layout(
     local_size_y = 3
 ) in;
 
-PredefinedUniformBlock(SphereSampleBuffer)
+PredefinedUniformBlockRaw(SphereSampleBuffer)
 {
     // a-component unused!
     vec4 u_samples[SPHERE_SAMPLES_COUNT];

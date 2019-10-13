@@ -10,9 +10,14 @@
 #include "ShadowMap.h"
 #include "LightPass.h"
 #include "ShadowPass.h"
+#include "BufferObject.h"
 
 class Input;
 struct Scene;
+
+// TODO: We might still want to expose glm to the global/prospect namespace, but not just like this.
+using namespace glm;
+#include "scene_uniforms.h"
 
 class RenderPipeline
 {
@@ -32,6 +37,8 @@ private:
 
 	int width;
 	int height;
+
+	BufferObject<SceneUniforms> sceneBuffer;
 
 	GLuint blueNoiseTexture;
 

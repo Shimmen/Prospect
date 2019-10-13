@@ -3,10 +3,7 @@
 #include <shader_locations.h>
 #include <camera_uniforms.h>
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 out vec2 v_uv;
 out vec3 v_view_ray;

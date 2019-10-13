@@ -35,6 +35,18 @@
 #define TARGET_o_g_buffer_norm_vel 2
 
 ///////////////////////////////////////////////////////////////////////////////
+// Image locations
+
+#define PredefinedImageBinding(name) IMG_LOC_##name
+
+#define PredefinedNoiseImage(var) layout(binding = IMG_LOC_BlueNoiseImage, r8) \
+                                    restrict readonly uniform image2DArray var
+
+//
+
+#define IMG_LOC_BlueNoiseImage 7
+
+///////////////////////////////////////////////////////////////////////////////
 // Uniform locations
 
 #define PredefinedUniformLocation(name) LOC_##name
@@ -59,18 +71,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Uniform block bindings
 
+#define PredefinedUniformBlockType(name) TYPE_##name
 #define PredefinedUniformBlockBinding(name) BINDING_##name
-#define PredefinedUniformBlock(name) layout(std140, binding = PredefinedUniformBlockBinding(name)) uniform name
+
+#define PredefinedUniformBlockRaw(name) layout(std140, binding = PredefinedUniformBlockBinding(name)) uniform name
+#define PredefinedUniformBlock(name, var) layout(std140, binding = PredefinedUniformBlockBinding(name)) uniform name \
+                                                    { PredefinedUniformBlockType(name) var; }
 
 //
 
+#define TYPE_CameraUniformBlock CameraUniforms
 #define BINDING_CameraUniformBlock 0
 
-#define BINDING_ShadowMapSegmentBlock 1
+#define TYPE_SceneUniformBlock SceneUniforms
+#define BINDING_SceneUniformBlock 1
 
-#define BINDING_DirectionalLightBlock 2
+#define BINDING_ShadowMapSegmentBlock 2
 
-#define BINDING_SSAODataBlock 3
+#define TYPE_DirectionalLightBlock DirectionalLight
+#define BINDING_DirectionalLightBlock 3
+
+#define TYPE_SSAODataBlock SSAOData
+#define BINDING_SSAODataBlock 4
 
 #define BINDING_SphereSampleBuffer 10
 

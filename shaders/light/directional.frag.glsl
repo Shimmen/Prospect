@@ -4,6 +4,7 @@
 #include <common.glsl>
 #include <shader_locations.h>
 #include <camera_uniforms.h>
+#include <scene_uniforms.h>
 
 #include <shader_types.h>
 #include <shader_constants.h>
@@ -11,19 +12,13 @@
 in vec2 v_uv;
 in vec3 v_view_ray;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera_uniforms;
-};
+PredefinedUniformBlock(SceneUniformBlock, scene);
+PredefinedUniformBlock(CameraUniformBlock, camera);
+PredefinedUniformBlock(DirectionalLightBlock, directionalLight);
 
-PredefinedUniformBlock(ShadowMapSegmentBlock)
+PredefinedUniformBlockRaw(ShadowMapSegmentBlock)
 {
     ShadowMapSegment shadowMapSegments[SHADOW_MAP_SEGMENT_MAX_COUNT];
-};
-
-PredefinedUniformBlock(DirectionalLightBlock)
-{
-    DirectionalLight directionalLight;
 };
 
 PredefinedUniform(sampler2D, u_g_buffer_albedo);
@@ -32,6 +27,7 @@ PredefinedUniform(sampler2D, u_g_buffer_norm_vel);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
 PredefinedUniform(sampler2D, u_shadow_map);
+PredefinedNoiseImage(img_blue_noise);
 
 PredefinedOutput(vec4, o_color);
 
@@ -56,17 +52,15 @@ float calculateShadowFactor(vec4 viewSpacePos, float LdotN)
     vec2 shadowTexelSize = vec2(1.0) / vec2(textureSize(u_shadow_map, 0));
 
     float bias = 0.0006 - 0.0006 * pow(LdotN, 10.0);
-    mat4 lightProjectionFromView = segment.lightViewProjection * camera_uniforms.world_from_view;
+    mat4 lightProjectionFromView = segment.lightViewProjection * camera.world_from_view;
 
     // Generate rotation from a blue-noise value
-    ivec2 noiseCoord = ivec2(gl_FragCoord.xy);// % ivec2(64);
-    //float noise = fract(float(uFrameCount + 1) * goldenRatio * texelFetch(uBlueNoise, noiseCoord, 0).r);
-    float noise = fract(122359.384549 * float(noiseCoord.x) + 239223.2435894 * float(noiseCoord.y));
-    float rot = 6.283185 * noise;
-    mat2 sampleRot = mat2(cos(rot), sin(rot), -sin(rot), cos(rot));
+    ivec3 noiseCoords = ivec3(ivec2(gl_FragCoord.xy) % ivec2(64), scene.frame_count_noise);
+    float angle = TWO_PI * imageLoad(img_blue_noise, noiseCoords).r;
+    mat2 sampleRot = mat2(cos(angle), sin(angle), -sin(angle), cos(angle));
 
     float shadowAcc = 0.0;
-    for (int i = 0; i < numFibShadowSamples; ++i)
+    for (int i = 1; i < numFibShadowSamples; ++i)
     {
         vec4 posInShadowMap = lightProjectionFromView * viewSpacePos;
         posInShadowMap.xyz /= posInShadowMap.w;
@@ -85,13 +79,13 @@ float calculateShadowFactor(vec4 viewSpacePos, float LdotN)
         shadowAcc += shadowFactor;
     }
 
-    return shadowAcc / numFibShadowSamples;
+    return shadowAcc / (numFibShadowSamples - 1);
 }
 
 float linearizeDepth(float nonLinearDepth)
 {
-    float projectionA = camera_uniforms.near_far.z;
-    float projectionB = camera_uniforms.near_far.w;
+    float projectionA = camera.near_far.z;
+    float projectionB = camera.near_far.w;
     return projectionB / (nonLinearDepth - projectionA);
 }
 

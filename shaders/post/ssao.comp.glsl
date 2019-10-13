@@ -6,6 +6,7 @@
 #include <shader_locations.h>
 #include <shader_constants.h>
 #include <camera_uniforms.h>
+#include <scene_uniforms.h>
 #include <shader_types.h>
 #include <ssao_data.h>
 
@@ -14,21 +15,15 @@ layout(
     local_size_y = 32
 ) in;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
-
-PredefinedUniformBlock(SSAODataBlock)
-{
-    SSAOData ssao;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
+PredefinedUniformBlock(SceneUniformBlock, scene);
+PredefinedUniformBlock(SSAODataBlock, ssao);
 
 PredefinedUniform(sampler2D, u_g_buffer_norm_vel);
 PredefinedUniform(sampler2D, u_g_buffer_depth);
 
+PredefinedNoiseImage(img_blue_noise);
 layout(binding = 0, r16f) restrict writeonly uniform image2D img_occlusion;
-layout(binding = 1, r8)   restrict readonly  uniform image2D img_blue_noise;
 
 vec3 project(vec3 vsPos)
 {
@@ -71,7 +66,7 @@ void main()
         // Set up matrix for rotating the kernel samples around the normal. This makes sure we
         // don't get any banding and instead introduce noise. (Note that GLSL has column-major
         // matrix order, so the rotation is really the transpose of what is shown below.)
-        ivec2 noiseCoords = pixelCoord % ivec2(64);
+        ivec3 noiseCoords = ivec3(pixelCoord % ivec2(64), scene.frame_count_noise);
         float angle = TWO_PI * imageLoad(img_blue_noise, noiseCoords).r;
         float cosA = cos(angle);
         float sinA = sin(angle);

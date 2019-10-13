@@ -29,4 +29,6 @@ namespace TextureSystem
 	GLuint LoadLdrImage(const std::string& filename);
 	GLuint LoadHdrImage(const std::string& filename);
 	GLuint LoadDataTexture(const std::string& filename, GLenum internalFormat = GL_RGBA8);
+
+	GLuint LoadBlueNoiseTextureArray(const std::string& folderPath);
 }

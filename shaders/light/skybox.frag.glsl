@@ -7,10 +7,7 @@
 in vec2 v_uv;
 in vec3 v_view_ray;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 PredefinedUniform(sampler2D, u_texture);
 

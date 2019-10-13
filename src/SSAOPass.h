@@ -29,8 +29,6 @@ private:
 
 	void GenerateAndUpdateKernel() const;
 
-	GLuint kernelNoiseTexture{ 0 };
-
 	GLuint *ssaoProgram{ 0 };
 	GLuint *ssaoBlurProgram{ 0 };
 

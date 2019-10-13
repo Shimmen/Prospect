@@ -7,6 +7,8 @@
 #include "Input.h"
 #include "Scene.h"
 
+#include "shader_locations.h"
+
 void RenderPipeline::Resize(int width, int height)
 {
 	this->width = width;
@@ -22,7 +24,10 @@ void RenderPipeline::Render(Scene& scene, const Input& input, float deltaTime, f
 {
 	PerformOnce(
 		shadowMapAtlas.RecreateGpuResources(8192);
-		blueNoiseTexture = TextureSystem::LoadDataTexture("assets/blue_noise/64/LDR_LLL1_0.png", GL_R8); // TODO: Use texture array!
+		sceneBuffer.BindBufferBase(BufferObjectType::Uniform, PredefinedUniformBlockBinding(SceneUniformBlock));
+		
+		blueNoiseTexture = TextureSystem::LoadBlueNoiseTextureArray("assets/blue_noise/64/");
+		glBindImageTexture(PredefinedImageBinding(BlueNoiseImage), blueNoiseTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
 	);
 
 	if (settings.useTaa)
@@ -37,7 +42,13 @@ void RenderPipeline::Render(Scene& scene, const Input& input, float deltaTime, f
 		scene.mainCamera->ApplyFrustumJitter({ 0, 0 });
 	}
 
-	scene.mainCamera->CommitToGpu(deltaTime);
+	sceneBuffer.memory.delta_time = deltaTime;
+	sceneBuffer.memory.running_time = runningTime;
+	sceneBuffer.memory.frame_count = frameCount;
+	sceneBuffer.memory.frame_count_noise = settings.useTaa ? frameCount % 64 : 0;
+	sceneBuffer.UpdateGpuBuffer();
+
+	scene.mainCamera->CommitToGpu();
 
 	geometryPass.Draw(gBuffer, scene);
 	shadowPass.Draw(shadowMapAtlas, scene);

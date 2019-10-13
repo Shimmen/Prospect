@@ -11,7 +11,7 @@
 
 #include "shader_locations.h"
 
-void CameraBase::CommitToGpu(float deltaTimeREMOVEME_AND_PUT_IN_SOME_OTHER_BUFFER)
+void CameraBase::CommitToGpu()
 {
 	PerformOnce(cameraBuffer.BindBufferBase(BufferObjectType::Uniform, PredefinedUniformBlockBinding(CameraUniformBlock)));
 
@@ -39,10 +39,6 @@ void CameraBase::CommitToGpu(float deltaTimeREMOVEME_AND_PUT_IN_SOME_OTHER_BUFFE
 
 	cameraBuffer.memory.adaption_rate = adaptionRate;
 	cameraBuffer.memory.use_automatic_exposure = useAutomaticExposure;
-
-	// NOTE: This will force way more updates than maybe required, due to the noisy nature
-	// of a delta time signal. Maybe move to some other smaller uniform buffer?
-	cameraBuffer.memory.delta_time = deltaTimeREMOVEME_AND_PUT_IN_SOME_OTHER_BUFFER;
 
 	cameraBuffer.UpdateGpuBuffer();
 }

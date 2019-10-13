@@ -15,10 +15,7 @@ in vec3 v_bitangent;
 in vec4 v_curr_proj_pos;
 in vec4 v_prev_proj_pos;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 uniform sampler2D u_base_color;
 uniform sampler2D u_normal_map;

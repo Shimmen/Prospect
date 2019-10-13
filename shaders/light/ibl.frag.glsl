@@ -11,10 +11,7 @@
 in vec2 v_uv;
 in vec3 v_view_ray;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera_uniforms;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 PredefinedUniform(sampler2D, u_g_buffer_albedo);
 PredefinedUniform(sampler2D, u_g_buffer_material);
@@ -30,8 +27,8 @@ PredefinedOutput(vec4, o_color);
 
 float linearizeDepth(float nonLinearDepth)
 {
-    float projectionA = camera_uniforms.near_far.z;
-    float projectionB = camera_uniforms.near_far.w;
+    float projectionA = camera.near_far.z;
+    float projectionB = camera.near_far.w;
     return projectionB / (nonLinearDepth - projectionA);
 }
 
@@ -69,7 +66,7 @@ void main()
     // (use square roughness here, since we call directly into the brdf-related code)
     vec3 F = F_SchlickRoughnessCompensating(saturate(dot(V, N)), f0, square(roughness));
 
-    mat3 world_from_view_dir = mat3(camera_uniforms.world_from_view);
+    mat3 world_from_view_dir = mat3(camera.world_from_view);
 
     vec3 specular;
     {

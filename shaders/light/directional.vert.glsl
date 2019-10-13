@@ -3,10 +3,7 @@
 #include <shader_locations.h>
 #include <camera_uniforms.h>
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera_uniforms;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 out vec2 v_uv;
 out vec3 v_view_ray;
@@ -18,7 +15,7 @@ void main()
     gl_Position = vec4(v_uv * 2.0 - 1.0, 0.0, 1.0);
 
     // Unproject the NDC-position to view space
-    vec4 viewSpacePos = camera_uniforms.view_from_projection * gl_Position;
+    vec4 viewSpacePos = camera.view_from_projection * gl_Position;
     viewSpacePos.xyz /= viewSpacePos.w;
 
     // Normalize the z coordinate since we interpolate from a 2D/xy-quad

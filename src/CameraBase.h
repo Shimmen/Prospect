@@ -20,7 +20,7 @@ public:
 
 	void DrawEditorGui();
 
-	void CommitToGpu(float deltaTimeREMOVEME_AND_PUT_IN_SOME_OTHER_BUFFER);
+	void CommitToGpu();
 
 	void LookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up = { 0, 1, 0 });
 

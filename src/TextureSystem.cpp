@@ -4,6 +4,7 @@
 #include <stb_image.h>
 
 #include <atomic>
+#include <filesystem>
 #include <algorithm>
 
 #include "Logging.h"
@@ -376,4 +377,80 @@ TextureSystem::LoadDataTexture(const std::string& filename, GLenum internalForma
 	}
 
 	return dsc.texture;
+}
+
+GLuint
+TextureSystem::LoadBlueNoiseTextureArray(const std::string& folderPath)
+{
+	// TODO: Make this async!
+
+	// TODO: I really need to update to the latest version of Visual Studio...
+	namespace fs = std::experimental::filesystem;
+
+	GLuint texture;
+	int size;
+
+	glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture);
+	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	int numImages = 0;
+	for (const auto& entry : fs::directory_iterator(folderPath))
+	{
+		if (fs::is_regular_file(entry))
+		{
+			numImages += 1;
+		}
+	}
+
+	bool storageAllocated = false;
+	for (const auto& entry : fs::directory_iterator(folderPath))
+	{
+		// For now, assume we only have valid images in a directory
+		if (!fs::is_regular_file(entry)) continue;
+		auto filepath = entry.path().u8string();
+
+		int w, h;
+		stbi_uc *pixels = stbi_load(filepath.c_str(), &w, &h, nullptr, STBI_grey);
+		if (!pixels)
+		{
+			Log("Could not load image '%s': %s.\n", filepath.c_str(), stbi_failure_reason());
+			continue;
+		}
+
+		if (w != h)
+		{
+			Log("LoadBlueNoiseTextureArray only supports square images.");
+			return texture;
+		}
+
+		if (storageAllocated)
+		{
+			if (w != size)
+			{
+				Log("LoadBlueNoiseTextureArray can only load an image directory where all images are of the same size.");
+				return texture;
+			}
+		}
+		else
+		{
+			size = w;
+			glTextureStorage3D(texture, 1, GL_R8, size, size, numImages);
+			storageAllocated = true;
+		}
+
+		// Get the index of the image in the sequence
+		auto filename = entry.path().filename().replace_extension("").u8string();
+		size_t subIdx = filename.rfind('_');
+		assert(subIdx != std::string::npos);
+		auto sequenceIdxStr = filename.substr(subIdx + 1);
+		int sequenceIdx = atoi(sequenceIdxStr.c_str());
+
+		glTextureSubImage3D(texture, 0, 0, 0, sequenceIdx, size, size, 1, GL_RED, GL_UNSIGNED_BYTE, pixels);
+		stbi_image_free(pixels);
+	}
+
+	return texture;
 }

@@ -12,10 +12,7 @@ in vec3 v_normal;
 in vec4 v_curr_proj_pos;
 in vec4 v_prev_proj_pos;
 
-PredefinedUniformBlock(CameraUniformBlock)
-{
-    CameraUniforms camera;
-};
+PredefinedUniformBlock(CameraUniformBlock, camera);
 
 uniform vec3 u_base_color;
 uniform float u_roughness;

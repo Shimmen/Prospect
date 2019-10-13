@@ -16,6 +16,7 @@ void main()
 
     if (pixelCoord.x < imagePx.x && pixelCoord.y < imagePx.y)
     {
+        /*
         float occlusionCenter = imageLoad(img_occlusion, pixelCoord).r;
 
         vec4 occlusionPlus = vec4(
@@ -37,6 +38,7 @@ void main()
             + 0.15 * dot(vec4(0.25), occlusionCross);
 
         imageStore(img_occlusion, pixelCoord, vec4(occlusion));
+        */
 
 
         // Alternative, slower blur:
