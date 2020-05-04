@@ -7,11 +7,11 @@ This is my personal real-time render that I've been working on periodically over
 
 Over time I've implemented a lot of different techniques, and while it's not pushing any technical boundaries it can produce a nice looking image that is somewhat state-of-the-art (pre real-time ray tracing). For ray tracing stuff, see my Vulkan renderer I made as part of my Master's thesis, [Arkose Renderer](https://github.com/Shimmen/ArkoseRenderer/).
 
-<img src="images/dragon-in-room.png" style="width: 49%;"></img>
-<img src="images/materials.png" style="width: 49%;"></img>
-<img src="images/gui-showcase.png" style="width: 49%;"></img>
-<img src="images/revolver.png" style="width: 49%;"></img>
-
+<img src="images/dragon-in-room.png" width="49%"></img>
+<img src="images/materials.png" width="49%"></img>
+<img src="images/gui-showcase.png" width="49%"></img>
+<img src="images/revolver.png" width="49%"></img>
+*Click on the images to view them in high-resolution!*
 
 ## Features
 
@@ -67,12 +67,14 @@ Beyond the rendering & graphics features listed above, the engine also supports:
  - Hot reloading of shader programs, with error logs in the GUI
  - A custom Dear ImGui integration
 
+
 ---
 
-<img src="images/dragon-in-room-2.png" style="width: 49%;"></img>
-<img src="images/spheres.png" style="width: 49%;"></img>
-<img src="images/materials-2.png" style="width: 49%;"></img>
-<img src="images/scene.png" style="width: 49%;"></img>
+<img src="images/materials-2.png" width="49%"></img>
+<img src="images/spheres.png" width="49%"></img>
+<img src="images/dragon-in-room-2.png" width="49%"></img>
+<img src="images/scene.png" width="49%"></img>
+*Click on the images to view them in high-resolution!*
 
 ## Design
 As mentioned the renderer is designed to be flexible and extendable and for personal use. For this reason some design choices have been made that aren't necessarily obvious. In previous projects I've opted for the more traditional make-abstractions-for-each-api-type, e.g. a `Texture` class and a `Buffer` type. While this can work fine it takes a lot of work to maintain the abstraction when adding features. E.g. adding 3D texture support: how should it relate to the `Texture` class, and how should it interact with the `FrameBuffer` class for attaching, etc.
@@ -83,7 +85,6 @@ While there are some pain points with this approach, such as setting shader unif
 
 
 ## Repository structure
-
 ```bash
 Prospect
 |-- assets       # all run-time assets, except shaders (e.g. 3D models, images)
