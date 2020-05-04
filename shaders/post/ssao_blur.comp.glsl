@@ -16,7 +16,8 @@ void main()
 
     if (pixelCoord.x < imagePx.x && pixelCoord.y < imagePx.y)
     {
-        /*
+#if 0
+
         float occlusionCenter = imageLoad(img_occlusion, pixelCoord).r;
 
         vec4 occlusionPlus = vec4(
@@ -38,24 +39,27 @@ void main()
             + 0.15 * dot(vec4(0.25), occlusionCross);
 
         imageStore(img_occlusion, pixelCoord, vec4(occlusion));
-        */
 
+#else
+        // Alternative and better but slower blur:
+        const int k = 2;
 
-        // Alternative, slower blur:
-
-        int k = 2;
-        float totalWeight = 0.0;
         float o = 0.0;
+        float totalWeight = 0.0;
+
         for (int i = -k; i <= k; ++i)
         {
             for (int j = -k; j <= k; ++j)
             {
-                float weight = float(k) + 2.5 - length(vec2(i, j));
-                o += weight * imageLoad(img_occlusion, pixelCoord + ivec2(i, j)).r;
+                // (make the weight slightly bell shaped)
+                float weight = 1.0 + float(k*k) - length(vec2(i, j));
                 totalWeight += weight;
+
+                o += weight * imageLoad(img_occlusion, pixelCoord + ivec2(i, j)).r;
             }
         }
         o /= totalWeight;
         imageStore(img_occlusion, pixelCoord, vec4(o));
+#endif
     }
 }
