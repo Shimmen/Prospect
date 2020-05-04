@@ -20,7 +20,7 @@ public:
 
 	float kernelRadius = 0.62f;
 	float intensity = 7.0f;
-	bool applyBlur = false;
+	bool applyBlur = true;
 
 	// (recompile to change this.. easier this way)
 	bool randomKernelSamples = true;

@@ -17,7 +17,7 @@ public:
 
 	Uniform<float> historyBlend{ "u_history_blend", 0.05f };
 
-	bool enabled;
+	bool enabled = true;
 	GLuint outputTexture;
 
 private:
