@@ -7,16 +7,10 @@ This is my personal real-time render that I've been working on periodically over
 
 Over time I've implemented a lot of different techniques, and while it's not pushing any technical boundaries it can produce a nice looking image that is somewhat state-of-the-art (pre real-time ray tracing). For ray tracing stuff, see my Vulkan renderer I made as part of my Master's thesis, [Arkose Renderer](https://github.com/Shimmen/ArkoseRenderer/).
 
-<style>
-.twocol {
-    width: 49%;
-}
-</style>
-
-<img src="images/dragon-in-room.png" class="twocol"></img>
-<img src="images/materials.png" class="twocol"></img>
-<img src="images/gui-showcase.png" class="twocol"></img>
-<img src="images/revolver.png" class="twocol"></img>
+<img src="images/dragon-in-room.png" style="width: 49%;"></img>
+<img src="images/materials.png" style="width: 49%;"></img>
+<img src="images/gui-showcase.png" style="width: 49%;"></img>
+<img src="images/revolver.png" style="width: 49%;"></img>
 
 
 ## Features
@@ -75,10 +69,10 @@ Beyond the rendering & graphics features listed above, the engine also supports:
 
 ---
 
-<img src="images/dragon-in-room-2.png" class="twocol"></img>
-<img src="images/spheres.png" class="twocol"></img>
-<img src="images/materials-2.png" class="twocol"></img>
-<img src="images/scene.png" class="twocol"></img>
+<img src="images/dragon-in-room-2.png" style="width: 49%;"></img>
+<img src="images/spheres.png" style="width: 49%;"></img>
+<img src="images/materials-2.png" style="width: 49%;"></img>
+<img src="images/scene.png" style="width: 49%;"></img>
 
 ## Design
 As mentioned the renderer is designed to be flexible and extendable and for personal use. For this reason some design choices have been made that aren't necessarily obvious. In previous projects I've opted for the more traditional make-abstractions-for-each-api-type, e.g. a `Texture` class and a `Buffer` type. While this can work fine it takes a lot of work to maintain the abstraction when adding features. E.g. adding 3D texture support: how should it relate to the `Texture` class, and how should it interact with the `FrameBuffer` class for attaching, etc.
